@@ -89,12 +89,17 @@ function SelectField<T extends string>({
 function ProjectCard({ project }: { project: ProjectDetails }) {
   const imgSrc = asNextImageSrc(project.image);
 
+  // ✅ If productTypes is an array, make it readable in strings
+  const productTypesText = Array.isArray(project.productTypes)
+    ? project.productTypes.join(", ")
+    : String(project.productTypes ?? "");
+
   const inner = (
     <>
       <div className="relative aspect-[4/3] sm:aspect-square overflow-hidden">
         <Image
           src={imgSrc}
-          alt={project.alt ?? `${project.workType} ${project.productType}: ${project.name}`}
+          alt={project.alt ?? `${project.workType} ${productTypesText}: ${project.name}`}
           fill
           sizes="(min-width: 1280px) 260px, (min-width: 1024px) 33vw, (min-width: 640px) 50vw, 100vw"
           className="object-cover transition-transform duration-300 group-hover:scale-[1.04]"
@@ -115,7 +120,13 @@ function ProjectCard({ project }: { project: ProjectDetails }) {
 
           <div className="flex flex-wrap gap-2 mt-3">
             <Tag>{project.workType}</Tag>
-            <Tag>{project.productType}</Tag>
+
+            {/* ✅ Render one chip per product type */}
+            {Array.isArray(project.productTypes) ? (
+              project.productTypes.map((pt) => <Tag key={pt}>{pt}</Tag>)
+            ) : (
+              <Tag>{String(project.productTypes ?? "")}</Tag>
+            )}
           </div>
         </div>
       </div>
@@ -125,7 +136,7 @@ function ProjectCard({ project }: { project: ProjectDetails }) {
   return (
     <div className="bg-white rounded-xl overflow-hidden border border-zinc-200 shadow-sm hover:shadow-lg transition-shadow">
       <Link
-        href={`/SeeWork/${project.slug}`}
+        href={`/ironwork-projects/${project.slug}`}
         className="group block focus:outline-none focus-visible:ring-2 focus-visible:ring-amber-500"
       >
         {inner}
@@ -135,16 +146,17 @@ function ProjectCard({ project }: { project: ProjectDetails }) {
 }
 
 export default function GalleryPage() {
-  // Build filter options from data so you never “break” UI again when adding projects
+  // ✅ Work type options
   const workTypes = useMemo(
     () => ["All", ...Array.from(new Set(projects.map((p) => p.workType)))].sort() as WorkTypeFilter[],
     []
   );
 
-  const productTypes = useMemo(
-    () => ["All", ...Array.from(new Set(projects.map((p) => p.productType)))].sort() as ProductTypeFilter[],
-    []
-  );
+  // ✅ Product type options (FIX: flatMap if productTypes is an array)
+  const productTypes = useMemo(() => {
+    const all = projects.flatMap((p) => (Array.isArray(p.productTypes) ? p.productTypes : [p.productTypes]));
+    return ["All", ...Array.from(new Set(all.filter(Boolean)))].sort() as ProductTypeFilter[];
+  }, []);
 
   const locations = useMemo(
     () => ["All", ...Array.from(new Set(projects.map((p) => p.location)))].sort() as LocationFilter[],
@@ -158,8 +170,13 @@ export default function GalleryPage() {
   const filteredProjects = useMemo(() => {
     return projects.filter((project) => {
       const matchesWorkType = selectedWorkType === "All" || project.workType === selectedWorkType;
-      const matchesProductType = selectedProductType === "All" || project.productType === selectedProductType;
+
+      // ✅ Product type match works whether productTypes is array or string
+      const productList = Array.isArray(project.productTypes) ? project.productTypes : [project.productTypes];
+      const matchesProductType = selectedProductType === "All" || productList.includes(selectedProductType);
+
       const matchesLocation = selectedLocation === "All" || project.location === selectedLocation;
+
       return matchesWorkType && matchesProductType && matchesLocation;
     });
   }, [selectedWorkType, selectedProductType, selectedLocation]);

@@ -62,7 +62,7 @@ export default function ProjectDetailsPage({
         {/* Back to Gallery */}
         <div className="mb-8">
           <Link
-            href="/SeeWork"
+            href="/ironwork-projects"
             className="inline-flex items-center gap-2 text-zinc-600 hover:text-amber-600 transition-colors"
           >
             <ChevronLeft className="w-5 h-5" />
@@ -84,14 +84,32 @@ export default function ProjectDetailsPage({
               </span>
 
               <span className="inline-flex items-center gap-2 text-zinc-600">
-                <Briefcase className="w-5 h-5 text-amber-500" />
-                {project.workType}
-              </span>
+  <Briefcase className="w-5 h-5 text-amber-500" />
+  <span className="px-2.5 py-1 bg-zinc-100 text-zinc-700 rounded-md text-xs border border-zinc-200">
+    {project.workType}
+  </span>
+</span>
 
-              <span className="inline-flex items-center gap-2 text-zinc-600">
-                <Tag className="w-5 h-5 text-amber-500" />
-                {project.productType}
+              <span className="inline-flex items-start gap-2 text-zinc-600">
+             <Tag className="w-5 h-5 text-amber-500 mt-[2px]" />
+
+             <span className="flex flex-wrap gap-2">
+               {Array.isArray(project.productTypes) ? (
+               project.productTypes.map((pt) => (
+              <span
+               key={pt}
+               className="px-2.5 py-1 bg-zinc-100 text-zinc-700 rounded-md text-xs border border-zinc-200"
+               >
+                {pt}
               </span>
+      ))
+    ) : (
+      <span className="px-2.5 py-1 bg-zinc-100 text-zinc-700 rounded-md text-xs border border-zinc-200">
+        {String(project.productTypes ?? "")}
+      </span>
+    )}
+  </span>
+</span>
             </div>
 
             {project.description && (

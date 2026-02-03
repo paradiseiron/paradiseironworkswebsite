@@ -27,7 +27,8 @@ export type ProjectDetails = {
   name: string;
   location: string;
   workType: WorkType;
-  productType: ProductType;
+  productTypes: Exclude<ProductType, "All">[];
+
 
   // Gallery thumbnail
   image: string;
@@ -54,48 +55,74 @@ export function normalizeSlug(input: string) {
  * Also: slugs should match URLs exactly (case + hyphens).
  */
 export const projects: ProjectDetails[] = [
-  {
-    id: 1,
-    slug: "custom-entry-gate",
-    name: "Custom Entry Gate",
-    location: "Washington, DC",
-    workType: "Commercial",
-    productType: "Gates",
-    image: "/images/double-swing-security-gate-steel-mesh-dc.jpeg",
-    alt: "Custom steel entry gate in Washington, DC",
-    // (optional detail fields can be added later)
-    images: [
-      {
-        src: "/images/double-swing-security-gate-steel-mesh-dc.jpeg",
-        alt: "Custom steel entry gate in Washington, DC",
-      },
-    ],
-    specifications: [],
-  },
-  {
-    id: 2,
-    slug: "cable-railing",
-    name: "Cable Railing",
-    location: "DMV Area",
-    workType: "Commercial",
-    productType: "Exterior Railings",
-    image: "/images/stainless-cable-railing-exterior-commercial-dc.jpeg",
-    alt: "Commercial exterior cable railing in the DMV area",
-    images: [
-      {
-        src: "/images/stainless-cable-railing-exterior-commercial-dc.jpeg",
-        alt: "Commercial exterior cable railing in the DMV area",
-      },
-    ],
-    specifications: [],
-  },
+ {
+  id: 1,
+  slug: "commercial-security-gate-steel-mesh-reston-virginia",
+  name: "Reston Commercial Security Gate + Handrail",
+  location: "Reston, VA",
+  workType: "Commercial",
+  productTypes: ["Gates", "Exterior Railings"],
+
+  // IMPORTANT: this thumbnail must exist under /public
+  image: "/images/work/commercial-security-gate-steel-mesh-reston-virginia-thumb.jpeg",
+  alt: "Commercial steel mesh security gate and exterior handrail installation in Reston, VA - overview",
+
+  description:
+    "Commercial steel fabrication project completed in Reston, Virginia featuring a custom steel mesh security gate and an exterior steel handrail. Built for secure access control, long-term durability, and a clean professional finish suitable for high-traffic commercial environments.",
+  year: 2026,
+
+  images: [
+    {
+      src: "/images/work/commercial-security-gate-steel-mesh-reston-virginia-01.jpg",
+      alt: "Commercial steel mesh security gate in Reston, VA - full view",
+    },
+    {
+      src: "/images/work/commercial-security-gate-steel-mesh-reston-virginia-02.jpg",
+      alt: "Steel mesh security gate - hinge side and frame detail",
+    },
+    {
+      src: "/images/work/commercial-security-gate-steel-mesh-reston-virginia-03.jpg",
+      alt: "Commercial security gate - latch and hardware detail",
+    },
+    {
+      src: "/images/work/commercial-security-gate-steel-mesh-reston-virginia-04.jpg",
+      alt: "Steel security gate installation - final alignment and fit",
+    },
+
+    // ✅ Exterior handrail images included in the same project
+    {
+      src: "/images/work/commercial-exterior-steel-handrail-reston-virginia-05.jpg",
+      alt: "Commercial exterior steel handrail in Reston, VA - overview",
+    },
+    {
+      src: "/images/work/commercial-exterior-steel-handrail-reston-virginia-06.jpg",
+      alt: "Commercial exterior steel handrail - detail view of posts and connections",
+    },
+  ],
+
+  // Optional SEO fields (safe to add now)
+  summary:
+    "Commercial steel fabrication in Reston, VA featuring a custom steel mesh security gate and exterior handrail—secure, durable, and finished for daily commercial use.",
+  seoTitle:
+    "Commercial Security Gate & Steel Handrail in Reston, VA | Paradise Ironworks",
+  metaDescription:
+    "Commercial steel mesh security gate and exterior steel handrail installed in Reston, Virginia. Custom fabricated for secure access, safety, and long-term durability. Get a quote from Paradise Ironworks.",
+
+  specifications: [
+    { label: "Material", value: "Steel" },
+    { label: "Finish", value: "Powder coat" },
+    { label: "Use", value: "Commercial / security + safety rail" },
+    { label: "Code", value: "Installed to local code requirements" },
+  ],
+},
+
   {
     id: 3,
     slug: "structural-steel-installation",
     name: "Structural Steel Installation",
     location: "DMV Area",
     workType: "Structural",
-    productType: "Structural Steel",
+    productTypes: ["Structural Steel"],
     image: "/images/structural-steel-erection-commercial-building-dc.jpeg",
     alt: "Structural steel erection for a commercial building in the DMV area",
     images: [
@@ -112,7 +139,7 @@ export const projects: ProjectDetails[] = [
     name: "Steel Canopy Frame Installation",
     location: "DMV Area",
     workType: "Commercial",
-    productType: "Architectural Metalwork",
+    productTypes: ["Architectural Metalwork"],
     image: "/images/commercial-steel-canopy-frame-fabrication-installation.jpg",
     alt: "Commercial steel canopy frame fabrication and installation",
     images: [
@@ -129,7 +156,7 @@ export const projects: ProjectDetails[] = [
     name: "Exterior Railing",
     location: "Maryland",
     workType: "Residential",
-    productType: "Exterior Railings",
+    productTypes: ["Exterior Railings"],
     image: "/images/residential-exterior-stairs-metal-railings-md.jpeg",
     alt: "Residential exterior stair railing in Maryland",
     images: [
@@ -146,7 +173,7 @@ export const projects: ProjectDetails[] = [
     name: "Interior Railing",
     location: "Virginia",
     workType: "Residential",
-    productType: "Interior Railings",
+    productTypes: ["Interior Railings"],
     image: "/images/modern-interior-stair-railing-horizontal-metal-black.jpg",
     alt: "Modern black horizontal interior stair railing",
     images: [
@@ -165,14 +192,14 @@ export const projects: ProjectDetails[] = [
     name: "Mount Rainier Railing",
     location: "Mount Rainier, MD",
     workType: "Residential",
-    productType: "Interior Railings",
+    productTypes: ["Interior Railings"],
 
     // IMPORTANT: this thumbnail must exist under /public
     image: "/images/work/residential-modern-interior-metal-railing-mount-rainier-maryland-01.JPG",
     alt: "Interior railing in Mount Rainier, MD - overview",
 
     description:
-      "Custom interior railing fabricated and installed for a residential property in Mount Rainier. Built for durability, code compliance, and long-term weather resistance while maintaining a clean, modern look.",
+      "Custom interior railing fabricated and installed for a residential property in Mount Rainier. Built for durability and code compliance while maintaining a clean, modern look.",
     year: 2026,
     images: [
       {
@@ -187,7 +214,12 @@ export const projects: ProjectDetails[] = [
         src: "/images/work/residential-modern-interior-metal-railing-mount-rainier-maryland-03.JPG",
         alt: "Interior railing - angle view along stair run",
       },
-    ],
+      ],
+       // Optional SEO fields (safe to add now)
+        summary: "Custom interior stair railing fabricated and installed in Mount Rainier, MD—clean modern lines, code-compliant, and built to last.",
+        seoTitle: "Custom Interior Metal Railing in Mount Rainier, MD",
+        metaDescription: "Modern interior metal stair railing installed in Mount Rainier, Maryland near DC. Custom steel fabrication, code-compliant install, and a clean durable finish. Request pricing.",
+    
     specifications: [
       { label: "Material", value: "Steel" },
       { label: "Finish", value: "Powder coat" },

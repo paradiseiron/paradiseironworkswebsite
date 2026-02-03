@@ -69,7 +69,7 @@ export default function HeroSection() {
 
               <div className="pt-2 flex flex-col sm:flex-row gap-3 sm:gap-4">
                 <Link
-                  href="/SeeWork"
+                  href="/ironwork-projects"
                   className="inline-flex items-center justify-center rounded-[10px] bg-white/10 backdrop-blur-md border border-white/20 px-6 py-3 sm:px-7 sm:py-3.5 text-white text-base sm:text-lg font-medium hover:bg-white/20 transition-colors"
                 >
                   View Our Work
