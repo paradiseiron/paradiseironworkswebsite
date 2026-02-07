@@ -79,19 +79,19 @@ export default function ProjectDetailsPage({
 
             <div className="flex flex-wrap gap-4 mb-6">
               <span className="inline-flex items-center gap-2 text-zinc-600">
-                <MapPin className="w-5 h-5 text-amber-500" />
+                <MapPin className="w-5 h-5 text-amber-600" />
                 {project.location}
               </span>
 
               <span className="inline-flex items-center gap-2 text-zinc-600">
-  <Briefcase className="w-5 h-5 text-amber-500" />
-  <span className="px-2.5 py-1 bg-zinc-100 text-zinc-700 rounded-md text-xs border border-zinc-200">
-    {project.workType}
-  </span>
-</span>
+               <Briefcase className="w-5 h-5 text-amber-600" />
+               <span className="px-2.5 py-1 bg-zinc-100 text-zinc-700 rounded-md text-xs border border-zinc-200">
+               {project.workType}
+               </span>
+             </span>
 
               <span className="inline-flex items-start gap-2 text-zinc-600">
-             <Tag className="w-5 h-5 text-amber-500 mt-[2px]" />
+             <Tag className="w-5 h-5 text-amber-600 mt-[2px]" />
 
              <span className="flex flex-wrap gap-2">
                {Array.isArray(project.productTypes) ? (

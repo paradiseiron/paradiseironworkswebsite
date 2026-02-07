@@ -120,26 +120,51 @@ export default function ServicesSection() {
 
         <div className="grid grid-cols-1 md:grid-cols-3 gap-6 lg:gap-8">
           <ServiceCard
-            image="/images/residential-metal-rail.jpg"
+            image="/images/residential-metal-rail1.jpg"
             title="Residential"
-            href="/services/residential-ironwork"
+            href="/services/residential"
             imageAlt="Custom residential metal railing and stair installation in the Washington DC area"
-            items={["Juliet balconies", "Railings & stairs", "Gates & fences"]}
+            items={["Interior stair railings",
+                    "Exterior porch railings",
+                    "Juliet balconies",
+                    "Driveway & walk gates",
+                    "Fence panels & sections",
+                    "Handrails for steps",
+                    "Deck & balcony guards",
+                    "Window guards (security)",
+                    "Custom metal stair systems",
+                    "Wrought iron decorative details"]}
             priority={false}
           />
           <ServiceCard
             image="/images/commercial.jpg"
             title="Commercial"
-            href="/services/commercial-metal-fabrication"
+            href="/services/commercial"
             imageAlt="Commercial metal fabrication including railings, stairs, and security gates for DMV properties"
-            items={["Code-compliant railings", "Security gates", "Architectural metalwork"]}
+            items={["Code-compliant railings", "Commercial stair handrails",
+  "Security gates & access control",
+  "Metal fencing & barriers",
+  "Dumpster enclosures",
+  "Loading dock protection",
+  "Bollards & guard rails",
+  "Canopies & awning frames",
+  "ADA handrails (as required)",
+  "On-site repair & upgrades"]}
           />
           <ServiceCard
             image="/images/structural-steel-install.jpg"
             title="Structural"
-            href="/services/structural-steel"
+            href="/services/structural"
             imageAlt="Structural steel installation and support framing for commercial construction projects"
-            items={["Steel stairs", "Handrails & guards", "Support framing"]}
+            items={["Structural steel framing",
+  "Beams & columns",
+  "Steel supports & bracing",
+  "Canopy frame fabrication",
+  "Steel stair stringers",
+  "Platforms & equipment supports",
+  "Lintels & opening supports",
+  "Welded connection assemblies",
+  "Field installation & erection"]}
           />
         </div>
       </div>

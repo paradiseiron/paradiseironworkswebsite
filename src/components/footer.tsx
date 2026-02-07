@@ -133,7 +133,7 @@ export default function Footer() {
             <div className="flex items-center gap-2 px-5">
               <div className="relative size-10 overflow-hidden rounded-[4px] shadow-[0px_4px_4px_0px_rgba(0,0,0,0.25)]">
                 <img
-                  src="images/paradise_ironworks_logo.png"
+                  src="/images/paradise_ironworks_logo.png"
                   alt="Paradise Ironworks Logo"
                   className="absolute inset-0 h-full w-full object-cover"
                   loading="lazy"

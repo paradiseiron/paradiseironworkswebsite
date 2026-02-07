@@ -10,7 +10,7 @@ export default function QuoteLayout({
     <>
       <Header />
       {children}
-      <Footer />
+    
     </>
   );
 }

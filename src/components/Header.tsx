@@ -53,28 +53,39 @@ export default function Header() {
 
   return (
     <header className="fixed left-0 right-0 top-3 sm:top-5 z-50">
-      <div className="mx-auto w-full max-w-[1100px] px-4 sm:px-6 md:px-8">
-        {/* Reduced vertical padding */}
+      {/* ✅ Option A: large screens use a % width, while keeping your padding behavior */}
+      <div className="mx-auto w-full max-w-[1100px] lg:max-w-none lg:w-[92vw] px-4 sm:px-6 md:px-8">
         <div className="relative py-2 my-2 sm:my-3">
           {/* Glass background */}
-         <div className="absolute inset-0 -mx-3 sm:-mx-5 -my-2 bg-black/40 backdrop-blur-md rounded-[10px]" />
+          <div className="absolute inset-0 -mx-3 sm:-mx-5 -my-2 bg-black/40 backdrop-blur-md rounded-[10px]" />
 
           {/* Header row */}
           <div className="relative flex items-center justify-between px-3 sm:px-5">
             {/* Logo + Brand (always returns home) */}
             <Link href="/" className="flex min-w-0 items-center gap-3">
-              <div className="relative size-[60px] rounded-[6px] overflow-hidden">
-                <Image
-                  alt="Paradise Ironworks Logo"
-                  src="/images/paradise_ironworks_logo.png"
-                  fill
-                  sizes="60px"
-                  className="object-cover"
+              {/* OUTER wrapper (no overflow) so shadow isn't clipped */}
+              <div className="relative">
+                {/* Shadow layer (NOT clipped) */}
+                <div
+                  className="absolute inset-0 rounded-[6px] pointer-events-none"
                   style={{
-                    filter: "drop-shadow(0px 4px 4px rgba(0,0,0,0.25))",
+                    filter:
+                      "drop-shadow(0px 10px 22px rgba(0,0,0,0.80)) drop-shadow(0px 3px 10px rgba(0,0,0,0.70))",
                   }}
-                  priority
+                  aria-hidden="true"
                 />
+
+                {/* INNER container clips only the image */}
+                <div className="relative size-[60px] rounded-[6px] overflow-hidden">
+                  <Image
+                    alt="Paradise Ironworks Logo"
+                    src="/images/paradise_ironworks_logo.png"
+                    fill
+                    sizes="60px"
+                    className="object-cover"
+                    priority
+                  />
+                </div>
               </div>
 
               <span className="min-w-0 truncate font-['var(--font-montserrat)',sans-serif] text-white tracking-[-0.4492px] text-[16px] sm:text-[18px] md:text-[20px] leading-[24px] sm:leading-[26px] md:leading-[28px]">
@@ -119,33 +130,34 @@ export default function Header() {
                   onMouseEnter={openServices}
                   onMouseLeave={closeServices}
                 >
-                  <a
+                  <Link
                     role="menuitem"
-                    href="#services-residential"
+                    href="/services/residential"
                     className="block px-4 py-3 text-white/95 hover:text-white hover:bg-white/12 focus:bg-white/12 focus:text-white transition-colors outline-none"
                     onClick={() => setServicesOpen(false)}
                   >
                     Residential
-                  </a>
-                  <a
+                  </Link>
+                  <Link
                     role="menuitem"
-                    href="#services-commercial"
+                    href="/services/commercial"
                     className="block px-4 py-3 text-white/95 hover:text-white hover:bg-white/12 focus:bg-white/12 focus:text-white transition-colors outline-none"
                     onClick={() => setServicesOpen(false)}
                   >
                     Commercial
-                  </a>
-                  <a
+                  </Link>
+                  <Link
                     role="menuitem"
-                    href="#services-structural"
+                    href="/services/structural"
                     className="block px-4 py-3 text-white/95 hover:text-white hover:bg-white/12 focus:bg-white/12 focus:text-white transition-colors outline-none"
                     onClick={() => setServicesOpen(false)}
                   >
                     Structural
-                  </a>
+                  </Link>
                 </div>
               </div>
 
+              {/* anchors */}
               <a
                 href="#contact"
                 className="text-white text-[16px] leading-[24px] tracking-[-0.3125px] hover:opacity-80 transition-opacity"
@@ -160,11 +172,29 @@ export default function Header() {
                 About
               </a>
 
+              {/* CTA with solid gleam */}
               <Link
                 href="/quote"
-                className="bg-[#fb5411] px-5 lg:px-6 py-3 rounded-[10px] text-white text-[16px] leading-[24px] tracking-[-0.3125px] font-medium hover:bg-[#e64d0f] transition-colors whitespace-nowrap"
+                className="
+                  cta-gleam
+                  relative overflow-hidden
+                  inline-flex items-center justify-center
+                  bg-[#fb5411] px-5 lg:px-6 py-3 rounded-[10px]
+                  text-white text-[16px] leading-[24px] tracking-[-0.3125px] font-medium
+                  hover:bg-[#e64d0f] transition-colors whitespace-nowrap
+                "
               >
-                Get a Free Quote
+                {/* Solid gleam bar; clipped by overflow-hidden on the button */}
+                <span
+                  aria-hidden="true"
+                  className="
+                    cta-gleam__shine
+                    pointer-events-none absolute inset-y-[-40%]
+                    -left-[45%] w-[28%]
+                    -skew-x-20
+                  "
+                />
+                <span className="relative z-10">Get a Free Quote</span>
               </Link>
             </nav>
 
@@ -191,27 +221,27 @@ export default function Header() {
                   </summary>
 
                   <div className="mt-1 flex flex-col">
-                    <a
-                      href="#services-residential"
+                    <Link
+                      href="/services/residential"
                       onClick={() => setMobileOpen(false)}
                       className="rounded-lg px-3 py-2 pl-6 text-white/95 hover:bg-white/10 transition-colors"
                     >
                       Residential
-                    </a>
-                    <a
-                      href="#services-commercial"
+                    </Link>
+                    <Link
+                      href="/services/commercial"
                       onClick={() => setMobileOpen(false)}
                       className="rounded-lg px-3 py-2 pl-6 text-white/95 hover:bg-white/10 transition-colors"
                     >
                       Commercial
-                    </a>
-                    <a
-                      href="#services-structural"
+                    </Link>
+                    <Link
+                      href="/services/structural"
                       onClick={() => setMobileOpen(false)}
                       className="rounded-lg px-3 py-2 pl-6 text-white/95 hover:bg-white/10 transition-colors"
                     >
                       Structural
-                    </a>
+                    </Link>
                   </div>
                 </details>
 
@@ -234,9 +264,24 @@ export default function Header() {
                 <Link
                   href="/quote"
                   onClick={() => setMobileOpen(false)}
-                  className="mt-1 w-full text-center bg-[#fb5411] px-4 py-3 rounded-[10px] text-white font-medium hover:bg-[#e64d0f] transition-colors"
+                  className="
+                    cta-gleam
+                    relative overflow-hidden
+                    mt-1 w-full text-center
+                    bg-[#fb5411] px-4 py-3 rounded-[10px]
+                    text-white font-medium hover:bg-[#e64d0f] transition-colors
+                  "
                 >
-                  Get a Free Quote
+                  <span
+                    aria-hidden="true"
+                    className="
+                      cta-gleam__shine
+                      pointer-events-none absolute inset-y-[-40%]
+                      -left-[45%] w-[28%]
+                      -skew-x-20
+                    "
+                  />
+                  <span className="relative z-10">Get a Free Quote</span>
                 </Link>
               </div>
             </div>

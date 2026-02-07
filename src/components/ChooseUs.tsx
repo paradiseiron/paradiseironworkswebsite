@@ -46,19 +46,19 @@ function CertificationCard({
   imageClassName = "",
 }: CertificationCardProps) {
   return (
-    <div className="bg-white flex flex-col gap-4 items-center px-4 py-2 w-full">
-      <div className="bg-white relative flex items-center justify-center h-[107px] w-[106px]">
+    <div className="bg-white flex flex-col items-center px-4 py-2 w-full">
+      {/* Fixed-height slot ensures vertical centering + consistent alignment */}
+      <div className="h-[110px] w-full flex items-center justify-center">
         <Image
           src={image}
           alt={alt}
-          fill
-          sizes="106px"
-          className={`object-contain ${imageClassName}`}
+          width={220}
+          height={110}
+          className={`object-contain max-h-[100px] w-auto ${imageClassName}`}
         />
       </div>
 
-      {/* ✅ Darkened for legibility */}
-      <p className="font-inter text-[#52525c] text-[16px] leading-[24px] tracking-[-0.3125px] text-center whitespace-nowrap">
+      <p className="mt-2 font-inter text-[#52525c] text-[16px] leading-[24px] tracking-[-0.3125px] text-center whitespace-nowrap">
         {label}
       </p>
     </div>
@@ -68,8 +68,8 @@ function CertificationCard({
 export default function WhyChooseUsSection() {
   const CERT_sbe = "/certs/sbe.png";
   const CERT_mbe = "/certs/mbe.png";
-  const CERT_naisc = "/certs/naisc.png";
-  const CERT_mhic = "/certs/mhic.png";
+  const CERT_naisc = "/certs/naisc.svg";
+  const CERT_mhic = "/certs/mhic.webp";
   const CERT_mdot = "/certs/mdot.png";
 
   return (
@@ -111,49 +111,50 @@ export default function WhyChooseUsSection() {
       <div className="bg-[#18181b] w-full">
         <div className="max-w-[1100px] mx-auto px-4 sm:px-8 lg:px-12 py-6 sm:py-8">
           <div className="bg-white border border-black rounded-sm px-4 sm:px-6 lg:px-8 py-4">
-            <div className="grid grid-cols-2 gap-6 place-items-center lg:flex lg:items-center lg:justify-between lg:gap-0">
-              <div className="w-full lg:flex-1 lg:flex lg:justify-center">
+            {/* One layout mode: predictable alignment */}
+            <div className="flex flex-wrap items-center justify-center gap-6 lg:flex-nowrap lg:justify-between">
+              <div className="w-[48%] sm:w-[45%] lg:w-auto lg:flex-1 lg:flex lg:justify-center">
                 <CertificationCard
                   image={CERT_naisc}
                   label="NAICS Certified"
                   alt="NAICS Certification"
-                  imageClassName="max-w-[97px] max-h-[107px]"
+                  imageClassName="max-h-[100px]"
                 />
               </div>
 
-              <div className="w-full lg:flex-1 lg:flex lg:justify-center">
+              <div className="w-[48%] sm:w-[45%] lg:w-auto lg:flex-1 lg:flex lg:justify-center">
                 <CertificationCard
                   image={CERT_mbe}
                   label="MBE Certified"
                   alt="MBE Certification"
-                  imageClassName="max-w-[106px] max-h-[106px]"
+                  imageClassName="max-h-[100px]"
                 />
               </div>
 
-              <div className="w-full lg:flex-1 lg:flex lg:justify-center">
+              <div className="w-[48%] sm:w-[45%] lg:w-auto lg:flex-1 lg:flex lg:justify-center">
                 <CertificationCard
                   image={CERT_sbe}
                   label="SBE Certified"
                   alt="SBE Certification"
-                  imageClassName="max-w-[106px] max-h-[107px]"
+                  imageClassName="max-h-[100px]"
                 />
               </div>
 
-              <div className="w-full lg:flex-1 lg:flex lg:justify-center">
+              <div className="w-[48%] sm:w-[45%] lg:w-auto lg:flex-1 lg:flex lg:justify-center">
                 <CertificationCard
                   image={CERT_mdot}
                   label="MDOT Certified"
                   alt="MDOT-MTA Certification"
-                  imageClassName="max-w-[145px] max-h-[87px]"
+                  imageClassName="max-h-[90px]"
                 />
               </div>
 
-              <div className="w-full lg:flex-1 lg:flex lg:justify-center">
+              <div className="w-[48%] sm:w-[45%] lg:w-auto lg:flex-1 lg:flex lg:justify-center">
                 <CertificationCard
                   image={CERT_mhic}
                   label="MHIC Certified"
                   alt="MHIC Certification"
-                  imageClassName="max-w-[145px] max-h-[87px]"
+                  imageClassName="max-h-[90px]"
                 />
               </div>
             </div>

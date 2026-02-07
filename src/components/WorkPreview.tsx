@@ -1,6 +1,8 @@
 "use client";
 
 import Image, { type StaticImageData } from "next/image";
+import Link from "next/link";
+
 
 /**
  * Same image handling format as ServicesSection:
@@ -19,61 +21,61 @@ interface WorkCardProps {
   image: unknown;
   category: string;
   title: string;
+  slug: string;
 }
 
-function WorkCard({ image, category, title }: WorkCardProps) {
+function WorkCard({ image, category, title, slug }: WorkCardProps) {
   const imgSrc = asNextImageSrc(image);
 
   return (
-    <article
-      className="
-        relative overflow-hidden rounded-[10px] group
-        w-full aspect-square
-        bg-black/5
-      "
+    <Link
+      href={`/ironwork-projects/${slug}`}
+      className="block focus:outline-none focus-visible:ring-2 focus-visible:ring-amber-500 rounded-[10px]"
       aria-label={`${category}: ${title}`}
     >
-      {/* Image */}
-      <div className="absolute inset-0">
-        <Image
-          alt={`${category} project: ${title}`}
-          src={imgSrc}
-          fill
-          sizes="(min-width: 1024px) 340px, (min-width: 768px) 33vw, 100vw"
-          className="object-cover transition-transform duration-300 group-hover:scale-[1.03]"
-        />
-      </div>
-
-      {/* Always-on subtle gradient for readability */}
-      <div className="absolute inset-0 bg-gradient-to-t from-black/45 via-black/10 to-transparent" />
-
-      {/* Hover/Focus overlay (desktop) + always visible text (mobile) */}
-      <div
+      <article
         className="
-          absolute inset-0
-          bg-gradient-to-t from-black/80 via-black/40 to-transparent
-          opacity-100 sm:opacity-0 sm:group-hover:opacity-100
-          transition-opacity duration-300
+          relative overflow-hidden rounded-[10px] group
+          w-full aspect-square
+          bg-black/5
         "
       >
+        {/* Image */}
+        <div className="absolute inset-0">
+          <Image
+            alt={`${category} project: ${title}`}
+            src={imgSrc}
+            fill
+            sizes="(min-width: 1024px) 340px, (min-width: 768px) 33vw, 100vw"
+            className="object-cover transition-transform duration-300 group-hover:scale-[1.03]"
+          />
+        </div>
+
+        {/* Gradient overlays */}
+        <div className="absolute inset-0 bg-gradient-to-t from-black/45 via-black/10 to-transparent" />
+
         <div
           className="
-            absolute bottom-0 left-0 right-0
-            p-4 sm:p-6
-            space-y-1
+            absolute inset-0
+            bg-gradient-to-t from-black/80 via-black/40 to-transparent
+            opacity-100 sm:opacity-0 sm:group-hover:opacity-100
+            transition-opacity duration-300
           "
         >
-          <p className="text-[#ffb900] text-[12px] leading-[18px] sm:text-[14px] sm:leading-[20px] tracking-[-0.1504px]">
-            {category}
-          </p>
-          <h3 className="text-white text-[18px] leading-[24px] sm:text-[20px] sm:leading-[28px] tracking-[-0.4492px] font-medium">
-            {title}
-          </h3>
+          <div className="absolute bottom-0 left-0 right-0 p-4 sm:p-6 space-y-1">
+            <p className="text-[#ffb900] text-[12px] sm:text-[14px]">
+              {category}
+            </p>
+            <h3 className="text-white text-[18px] sm:text-[20px] font-medium">
+              {title}
+            </h3>
+          </div>
         </div>
-      </div>
-    </article>
+      </article>
+    </Link>
   );
 }
+
 
 export default function WorkSection() {
   const IMGgate = "/images/double-swing-security-gate-steel-mesh-dc.jpeg";
@@ -96,12 +98,12 @@ export default function WorkSection() {
         </div>
 
         <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4 sm:gap-6">
-          <WorkCard image={IMGgate} category="Commercial" title="Custom Entry Gate" />
-          <WorkCard image={IMGcable} category="Commercial" title="Cable Fencing" />
-          <WorkCard image={IMGstruc} category="Structural" title="Structural Steel Installation" />
-          <WorkCard image={IMGext} category="Residential" title="Exterior Railing" />
-          <WorkCard image={IMGcan} category="Commercial" title="Steel Canopy Frame Installation" />
-          <WorkCard image={IMGint} category="Residential" title="Interior Railing" />
+          <WorkCard image={IMGgate} category="Commercial" title="Custom Entry Gate" slug="commercial-security-gate-steel-mesh-reston-virginia" />
+          <WorkCard image={IMGcable} category="Commercial" title="Cable Fencing" slug="commercial-stainless-cable-railing-exterior-dc" />
+          <WorkCard image={IMGstruc} category="Structural" title="Structural Steel Installation" slug="structural-steel-framing-training-facility-beltsville-maryland" />
+          <WorkCard image={IMGext} category="Residential" title="Exterior Railing" slug="residential-exterior-stairs-metal-railings-md" />
+          <WorkCard image={IMGcan} category="Commercial" title="Steel Canopy Frame Installation" slug="commercial-steel-canopy-frame-glen-burnie-maryland" />
+          <WorkCard image={IMGint} category="Residential" title="Interior Railing" slug="residential-interior-stair-railing-black-metal-md" />
         </div>
       </div>
     </section>

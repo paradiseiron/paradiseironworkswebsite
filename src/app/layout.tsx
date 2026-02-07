@@ -2,6 +2,7 @@ import './globals.css';
 import type { Metadata } from 'next';
 import { Inter, Montserrat } from 'next/font/google';
 import Header from "@/components/Header"; // adjust path to where your Header is
+import Footer from "@/components/footer";
 
 const inter = Inter({ 
   subsets: ['latin'],
@@ -27,7 +28,11 @@ export default function RootLayout({
 }) {
   return (
     <html lang="en" className={`${inter.variable} ${montserrat.variable}`}>
-      <body><Header />{children}</body>
+      <body>
+        <Header />
+        {children}
+        <Footer />
+      </body>
     </html>
   );
 }

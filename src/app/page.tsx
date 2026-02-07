@@ -3,7 +3,6 @@ import HeroSection from '../components/herosection';
 import OurServices from '../components/OurServices';
 import WorkPreview from '../components/WorkPreview';
 import ChooseUs from '../components/ChooseUs';
-import Footer from '@/components/footer';
 
 export default function Page() {
   return (
@@ -14,8 +13,6 @@ export default function Page() {
       <OurServices />
       <WorkPreview />
       <ChooseUs />
-      <Footer />
-
     </main>
      </div>
   );

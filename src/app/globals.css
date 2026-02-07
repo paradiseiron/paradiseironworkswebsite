@@ -197,3 +197,50 @@
 html {
   font-size: var(--font-size);
 }
+
+/* Header CTA sheen (gleam) */
+.cta-gleam {
+  position: relative;
+  overflow: hidden;     /* ✅ clips gleam to button only */
+  isolation: isolate;   /* ✅ prevents blend/z-index weirdness with neighbors */
+}
+
+.cta-gleam::before {
+  content: "";
+  position: absolute;
+  inset: -40%;
+  left: -140%;
+  width: 70%;
+  transform: rotate(20deg) translateX(0);
+  background: linear-gradient(
+    90deg,
+    transparent 0%,
+    rgba(255, 255, 255, 0.20) 35%,
+    rgba(255, 255, 255, 0.55) 50%,
+    rgba(255, 255, 255, 0.20) 65%,
+    transparent 100%
+  );
+  pointer-events: none;
+  z-index: 0;
+  opacity: 0;
+}
+
+.cta-gleam:hover::before,
+.cta-gleam:focus-visible::before {
+  opacity: 1;
+  animation: cta-gleam-sweep 300ms ease-in-out;
+}
+
+@keyframes cta-gleam-sweep {
+  0%   { transform: rotate(20deg) translateX(0); }
+  100% { transform: rotate(20deg) translateX(320%); }
+}
+
+/* Optional: respect reduced motion */
+@media (prefers-reduced-motion: reduce) {
+  .cta-gleam:hover::before,
+  .cta-gleam:focus-visible::before {
+    animation: none;
+    opacity: 0;
+  }
+}

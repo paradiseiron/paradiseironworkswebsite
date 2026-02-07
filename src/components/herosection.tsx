@@ -42,11 +42,11 @@ export default function HeroSection() {
         <motion.div style={{ y }} className="absolute inset-0 z-0">
           <Image
             alt="Ironwork background"
-            src="/images/welding_metal_railing.jpg"
+            src="/images/welding_metal_railing5.jpg"
             priority
             fill
             sizes="100vw"
-            className="object-cover object-center scale-110"
+            className="object-cover object-[50%, 30%] scale-100"
           />
         </motion.div>
 
@@ -75,13 +75,10 @@ export default function HeroSection() {
                   View Our Work
                 </Link>
 
-                <a
-                  href="tel:+12022404400"
-                  className="inline-flex items-center justify-center gap-2 rounded-[10px] bg-[#fb5411] px-6 py-3 sm:px-7 sm:py-3.5 text-white text-base sm:text-lg font-medium hover:bg-[#e64d0f] transition-colors"
-                >
-                  <PhoneIcon className="size-5" />
-                  Call Now: 202-240-4400
-                </a>
+                
+               <a href="tel:+12022404400" className="inline-flex items-center justify-center gap-2 rounded-[10px] bg-[#fb5411] px-6 py-3 sm:px-7 sm:py-3.5 text-white text-base sm:text-lg font-medium hover:bg-[#e64d0f] transition-colors" > <PhoneIcon className="size-5" /> Call Now: 202-240-4400 </a>
+
+
               </div>
             </div>
           </div>

@@ -192,33 +192,37 @@ export default function GalleryPage() {
 
   return (
     <div>
-      {/* ✅ HERO with background image + header-safe padding */}
-      <div className="relative overflow-hidden bg-zinc-900 text-white">
-        {/* Background image */}
-        <div className="absolute inset-0">
-          <Image
-            src="/images/welding_shop_sparks.jpg"
-            alt="Welding sparks in the shop"
-            fill
-            priority
-            sizes="100vw"
-            className="object-cover"
-          />
-          {/* Overlays for readability */}
-          <div className="absolute inset-0 bg-black/55" />
-          <div className="absolute inset-0 bg-gradient-to-b from-black/60 via-black/35 to-black/70" />
-        </div>
+ {/* ✅ HERO (match ServicePage sizing/layout) */}
+<section className="relative overflow-hidden">
+  <div className="relative h-[52vh] min-h-[420px] w-full">
+    <Image
+      src="/images/welding_shop_sparks2.jpg"
+      alt="Welding sparks in the shop"
+      fill
+      priority
+      sizes="100vw"
+      className="object-cover object-center"
+    />
 
-        {/* Content */}
-        <div className="relative pt-[108px] sm:pt-[124px] lg:pt-[140px] pb-16 sm:pb-20 lg:pb-24">
-          <div className="max-w-[1100px] mx-auto px-4 sm:px-6 lg:px-8">
-            <h1 className="text-3xl sm:text-4xl lg:text-5xl font-medium mb-3">Our Work</h1>
-            <p className="text-base sm:text-lg lg:text-xl text-white/85">
-              Explore our portfolio of {projects.length} completed ironwork projects.
-            </p>
-          </div>
+    {/* overlay (same as ServicePage) */}
+    <div className="absolute inset-0 bg-black/45" />
+
+    {/* content (bottom-aligned, same container as ServicePage) */}
+    <div className="absolute inset-0">
+      <div className="mx-auto flex h-full w-full max-w-6xl items-end px-6 pb-12">
+        <div className="max-w-3xl">
+          <h1 className="mt-2 text-3xl font-semibold text-white md:text-5xl">
+            Our Work
+          </h1>
+          <p className="mt-4 text-base text-white/90 md:text-lg">
+            Explore some of our portfolio.
+          </p>
         </div>
       </div>
+    </div>
+  </div>
+</section>
+
 
       {/* Page content */}
       <div className="max-w-[1100px] mx-auto px-4 sm:px-6 lg:px-8 py-10 sm:py-12">
