@@ -16,7 +16,8 @@ export type ProductType =
   | "Exterior Staircases"
   | "Custom Furniture"
   | "Security Cages"
-  | "Utility Enclosures";
+  | "Utility Enclosures"
+  | "Cable Railings";
 
 export type ProjectSpec = { label: string; value: string };
 export type ProjectImage = { src: string; alt: string };
@@ -74,7 +75,7 @@ export const projects: ProjectDetails[] = [
   alt: "Commercial steel mesh security gate and exterior handrail installation in Reston, VA - overview",
 
   description:
-    "Commercial steel fabrication project completed in Reston, Virginia featuring a custom steel mesh security gate and an exterior steel handrail. Built for secure access control, long-term durability, and a clean professional finish suitable for high-traffic commercial environments.",
+    "Commercial steel fabrication project completed in Reston, Virginia featuring a custom steel mesh security gate and an exterior steel handrail. Built for secure access control and a clean professional finish suitable for a high-traffic commercial environment.",
   year: 2026,
 
   images: [
@@ -890,6 +891,73 @@ export const projects: ProjectDetails[] = [
     { label: "Finish", value: "Exterior-grade paint or protective coating" },
     { label: "Use", value: "Commercial / utility and equipment security" },
     { label: "Design", value: "Custom-fabricated steel cage enclosure" },
+  ],
+},
+{
+  id: 15,
+  slug: "commercial-condominium-aluminum-cable-fencing-washington-dc",
+  name: "Commercial Condominium Aluminum Cable Fencing",
+  location: "Washington, DC",
+  workType: "Commercial",
+  productTypes: ["Cable Railings", "Fencing"],
+
+  // IMPORTANT: this thumbnail must exist under /public/images/work
+  image:
+    "/images/work/commercial-condominium-aluminum-cable-fencing-washington-dc-thumb.jpeg",
+  alt:
+    "Commercial condominium aluminum cable fencing installation in Washington, DC",
+
+  description:
+    "Commercial aluminum cable fencing project completed for a condominium property in Washington, DC. This custom-fabricated aluminum fence system with cable infill was designed to provide a clean, modern look while maintaining security, durability, and long-term performance in a commercial setting.",
+  year: 2026,
+
+  images: [
+    // ✅ Repeat thumbnail on the project detail page
+    {
+      src:
+        "/images/work/commercial-condominium-aluminum-cable-fencing-washington-dc-thumb.jpeg",
+      alt:
+        "Aluminum cable fencing in Washington, DC - completed overview",
+    },
+    {
+      src:
+        "/images/work/commercial-condominium-aluminum-cable-fencing-washington-dc-01.jpeg",
+      alt:
+        "Commercial cable fence - wide view showing overall run and site context",
+    },
+    {
+      src:
+        "/images/work/commercial-condominium-aluminum-cable-fencing-washington-dc-02.jpeg",
+      alt:
+        "Aluminum posts and cable infill - alignment and spacing detail",
+    },
+    {
+      src:
+        "/images/work/commercial-condominium-aluminum-cable-fencing-washington-dc-03.jpeg",
+      alt:
+        "Cable fencing corner/transition detail - posts, fittings, and cable terminations",
+    },
+    {
+      src:
+        "/images/work/commercial-condominium-aluminum-cable-fencing-washington-dc-04.jpeg",
+      alt:
+        "Completed aluminum cable fencing - clean lines and finished installation detail",
+    },
+  ],
+
+  // Optional SEO fields
+  summary:
+    "Aluminum cable fencing fabricated and installed for a condominium property in Washington, DC. Modern, durable fence system with cable infill.",
+  seoTitle:
+    "Aluminum Cable Fencing for Condominium in Washington, DC | Paradise Ironworks",
+  metaDescription:
+    "Commercial aluminum cable fencing fabricated and installed for a condominium property in Washington, DC. Custom aluminum posts with cable infill for a modern, durable fence system by Paradise Ironworks.",
+
+  specifications: [
+    { label: "Material", value: "Aluminum" },
+    { label: "Infill", value: "Cable (stainless steel)" },
+    { label: "Use", value: "Commercial / condominium fencing" },
+    { label: "Design", value: "Custom-fabricated aluminum fence with cable infill" },
   ],
 },
 

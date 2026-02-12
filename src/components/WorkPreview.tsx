@@ -99,11 +99,11 @@ export default function WorkSection() {
 
         <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4 sm:gap-6">
           <WorkCard image={IMGgate} category="Commercial" title="Custom Entry Gate" slug="commercial-security-gate-steel-mesh-reston-virginia" />
-          <WorkCard image={IMGcable} category="Commercial" title="Cable Fencing" slug="commercial-stainless-cable-railing-exterior-dc" />
+          <WorkCard image={IMGcable} category="Commercial" title="Cable Fencing" slug="commercial-condominium-aluminum-cable-fencing-washington-dc" />
           <WorkCard image={IMGstruc} category="Structural" title="Structural Steel Installation" slug="structural-steel-framing-training-facility-beltsville-maryland" />
-          <WorkCard image={IMGext} category="Residential" title="Exterior Railing" slug="residential-exterior-stairs-metal-railings-md" />
+          <WorkCard image={IMGext} category="Residential" title="Exterior Railing" slug="residential-exterior-metal-hand-railing-annapolis-maryland" />
           <WorkCard image={IMGcan} category="Commercial" title="Steel Canopy Frame Installation" slug="commercial-steel-canopy-frame-glen-burnie-maryland" />
-          <WorkCard image={IMGint} category="Residential" title="Interior Railing" slug="residential-interior-stair-railing-black-metal-md" />
+          <WorkCard image={IMGint} category="Residential" title="Interior Railing" slug="residential-modern-interior-metal-railing-arlington-virginia" />
         </div>
       </div>
     </section>

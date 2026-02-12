@@ -159,14 +159,14 @@ export default function Header() {
 
               {/* anchors */}
               <a
-                href="#contact"
+                href="/contact"
                 className="text-white text-[16px] leading-[24px] tracking-[-0.3125px] hover:opacity-80 transition-opacity"
               >
                 Contact
               </a>
 
               <a
-                href="#about"
+                href="/about"
                 className="text-white text-[16px] leading-[24px] tracking-[-0.3125px] hover:opacity-80 transition-opacity"
               >
                 About
@@ -246,7 +246,7 @@ export default function Header() {
                 </details>
 
                 <a
-                  href="#contact"
+                  href="/contact"
                   onClick={() => setMobileOpen(false)}
                   className="rounded-lg px-3 py-2 text-white hover:bg-white/10 transition-colors"
                 >
@@ -254,7 +254,7 @@ export default function Header() {
                 </a>
 
                 <a
-                  href="#about"
+                  href="/about"
                   onClick={() => setMobileOpen(false)}
                   className="rounded-lg px-3 py-2 text-white hover:bg-white/10 transition-colors"
                 >

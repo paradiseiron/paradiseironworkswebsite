@@ -18,16 +18,16 @@ export const metadata: Metadata = {
 
 export default function ContactPage() {
   const businessName = "Paradise Ironworks";
-  const phoneDisplay = "202-240-4400";
-  const phoneHref = "+12022404400";
+  const phoneDisplay = "202-309-6610";
+  const phoneHref = "+12023096610";
   const email = "info@paradiseironworks.com"; // <- change if needed
 
   // IMPORTANT: Replace with your real address if you want NAP accuracy on-page
   const address = {
     street: "Your street address",
-    city: "Washington",
-    region: "DC",
-    postalCode: "20001",
+    city: "College Park",
+    region: "MD",
+    postalCode: "20740",
     country: "US",
   };
 
@@ -266,7 +266,9 @@ export default function ContactPage() {
       </section>
 
       {/* FAQ (SEO-friendly) */}
-      <section className="mx-auto max-w-6xl px-6 pb-16">
+     <section
+  id="faq"
+  className="mx-auto max-w-6xl px-6 pb-16 scroll-mt-28">
         <div className="rounded-2xl border border-neutral-200 bg-white p-6 sm:p-8">
           <h2 className="text-2xl font-semibold text-neutral-900">Contact FAQs</h2>
           <div className="mt-6 grid gap-4">

@@ -3,9 +3,9 @@ import type { Metadata } from "next";
 import Script from "next/script";
 import Link from "next/link";
 
-const SITE_URL = "https://YOUR_SITE_URL.com"; // ✅ replace
+const SITE_URL = "https://paradiseironworks.com"; // ✅ replace
 const BUSINESS_NAME = "Paradise Ironworks";
-const PHONE = "+12022404400"; // ✅ already used on your site
+const PHONE = "+12023096610"; // ✅ already used on your site
 const AREA_SERVED = [
   "Washington, DC",
   "Maryland",
@@ -256,7 +256,7 @@ export default function AboutPage() {
                 <div className="mt-6 border-t pt-5">
                   <h3 className="text-lg font-semibold text-zinc-900">Call</h3>
                   <a className="mt-2 inline-block text-[#fb5411] font-medium" href={`tel:${PHONE}`}>
-                    202-240-4400
+                    202-309-6610
                   </a>
                 </div>
               </div>
