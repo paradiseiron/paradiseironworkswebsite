@@ -790,28 +790,28 @@ export const projects: ProjectDetails[] = [
   year: 2026,
 
   images: [
-    // ✅ Repeat thumbnail on the project detail page
+    // ✅ Repeat thumbnail on the project detail page casing adjusted
     {
       src:
-        "/images/work/residential-custom-steel-dining-room-table-frame-prince-frederick-maryland-thumb.jpg",
+        "/images/work/residential-custom-steel-dining-room-table-frame-prince-frederick-maryland-thumb.JPG",
       alt:
         "Custom steel dining room table frame in Prince Frederick, MD - completed overview",
     },
     {
       src:
-        "/images/work/residential-custom-steel-dining-room-table-frame-prince-frederick-maryland-01.jpg",
+        "/images/work/residential-custom-steel-dining-room-table-frame-prince-frederick-maryland-01.JPG",
       alt:
         "Custom steel dining table frame - full base view showing proportions and finish",
     },
     {
       src:
-        "/images/work/residential-custom-steel-dining-room-table-frame-prince-frederick-maryland-02.jpg",
+        "/images/work/residential-custom-steel-dining-room-table-frame-prince-frederick-maryland-02.JPG",
       alt:
         "Steel dining table base - welded joints and structural detail",
     },
     {
       src:
-        "/images/work/residential-custom-steel-dining-room-table-frame-prince-frederick-maryland-03.jpg",
+        "/images/work/residential-custom-steel-dining-room-table-frame-prince-frederick-maryland-03.JPG",
       alt:
         "Custom residential steel table frame - installed and ready for tabletop",
     },
