@@ -8,7 +8,7 @@ const SITE = {
   name: "Paradise Ironworks & Construction",
   phoneDisplay: "(202) 309-6610",
   phoneE164: "+12023096610",
-  email: "info@customironworks.com",
+  email: "info@paradiseironworks.com",
   serviceRegion: "Washington DC, Maryland & Northern Virginia",
 };
 

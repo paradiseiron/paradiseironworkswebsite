@@ -781,7 +781,7 @@ export const projects: ProjectDetails[] = [
 
   // IMPORTANT: this thumbnail must exist under /public/images/work
   image:
-    "/images/work/residential-custom-steel-dining-room-table-frame-prince-frederick-maryland-thumb.jpg",
+    "/images/work/residential-custom-steel-dining-room-table-frame-prince-frederick-maryland-thumb.JPG",
   alt:
     "Custom steel dining room table frame fabricated for a residential home in Prince Frederick, Maryland",
 
@@ -790,7 +790,7 @@ export const projects: ProjectDetails[] = [
   year: 2026,
 
   images: [
-    // ✅ Repeat thumbnail on the project detail page casing adjusted
+    // ✅ Repeat thumbnail on the project detail page 
     {
       src:
         "/images/work/residential-custom-steel-dining-room-table-frame-prince-frederick-maryland-thumb.JPG",
