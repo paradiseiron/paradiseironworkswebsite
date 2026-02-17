@@ -76,7 +76,7 @@ export const projects: ProjectDetails[] = [
 
   description:
     "Commercial steel fabrication project completed in Reston, Virginia featuring a custom steel mesh security gate and an exterior steel handrail. Built for secure access control and a clean professional finish suitable for a high-traffic commercial environment.",
-  year: 2026,
+  year: 2025,
 
   images: [
     {
@@ -141,8 +141,8 @@ export const projects: ProjectDetails[] = [
   alt: "Commercial steel canopy frame installation at Owings Mill Middle School in Glen Burnie, Maryland",
 
   description:
-    "Commercial structural steel project completed for Owings Mill Middle School in Glen Burnie, Maryland. This project involved the fabrication and installation of a custom steel canopy frame designed to support an exterior covered entry. Built for structural integrity, long-term durability, and compatibility with architectural canopy systems in an active school environment.",
-  year: 2026,
+    "Commercial structural steel project completed for Owings Mill Middle School in Glen Burnie, Maryland. The work included shop fabrication and field installation of a custom structural steel canopy frame supporting a covered exterior entry. The assembly was designed to satisfy structural load demands and integrate cleanly with the building’s canopy system.",
+  year: 2024,
 
   images: [
     // ✅ Repeat thumbnail on the project detail page
@@ -210,7 +210,7 @@ export const projects: ProjectDetails[] = [
 
   description:
     "Residential interior metal railing project completed in Arlington, Virginia featuring a clean, modern design tailored to a contemporary home interior. This custom-fabricated railing provides fall protection while maintaining open sightlines and a minimalist architectural aesthetic.",
-  year: 2026,
+  year: 2018,
 
   images: [
     // ✅ Repeat thumbnail on the project detail page
@@ -261,7 +261,7 @@ export const projects: ProjectDetails[] = [
 
   description:
     "Commercial structural steel project completed in Washington, DC featuring the installation of a custom steel frame assembly. Built to provide dependable structural support and long-term durability, with field installation executed for alignment, stability, and integration with the surrounding build.",
-  year: 2026,
+  year: 2019,
 
   images: [
     // ✅ Repeat thumbnail on the project detail page
@@ -317,7 +317,7 @@ export const projects: ProjectDetails[] = [
 
   description:
     "Residential exterior metal hand railing project completed in Annapolis, Maryland. This custom-fabricated steel railing was designed to provide safe, code-compliant support for exterior steps while maintaining a clean, understated appearance suited to the home’s exterior.",
-  year: 2026,
+  year: 2024,
 
   images: [
     // ✅ Repeat thumbnail on the project detail page
@@ -368,7 +368,7 @@ export const projects: ProjectDetails[] = [
 
   description:
     "Residential exterior metal staircase and deck project completed in Northeast Washington, DC. This custom-fabricated steel staircase provides safe exterior access between levels and integrates with a metal deck structure designed for durability, weather resistance, and everyday residential use.",
-  year: 2026,
+  year: 2025,
 
   images: [
     // ✅ Repeat thumbnail on the project detail page
@@ -421,7 +421,7 @@ export const projects: ProjectDetails[] = [
 
     description:
       "Custom interior railing fabricated and installed for a residential property in Mount Rainier. Built for durability and code compliance while maintaining a clean, modern look.",
-    year: 2026,
+    year: 2019,
     images: [
       {
         src: "/images/work/residential-modern-interior-metal-railing-mount-rainier-maryland-01.JPG",
@@ -444,7 +444,7 @@ export const projects: ProjectDetails[] = [
     specifications: [
       { label: "Material", value: "Steel" },
       { label: "Finish", value: "Powder coat" },
-      { label: "Use", value: "Exterior / weather-resistant" },
+      { label: "Use", value: "Residential / interior stair safety" },
       { label: "Code", value: "Installed to local code requirements" },
     ],
   },
@@ -462,7 +462,7 @@ export const projects: ProjectDetails[] = [
 
   description:
     "Structural steel framing project completed for a training facility in Beltsville, Maryland. This scope included fabrication and installation support for structural members and framing assemblies, focusing on accurate fit-up, clean welds, and jobsite-ready execution for commercial-grade performance.",
-  year: 2026,
+  year: 2023,
 
   images: [
     // ✅ Repeat thumbnail on the project detail page
@@ -537,7 +537,7 @@ export const projects: ProjectDetails[] = [
 
   description:
     "Residential exterior patio fencing project completed in Brentwood, Maryland. This custom metal fence was fabricated and installed to define the patio space, improve safety, and complement the surrounding exterior while maintaining durability for long-term outdoor use.",
-  year: 2026,
+  year: 2019,
 
   images: [
     // ✅ Repeat thumbnail on the project detail page
@@ -592,7 +592,7 @@ export const projects: ProjectDetails[] = [
 
   description:
     "Residential interior ornate metal railing project completed in Baltimore, Maryland. This custom-fabricated railing features decorative metalwork designed to enhance the interior staircase while providing durable, code-compliant safety for daily residential use.",
-  year: 2026,
+  year: 2018,
 
   images: [
     // ✅ Repeat thumbnail on the project detail page
@@ -663,7 +663,7 @@ export const projects: ProjectDetails[] = [
 
   description:
     "Residential motorized iron driveway gate project completed in Columbia, Maryland. This custom-fabricated gate was built to improve security and curb appeal while providing smooth, reliable automated access for daily use.",
-  year: 2026,
+  year: 2015,
 
   images: [
     // ✅ Repeat thumbnail on the project detail page
@@ -714,7 +714,7 @@ export const projects: ProjectDetails[] = [
 
   description:
     "Structural steel facility build completed in the Langdon area of Washington, DC. This project involved installation support for structural steel members and assemblies as part of a larger commercial facility build, with attention to alignment, fit-up, and jobsite coordination.",
-  year: 2026,
+  year: 2023,
 
   images: [
     // ✅ Repeat thumbnail on the project detail page
@@ -787,7 +787,7 @@ export const projects: ProjectDetails[] = [
 
   description:
     "Residential custom steel dining room table frame project completed in Prince Frederick, Maryland. This bespoke steel base was fabricated to support a solid dining tabletop, combining clean modern lines with structural strength and long-term durability for everyday residential use.",
-  year: 2026,
+  year: 2016,
 
   images: [
     // ✅ Repeat thumbnail on the project detail page 
@@ -848,7 +848,7 @@ export const projects: ProjectDetails[] = [
 
   description:
     "Commercial steel utility cage project completed in Waldorf, Maryland. This custom-fabricated steel enclosure was designed to secure utilities and equipment, providing controlled access, durability, and long-term protection in a commercial environment.",
-  year: 2026,
+  year: 2018,
 
   images: [
     // ✅ Repeat thumbnail on the project detail page
@@ -909,7 +909,7 @@ export const projects: ProjectDetails[] = [
 
   description:
     "Commercial aluminum cable fencing project completed for a condominium property in Washington, DC. This custom-fabricated aluminum fence system with cable infill was designed to provide a clean, modern look while maintaining security, durability, and long-term performance in a commercial setting.",
-  year: 2026,
+  year: 2025,
 
   images: [
     // ✅ Repeat thumbnail on the project detail page

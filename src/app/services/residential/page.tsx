@@ -39,7 +39,7 @@ export default function ResidentialServicesPage() {
 
 
         matchesProject: (p) =>
-          (p.workType || "").toLowerCase() === "commercial",
+          (p.workType || "").toLowerCase() === "residential",
       }}
     />
   );

@@ -5,24 +5,15 @@ import { useState } from "react";
 const GOOGLE_FORM_ACTION =
   "https://docs.google.com/forms/d/e/1FAIpQLSemG35X0R91Sdd-wt1OS-3Fxir9FBzsyPX0xws55ihM5bQ2-g/formResponse";
 
-/**
- * IMPORTANT:
- * Replace the entry IDs below with the real ones from your "Get pre-filled link" URL.
- */
 const ENTRY = {
-  name: "entry.1111111111",
-  phone: "entry.2222222222",
-  email: "entry.3333333333",
-  projectCategory: "entry.4444444444",
-  projectType: "entry.5555555555",
-  comments: "entry.6666666666",
-  disclaimer: "entry.7777777777",
+  name: "entry.1515559186",
+  phone: "entry.1408470442",
+  email: "entry.1735989640",
+  zip: "entry.1141022115",
+  projectCategory: "entry.277952424",
+  projectType: "entry.1821304697",
+  comments: "entry.1864356264",
 };
-
-// If your Disclaimer checkbox requires a specific label value,
-// use the EXACT option text from the Google Form.
-const DISCLAIMER_VALUE =
-  "I consent to Paradise Ironworks and Construction contacting me regarding my project inquiry.";
 
 function PhoneIcon({ className = "" }: { className?: string }) {
   return (
@@ -65,6 +56,7 @@ export default function QuotePage() {
     name: "",
     phone: "",
     email: "",
+    zip: "",
     projectCategory: "",
     projectType: "",
     comments: "",
@@ -75,6 +67,7 @@ export default function QuotePage() {
     form.name.trim() &&
     form.phone.trim() &&
     form.email.trim() &&
+    form.zip.trim() &&
     form.projectCategory &&
     form.projectType &&
     form.disclaimer;
@@ -90,13 +83,11 @@ export default function QuotePage() {
       fd.append(ENTRY.name, form.name);
       fd.append(ENTRY.phone, form.phone);
       fd.append(ENTRY.email, form.email);
+      fd.append(ENTRY.zip, form.zip);
       fd.append(ENTRY.projectCategory, form.projectCategory);
       fd.append(ENTRY.projectType, form.projectType);
       fd.append(ENTRY.comments, form.comments);
 
-      if (form.disclaimer) fd.append(ENTRY.disclaimer, DISCLAIMER_VALUE);
-
-      // Google Forms blocks reading the response due to CORS; no-cors is expected here.
       await fetch(GOOGLE_FORM_ACTION, {
         method: "POST",
         body: fd,
@@ -104,10 +95,15 @@ export default function QuotePage() {
       });
 
       setSubmitted(true);
+
+      // Scroll fully to top smoothly after submission
+      setTimeout(() => {
+        window.scrollTo({ top: 0, left: 0, behavior: "smooth" });
+      }, 50);
     } catch (err) {
       console.error(err);
       alert(
-        "Something went wrong submitting the form. Please try again or call 202-240-4400."
+        "Something went wrong submitting the form. Please try again or call 202-309-6610."
       );
     } finally {
       setSubmitting(false);
@@ -128,11 +124,11 @@ export default function QuotePage() {
           </p>
 
           <a
-            href="tel:+12022404400"
+            href="tel:+12023096610"
             className="mt-6 inline-flex items-center gap-2 rounded-[10px] bg-[#fb5411] px-5 py-3 text-white font-medium hover:bg-[#e64d0f] transition-colors"
           >
             <PhoneIcon className="size-5" />
-            Call Now: 202-240-4400
+            Call Now: 202-309-6610
           </a>
         </div>
 
@@ -145,14 +141,14 @@ export default function QuotePage() {
                 </h2>
                 <p className="text-white/75 mt-2">
                   We’ll reach out within 24 hours. If it’s urgent, call{" "}
-                  <a className="underline" href="tel:+12022404400">
-                    202-240-4400
-                  </a>
-                  .
+                  <a className="underline" href="tel:+12023096610">
+                    202-309-6610
+                  </a>.
                 </p>
               </div>
             ) : (
               <form onSubmit={onSubmit} className="grid grid-cols-1 md:grid-cols-2 gap-5">
+
                 {/* Name */}
                 <div>
                   <label className="block text-white/85 text-sm mb-2">Name *</label>
@@ -160,7 +156,7 @@ export default function QuotePage() {
                     className="w-full rounded-[10px] bg-black/40 border border-white/15 px-4 py-3 text-white outline-none focus:border-white/30"
                     value={form.name}
                     onChange={(e) => setForm({ ...form, name: e.target.value })}
-                    placeholder="Your name"
+                    placeholder="e.g. John Smith"
                     required
                   />
                 </div>
@@ -174,7 +170,7 @@ export default function QuotePage() {
                     className="w-full rounded-[10px] bg-black/40 border border-white/15 px-4 py-3 text-white outline-none focus:border-white/30"
                     value={form.phone}
                     onChange={(e) => setForm({ ...form, phone: e.target.value })}
-                    placeholder="202-240-4400"
+                    placeholder="e.g. (202) 555-1234"
                     required
                   />
                 </div>
@@ -187,7 +183,20 @@ export default function QuotePage() {
                     className="w-full rounded-[10px] bg-black/40 border border-white/15 px-4 py-3 text-white outline-none focus:border-white/30"
                     value={form.email}
                     onChange={(e) => setForm({ ...form, email: e.target.value })}
-                    placeholder="you@email.com"
+                    placeholder="e.g. john@example.com"
+                    required
+                  />
+                </div>
+
+                {/* Zip */}
+                <div>
+                  <label className="block text-white/85 text-sm mb-2">ZIP Code *</label>
+                  <input
+                    inputMode="numeric"
+                    className="w-full rounded-[10px] bg-black/40 border border-white/15 px-4 py-3 text-white outline-none focus:border-white/30"
+                    value={form.zip}
+                    onChange={(e) => setForm({ ...form, zip: e.target.value })}
+                    placeholder="e.g. 20740"
                     required
                   />
                 </div>
@@ -253,7 +262,7 @@ export default function QuotePage() {
                     className="w-full min-h-[120px] rounded-[10px] bg-black/40 border border-white/15 px-4 py-3 text-white outline-none focus:border-white/30"
                     value={form.comments}
                     onChange={(e) => setForm({ ...form, comments: e.target.value })}
-                    placeholder="Describe your project, measurements, timeline, location, etc."
+                    placeholder="e.g. 12 ft railing for front porch, installation needed within 4 weeks."
                   />
                 </div>
 
@@ -270,11 +279,9 @@ export default function QuotePage() {
                       required
                     />
                     <span>
-                      I understand that providing this information does not guarantee
-                      service availability.
+                      I understand that providing this information does not guarantee service availability.
                       <br />
-                      I consent to Paradise Ironworks and Construction contacting me
-                      regarding my project inquiry.
+                      I consent to Paradise Ironworks and Construction contacting me regarding my project inquiry.
                     </span>
                   </label>
                 </div>
@@ -293,20 +300,11 @@ export default function QuotePage() {
                     We usually respond within 24 hours.
                   </p>
                 </div>
+
               </form>
             )}
           </div>
         </div>
-
-        {/* NOTE:
-            Header fix is shown here as a reminder:
-            - Do NOT put QuoteLayout in this file.
-            - Create app/quote/layout.tsx with:
-              import Header from "@/components/Header";
-              export default function QuoteLayout({ children }: { children: React.ReactNode }) {
-                return (<><Header hideQuoteCta />{children}</>);
-              }
-        */}
       </div>
     </main>
   );

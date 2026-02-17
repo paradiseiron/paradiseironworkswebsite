@@ -15,7 +15,7 @@ const SITE = {
 const SOCIAL = [
   {
     name: "Google",
-    href: "https://g.page/your-google-profile-link",
+    href: "https://g.page/paradise-ironworks-construction",
     source: "/images/social/social.png",
   },
   {
@@ -57,15 +57,12 @@ export default function Footer() {
                 Explore
               </h2>
 
-              <div className="grid grid-cols-2 gap-x-10 gap-y-2">
+              <div className="grid gap-x-10 gap-y-2">
                 <Link href="/ironwork-projects" className="text-[#9f9fa9] hover:text-white">
                   Work / Portfolio
                 </Link>
                 <Link href="/about" className="text-[#9f9fa9] hover:text-white">
                   About
-                </Link>
-                <Link href="/reviews" className="text-[#9f9fa9] hover:text-white">
-                  Reviews
                 </Link>
                 <Link href="/contact#faq" className="text-[#9f9fa9] hover:text-white">
                   FAQ
@@ -117,10 +114,8 @@ export default function Footer() {
               <li>Arlington, VA</li>
               <li>Alexandria, VA</li>
               <li>Fairfax, VA</li>
-              <li>Bethesda, MD</li>
-              <li>Silver Spring, MD</li>
-              <li>Rockville, MD</li>
-              <li>Chevy Chase, MD</li>
+              <li>Anne Arundel County, MD</li>
+              <li>Baltimore County, MD</li>
               <li>Prince George's County, MD</li>
               <li>Montgomery County, MD</li>
             </ul>
