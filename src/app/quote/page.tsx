@@ -124,11 +124,11 @@ export default function QuotePage() {
           </p>
 
           <a
-            href="tel:+12023096610"
+            href="tel:+13014414919"
             className="mt-6 inline-flex items-center gap-2 rounded-[10px] bg-[#fb5411] px-5 py-3 text-white font-medium hover:bg-[#e64d0f] transition-colors"
           >
             <PhoneIcon className="size-5" />
-            Call Now: 202-309-6610
+            Call Now: 301-441-4919
           </a>
         </div>
 
@@ -141,8 +141,8 @@ export default function QuotePage() {
                 </h2>
                 <p className="text-white/75 mt-2">
                   We’ll reach out within 24 hours. If it’s urgent, call{" "}
-                  <a className="underline" href="tel:+12023096610">
-                    202-309-6610
+                  <a className="underline" href="tel:+13014414919">
+                    301-441-4919
                   </a>.
                 </p>
               </div>

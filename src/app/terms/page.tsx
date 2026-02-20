@@ -12,8 +12,8 @@ const BUSINESS = {
   name: "Paradise Ironworks & Construction",
   serviceRegion: "Washington, DC, Maryland, and Northern Virginia",
   email: "info@customironworks.com", // 🔴 Replace
-  phoneDisplay: "(202) 309-6610", // 🔴 Replace
-  phoneE164: "+12023096610", // 🔴 Replace
+  phoneDisplay: "(301) 441-4919", // 🔴 Replace
+  phoneE164: "+13014414919", // 🔴 Replace
 };
 
 const LAST_UPDATED = "February 12, 2026";

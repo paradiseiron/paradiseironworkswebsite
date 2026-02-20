@@ -6,8 +6,8 @@ import Image from "next/image";
 
 const SITE = {
   name: "Paradise Ironworks & Construction",
-  phoneDisplay: "(202) 309-6610",
-  phoneE164: "+12023096610",
+  phoneDisplay: "(301) 441-4919",
+  phoneE164: "+13014414919",
   email: "info@paradiseironworks.com",
   serviceRegion: "Washington DC, Maryland & Northern Virginia",
 };

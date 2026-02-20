@@ -18,8 +18,8 @@ export const metadata: Metadata = {
 
 export default function ContactPage() {
   const businessName = "Paradise Ironworks";
-  const phoneDisplay = "202-309-6610";
-  const phoneHref = "+12023096610";
+  const phoneDisplay = "301- 441-4919";
+  const phoneHref = "+13014414919";
   const email = "info@paradiseironworks.com"; // <- change if needed
 
   // IMPORTANT: Replace with your real address if you want NAP accuracy on-page

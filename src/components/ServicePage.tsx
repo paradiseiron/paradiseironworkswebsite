@@ -189,7 +189,7 @@ export function ServicePage({ service }: { service: ServiceConfig }) {
 
             <div className="mt-8">
               <a
-                href="tel:+12022404400"
+                href="tel:+1301-441-4919"
                 className="
                   inline-flex items-center justify-center gap-2
                   rounded-[10px]
@@ -201,7 +201,7 @@ export function ServicePage({ service }: { service: ServiceConfig }) {
                 "
               >
                 <PhoneIcon className="size-5" />
-                Call Now: 202-309-6610
+                Call Now: 301-441-4919
               </a>
             </div>
           </div>
