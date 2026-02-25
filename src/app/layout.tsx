@@ -3,6 +3,7 @@ import type { Metadata } from 'next';
 import { Inter, Montserrat } from 'next/font/google';
 import Header from "@/components/Header";
 import Footer from "@/components/footer";
+import { GoogleAnalytics } from '@next/third-parties/google';
 
 const inter = Inter({ 
   subsets: ['latin'],
@@ -78,6 +79,7 @@ export default function RootLayout({
         {children}
         <Footer />
       </body>
+      <GoogleAnalytics gaId="G-C7CY6HTYZH" />
     </html>
   );
 }
