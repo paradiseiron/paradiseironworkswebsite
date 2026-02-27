@@ -1,7 +1,7 @@
 // src/data/services.ts
 export const SERVICES = {
   residential: {
-    image: "/images/residential-metal-rail.jpg",
+    image: "/images/residential-metal-rail1-2000.webp",
     imageAlt:
       "Custom residential metal railing and stair installation in the Washington DC area",
     title: "Residential",
@@ -15,7 +15,7 @@ export const SERVICES = {
 ],
   },
   commercial: {
-    image: "/images/commercial.jpg",
+    image: "/images/commercial-2000.webp",
     imageAlt:
       "Commercial metal fabrication including railings, stairs, and security gates for DMV properties",
     title: "Commercial",
@@ -27,7 +27,7 @@ export const SERVICES = {
   "Architectural metalwork",],
   },
   structural: {
-    image: "/images/structural-steel-install.jpg",
+    image: "/images/structural-steel-install-2000.webp",
     imageAlt:
       "Structural steel installation and support framing for commercial construction projects",
     title: "Structural",

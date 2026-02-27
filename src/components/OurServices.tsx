@@ -120,7 +120,7 @@ export default function ServicesSection() {
 
         <div className="grid grid-cols-1 md:grid-cols-3 gap-6 lg:gap-8">
           <ServiceCard
-            image="/images/residential-metal-rail1.jpg"
+            image="images/residential-metal-rail1-2000.webp"
             title="Residential"
             href="/services/residential"
             imageAlt="Custom residential metal railing and stair installation in the Washington DC area"
@@ -137,7 +137,7 @@ export default function ServicesSection() {
             priority={false}
           />
           <ServiceCard
-            image="/images/commercial.jpg"
+            image="images/commercial-2000.webp"
             title="Commercial"
             href="/services/commercial"
             imageAlt="Commercial metal fabrication including railings, stairs, and security gates for DMV properties"
@@ -152,7 +152,7 @@ export default function ServicesSection() {
   "On-site repair & upgrades"]}
           />
           <ServiceCard
-            image="/images/structural-steel-install.jpg"
+            image="/images/structural-steel-install-2000.webp"
             title="Structural"
             href="/services/structural"
             imageAlt="Structural steel installation and support framing for commercial construction projects"
