@@ -42,7 +42,7 @@ export default function HeroSection() {
         <motion.div style={{ y }} className="absolute inset-0 z-0">
           <Image
             alt="Ironwork background"
-            src="/images/welding_metal_railing5.jpg"
+            src="/images/welding_metal_railing5-2400.webp"
             priority
             fill
             sizes="100vw"
