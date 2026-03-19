@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useMemo, useState } from "react";
 
 const GOOGLE_FORM_ACTION =
   "https://docs.google.com/forms/d/e/1FAIpQLSemG35X0R91Sdd-wt1OS-3Fxir9FBzsyPX0xws55ihM5bQ2-g/formResponse";
@@ -13,6 +13,31 @@ const ENTRY = {
   projectCategory: "entry.277952424",
   projectType: "entry.1821304697",
   comments: "entry.1864356264",
+};
+
+type FormState = {
+  name: string;
+  phone: string;
+  email: string;
+  zip: string;
+  projectCategory: string;
+  projectType: string;
+  comments: string;
+  disclaimer: boolean;
+};
+
+type FormErrors = Partial<Record<keyof FormState, string>>;
+type TouchedState = Partial<Record<keyof FormState, boolean>>;
+
+const initialForm: FormState = {
+  name: "",
+  phone: "",
+  email: "",
+  zip: "",
+  projectCategory: "",
+  projectType: "",
+  comments: "",
+  disclaimer: false,
 };
 
 function PhoneIcon({ className = "" }: { className?: string }) {
@@ -48,45 +73,181 @@ function SelectChevron() {
   );
 }
 
+// Option 1 fix:
+// Accept either:
+// - 10-digit US number
+// - 11-digit number starting with 1
+// Display as either:
+// - (202) 555-1234
+// - +1 (202) 555-1234
+function normalizePhone(value: string) {
+  const raw = value.replace(/[^\d+]/g, "");
+  const hasLeadingPlus = raw.startsWith("+");
+  const digits = raw.replace(/\D/g, "");
+
+  let normalizedDigits = digits;
+  if (digits.startsWith("1")) {
+    normalizedDigits = digits.slice(0, 11);
+  } else {
+    normalizedDigits = digits.slice(0, 10);
+  }
+
+  const hasCountryCode =
+    normalizedDigits.length > 10 && normalizedDigits.startsWith("1");
+  const local = hasCountryCode ? normalizedDigits.slice(1) : normalizedDigits;
+
+  if (!local.length) return hasLeadingPlus ? "+" : "";
+
+  let formattedLocal = "";
+  if (local.length <= 3) {
+    formattedLocal = local;
+  } else if (local.length <= 6) {
+    formattedLocal = `(${local.slice(0, 3)}) ${local.slice(3)}`;
+  } else {
+    formattedLocal = `(${local.slice(0, 3)}) ${local.slice(3, 6)}-${local.slice(
+      6,
+      10
+    )}`;
+  }
+
+  if (hasCountryCode || hasLeadingPlus) {
+    return `+1 ${formattedLocal}`;
+  }
+
+  return formattedLocal;
+}
+
+function normalizeZip(value: string) {
+  return value.replace(/[^\d-]/g, "").slice(0, 10);
+}
+
+function normalizeSubmittedPhone(value: string) {
+  const digits = value.replace(/\D/g, "");
+
+  if (digits.length === 11 && digits.startsWith("1")) {
+    return `+${digits}`;
+  }
+
+  if (digits.length === 10) {
+    return `+1${digits}`;
+  }
+
+  return value;
+}
+
+function validateForm(form: FormState): FormErrors {
+  const errors: FormErrors = {};
+
+  const name = form.name.trim();
+  const email = form.email.trim();
+  const zip = form.zip.trim();
+  const phoneDigits = form.phone.replace(/\D/g, "");
+
+  if (!name) {
+    errors.name = "Please enter your name.";
+  } else if (name.length < 2) {
+    errors.name = "Name looks too short.";
+  }
+
+  if (!phoneDigits) {
+    errors.phone = "Please enter your phone number.";
+  } else if (
+    !(
+      phoneDigits.length === 10 ||
+      (phoneDigits.length === 11 && phoneDigits.startsWith("1"))
+    )
+  ) {
+    errors.phone = "Enter a valid US phone number, with or without +1.";
+  }
+
+  if (!email) {
+    errors.email = "Please enter your email address.";
+  } else if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) {
+    errors.email = "Enter a valid email address.";
+  }
+
+  if (!zip) {
+    errors.zip = "Please enter your ZIP code.";
+  } else if (!/^\d{5}(-\d{4})?$/.test(zip)) {
+    errors.zip = "Enter a valid ZIP code.";
+  }
+
+  if (!form.projectCategory) {
+    errors.projectCategory = "Please choose a project category.";
+  }
+
+  if (!form.projectType) {
+    errors.projectType = "Please choose a project type.";
+  }
+
+  if (!form.disclaimer) {
+    errors.disclaimer = "You must agree before submitting.";
+  }
+
+  return errors;
+}
+
 export default function QuotePage() {
+  const [form, setForm] = useState<FormState>(initialForm);
+  const [touched, setTouched] = useState<TouchedState>({});
   const [submitting, setSubmitting] = useState(false);
   const [submitted, setSubmitted] = useState(false);
+  const [submitError, setSubmitError] = useState("");
 
-  const [form, setForm] = useState({
-    name: "",
-    phone: "",
-    email: "",
-    zip: "",
-    projectCategory: "",
-    projectType: "",
-    comments: "",
-    disclaimer: false,
-  });
+  const errors = useMemo(() => validateForm(form), [form]);
+  const isValid = Object.keys(errors).length === 0;
 
-  const canSubmit =
-    form.name.trim() &&
-    form.phone.trim() &&
-    form.email.trim() &&
-    form.zip.trim() &&
-    form.projectCategory &&
-    form.projectType &&
-    form.disclaimer;
+  function setField<K extends keyof FormState>(field: K, value: FormState[K]) {
+    setForm((prev) => ({ ...prev, [field]: value }));
+  }
+
+  function markTouched<K extends keyof FormState>(field: K) {
+    setTouched((prev) => ({ ...prev, [field]: true }));
+  }
+
+  function getFieldError(field: keyof FormState) {
+    return touched[field] ? errors[field] : undefined;
+  }
+
+  function inputClass(hasError: boolean) {
+    return `w-full rounded-[10px] bg-black/40 border px-4 py-3 text-white outline-none transition-colors ${
+      hasError
+        ? "border-red-500 focus:border-red-400"
+        : "border-white/15 focus:border-white/30"
+    }`;
+  }
 
   async function onSubmit(e: React.FormEvent) {
     e.preventDefault();
-    if (!canSubmit) return;
 
+    setTouched({
+      name: true,
+      phone: true,
+      email: true,
+      zip: true,
+      projectCategory: true,
+      projectType: true,
+      comments: true,
+      disclaimer: true,
+    });
+
+    const currentErrors = validateForm(form);
+    if (Object.keys(currentErrors).length > 0) {
+      return;
+    }
+
+    setSubmitError("");
     setSubmitting(true);
 
     try {
       const fd = new FormData();
-      fd.append(ENTRY.name, form.name);
-      fd.append(ENTRY.phone, form.phone);
-      fd.append(ENTRY.email, form.email);
-      fd.append(ENTRY.zip, form.zip);
+      fd.append(ENTRY.name, form.name.trim());
+      fd.append(ENTRY.phone, normalizeSubmittedPhone(form.phone));
+      fd.append(ENTRY.email, form.email.trim());
+      fd.append(ENTRY.zip, form.zip.trim());
       fd.append(ENTRY.projectCategory, form.projectCategory);
       fd.append(ENTRY.projectType, form.projectType);
-      fd.append(ENTRY.comments, form.comments);
+      fd.append(ENTRY.comments, form.comments.trim());
 
       await fetch(GOOGLE_FORM_ACTION, {
         method: "POST",
@@ -96,14 +257,13 @@ export default function QuotePage() {
 
       setSubmitted(true);
 
-      // Scroll fully to top smoothly after submission
       setTimeout(() => {
         window.scrollTo({ top: 0, left: 0, behavior: "smooth" });
       }, 50);
     } catch (err) {
       console.error(err);
-      alert(
-        "Something went wrong submitting the form. Please try again or call 202-309-6610."
+      setSubmitError(
+        "Something went wrong submitting the form. Please try again or call 301-441-4919."
       );
     } finally {
       setSubmitting(false);
@@ -147,101 +307,122 @@ export default function QuotePage() {
                 </p>
               </div>
             ) : (
-              <form onSubmit={onSubmit} className="grid grid-cols-1 md:grid-cols-2 gap-5">
-
-                {/* Name */}
+              <form
+                onSubmit={onSubmit}
+                noValidate
+                className="grid grid-cols-1 md:grid-cols-2 gap-5"
+              >
                 <div>
                   <label className="block text-white/85 text-sm mb-2">Name *</label>
                   <input
-                    className="w-full rounded-[10px] bg-black/40 border border-white/15 px-4 py-3 text-white outline-none focus:border-white/30"
+                    className={inputClass(Boolean(getFieldError("name")))}
                     value={form.name}
-                    onChange={(e) => setForm({ ...form, name: e.target.value })}
+                    onChange={(e) => setField("name", e.target.value)}
+                    onBlur={() => markTouched("name")}
                     placeholder="e.g. John Smith"
-                    required
+                    autoComplete="name"
+                    aria-invalid={Boolean(getFieldError("name"))}
                   />
+                  {getFieldError("name") && (
+                    <p className="mt-2 text-sm text-red-400">{getFieldError("name")}</p>
+                  )}
                 </div>
 
-                {/* Phone */}
                 <div>
                   <label className="block text-white/85 text-sm mb-2">
                     Phone Number *
                   </label>
                   <input
-                    className="w-full rounded-[10px] bg-black/40 border border-white/15 px-4 py-3 text-white outline-none focus:border-white/30"
+                    className={inputClass(Boolean(getFieldError("phone")))}
                     value={form.phone}
-                    onChange={(e) => setForm({ ...form, phone: e.target.value })}
-                    placeholder="e.g. (202) 555-1234"
-                    required
+                    onChange={(e) => setField("phone", normalizePhone(e.target.value))}
+                    onBlur={() => markTouched("phone")}
+                    placeholder="e.g. (202) 555-1234 or +1 (202) 555-1234"
+                    inputMode="tel"
+                    autoComplete="tel"
+                    aria-invalid={Boolean(getFieldError("phone"))}
                   />
+                  {getFieldError("phone") && (
+                    <p className="mt-2 text-sm text-red-400">{getFieldError("phone")}</p>
+                  )}
                 </div>
 
-                {/* Email */}
                 <div>
                   <label className="block text-white/85 text-sm mb-2">Email *</label>
                   <input
                     type="email"
-                    className="w-full rounded-[10px] bg-black/40 border border-white/15 px-4 py-3 text-white outline-none focus:border-white/30"
+                    className={inputClass(Boolean(getFieldError("email")))}
                     value={form.email}
-                    onChange={(e) => setForm({ ...form, email: e.target.value })}
+                    onChange={(e) => setField("email", e.target.value)}
+                    onBlur={() => markTouched("email")}
                     placeholder="e.g. john@example.com"
-                    required
+                    autoComplete="email"
+                    aria-invalid={Boolean(getFieldError("email"))}
                   />
+                  {getFieldError("email") && (
+                    <p className="mt-2 text-sm text-red-400">{getFieldError("email")}</p>
+                  )}
                 </div>
 
-                {/* Zip */}
                 <div>
                   <label className="block text-white/85 text-sm mb-2">ZIP Code *</label>
                   <input
-                    inputMode="numeric"
-                    className="w-full rounded-[10px] bg-black/40 border border-white/15 px-4 py-3 text-white outline-none focus:border-white/30"
+                    className={inputClass(Boolean(getFieldError("zip")))}
                     value={form.zip}
-                    onChange={(e) => setForm({ ...form, zip: e.target.value })}
+                    onChange={(e) => setField("zip", normalizeZip(e.target.value))}
+                    onBlur={() => markTouched("zip")}
                     placeholder="e.g. 20740"
-                    required
+                    inputMode="numeric"
+                    autoComplete="postal-code"
+                    aria-invalid={Boolean(getFieldError("zip"))}
                   />
+                  {getFieldError("zip") && (
+                    <p className="mt-2 text-sm text-red-400">{getFieldError("zip")}</p>
+                  )}
                 </div>
 
-                {/* Category */}
                 <div>
                   <label className="block text-white/85 text-sm mb-2">
                     Project Category *
                   </label>
                   <div className="relative">
                     <select
-                      className="w-full rounded-[10px] bg-black/40 border border-white/15 pl-4 pr-12 py-3 text-white outline-none focus:border-white/30 appearance-none"
+                      className={`${inputClass(
+                        Boolean(getFieldError("projectCategory"))
+                      )} appearance-none pr-12`}
                       value={form.projectCategory}
-                      onChange={(e) =>
-                        setForm({ ...form, projectCategory: e.target.value })
-                      }
-                      required
+                      onChange={(e) => setField("projectCategory", e.target.value)}
+                      onBlur={() => markTouched("projectCategory")}
+                      aria-invalid={Boolean(getFieldError("projectCategory"))}
                     >
-                      <option value="" disabled>
-                        Choose…
-                      </option>
+                      <option value="">Choose…</option>
                       <option value="Residential">Residential</option>
                       <option value="Commercial">Commercial</option>
                     </select>
                     <SelectChevron />
                   </div>
+                  {getFieldError("projectCategory") && (
+                    <p className="mt-2 text-sm text-red-400">
+                      {getFieldError("projectCategory")}
+                    </p>
+                  )}
                 </div>
 
-                {/* Type */}
                 <div>
                   <label className="block text-white/85 text-sm mb-2">
                     Project Type *
                   </label>
                   <div className="relative">
                     <select
-                      className="w-full rounded-[10px] bg-black/40 border border-white/15 pl-4 pr-12 py-3 text-white outline-none focus:border-white/30 appearance-none"
+                      className={`${inputClass(
+                        Boolean(getFieldError("projectType"))
+                      )} appearance-none pr-12`}
                       value={form.projectType}
-                      onChange={(e) =>
-                        setForm({ ...form, projectType: e.target.value })
-                      }
-                      required
+                      onChange={(e) => setField("projectType", e.target.value)}
+                      onBlur={() => markTouched("projectType")}
+                      aria-invalid={Boolean(getFieldError("projectType"))}
                     >
-                      <option value="" disabled>
-                        Choose…
-                      </option>
+                      <option value="">Choose…</option>
                       <option value="Custom Design">Custom Design</option>
                       <option value="Railings">Railings</option>
                       <option value="Repairs">Repairs</option>
@@ -251,9 +432,13 @@ export default function QuotePage() {
                     </select>
                     <SelectChevron />
                   </div>
+                  {getFieldError("projectType") && (
+                    <p className="mt-2 text-sm text-red-400">
+                      {getFieldError("projectType")}
+                    </p>
+                  )}
                 </div>
 
-                {/* Comments */}
                 <div className="md:col-span-2">
                   <label className="block text-white/85 text-sm mb-2">
                     Comments or Specifics
@@ -261,36 +446,40 @@ export default function QuotePage() {
                   <textarea
                     className="w-full min-h-[120px] rounded-[10px] bg-black/40 border border-white/15 px-4 py-3 text-white outline-none focus:border-white/30"
                     value={form.comments}
-                    onChange={(e) => setForm({ ...form, comments: e.target.value })}
+                    onChange={(e) => setField("comments", e.target.value)}
+                    onBlur={() => markTouched("comments")}
                     placeholder="e.g. 12 ft railing for front porch, installation needed within 4 weeks."
                   />
                 </div>
 
-                {/* Disclaimer */}
                 <div className="md:col-span-2">
                   <label className="flex items-start gap-3 text-white/80">
                     <input
                       type="checkbox"
                       className="mt-1 size-4 accent-[#fb5411]"
                       checked={form.disclaimer}
-                      onChange={(e) =>
-                        setForm({ ...form, disclaimer: e.target.checked })
-                      }
-                      required
+                      onChange={(e) => setField("disclaimer", e.target.checked)}
+                      onBlur={() => markTouched("disclaimer")}
+                      aria-invalid={Boolean(getFieldError("disclaimer"))}
                     />
                     <span>
-                      I understand that providing this information does not guarantee service availability.
-                      <br />
-                      I consent to Paradise Ironworks and Construction contacting me regarding my project inquiry.
+                      I understand that providing this information does not guarantee
+                      service availability.
+                      <br />I consent to Paradise Ironworks and Construction contacting
+                      me regarding my project inquiry.
                     </span>
                   </label>
+                  {getFieldError("disclaimer") && (
+                    <p className="mt-2 text-sm text-red-400">
+                      {getFieldError("disclaimer")}
+                    </p>
+                  )}
                 </div>
 
-                {/* Submit */}
                 <div className="md:col-span-2 flex flex-col sm:flex-row gap-3 sm:items-center">
                   <button
                     type="submit"
-                    disabled={!canSubmit || submitting}
+                    disabled={submitting || !isValid}
                     className="inline-flex justify-center rounded-[10px] bg-[#fb5411] px-6 py-3 text-white font-medium hover:bg-[#e64d0f] transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
                   >
                     {submitting ? "Submitting…" : "Submit Request"}
@@ -301,6 +490,11 @@ export default function QuotePage() {
                   </p>
                 </div>
 
+                {submitError && (
+                  <div className="md:col-span-2">
+                    <p className="text-sm text-red-400">{submitError}</p>
+                  </div>
+                )}
               </form>
             )}
           </div>

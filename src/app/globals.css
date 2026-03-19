@@ -244,3 +244,31 @@ html {
     opacity: 0;
   }
 }
+@layer base {
+  /* Tell the browser these controls are dark-themed */
+  .dark,
+  .dark input,
+  .dark textarea,
+  .dark select {
+    color-scheme: dark;
+  }
+
+  /* Autofill override */
+  .dark input:is(:-webkit-autofill, :autofill),
+  .dark textarea:is(:-webkit-autofill, :autofill),
+  .dark select:is(:-webkit-autofill, :autofill),
+  .dark input:is(:-webkit-autofill, :autofill):hover,
+  .dark textarea:is(:-webkit-autofill, :autofill):hover,
+  .dark select:is(:-webkit-autofill, :autofill):hover,
+  .dark input:is(:-webkit-autofill, :autofill):focus,
+  .dark textarea:is(:-webkit-autofill, :autofill):focus,
+  .dark select:is(:-webkit-autofill, :autofill):focus {
+    -webkit-text-fill-color: var(--foreground) !important;
+    caret-color: var(--foreground);
+    border-color: var(--border) !important;
+    -webkit-box-shadow: 0 0 0 1000px oklch(0.269 0 0) inset !important;
+    box-shadow: 0 0 0 1000px oklch(0.269 0 0) inset !important;
+    background-color: transparent !important;
+    background-clip: content-box !important;
+  }
+}
