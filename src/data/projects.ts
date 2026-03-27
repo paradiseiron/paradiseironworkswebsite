@@ -960,6 +960,79 @@ export const projects: ProjectDetails[] = [
     { label: "Design", value: "Custom-fabricated aluminum fence with cable infill" },
   ],
 },
+{
+  id: 16,
+  slug: "interior-metal-railing-north-potomac-maryland",
+  name: "Interior Metal Railing",
+  location: "North Potomac, Maryland",
+  workType: "Residential",
+  productTypes: ["Interior Railings"],
+
+  // IMPORTANT: this thumbnail must exist under /public/images/work
+  image:
+    "/images/work/interior-metal-railing-north-potomac-maryland-thumb.JPG",
+  alt:
+    "Interior metal railing installation in North Potomac, Maryland",
+
+  description:
+    "Custom interior metal railing project completed for a residential property in North Potomac, Maryland. This fabricated railing system was designed to complement the interior space while providing needed stairway safety.",
+  year: 2026,
+
+  images: [
+    // ✅ Repeat thumbnail on the project detail page
+    {
+      src:
+        "/images/work/interior-metal-railing-north-potomac-maryland-thumb.JPG",
+      alt:
+        "Interior metal railing in North Potomac, Maryland - completed overview",
+    },
+    {
+      src:
+        "/images/work/interior-metal-railing-north-potomac-maryland-01.JPG",
+      alt:
+        "Interior metal railing - wide view of completed installation",
+    },
+    {
+      src:
+        "/images/work/interior-metal-railing-north-potomac-maryland-02.JPG",
+      alt:
+        "Interior railing detail - custom metal balusters and handrail",
+    },
+    {
+      src:
+        "/images/work/interior-metal-railing-north-potomac-maryland-03.JPG",
+      alt:
+        "Residential interior metal railing - angle view showing profile and finish",
+    },
+    {
+      src:
+        "/images/work/interior-metal-railing-north-potomac-maryland-04.JPG",
+      alt:
+        "Completed interior railing installation - stair and landing detail",
+    },
+    {
+      src:
+        "/images/work/interior-metal-railing-north-potomac-maryland-05.JPG",
+      alt:
+        "Interior metal railing - finished installation close-up",
+    },
+  ],
+
+  // Optional SEO fields
+  summary:
+    "Custom interior metal railing fabricated and installed for a residential property in North Potomac, Maryland.",
+  seoTitle:
+    "Interior Metal Railing in North Potomac, Maryland | Paradise Ironworks",
+  metaDescription:
+    "Custom interior metal railing fabricated and installed for a residential property in North Potomac, Maryland. Clean, durable, and professionally finished interior ironwork by Paradise Ironworks.",
+
+  specifications: [
+    { label: "Material", value: "Metal" },
+    { label: "Use", value: "Residential interior railing" },
+    { label: "Location", value: "North Potomac, Maryland" },
+    { label: "Design", value: "Custom-fabricated interior metal railing" },
+  ],
+},
 
 
 
