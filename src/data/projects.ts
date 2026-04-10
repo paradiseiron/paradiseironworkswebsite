@@ -1039,7 +1039,7 @@ export const projects: ProjectDetails[] = [
   name: "Residential Metal Stair Case",
   location: "Washington, DC",
   workType: "Residential",
-  productTypes: ["Interior Railings", "Exterior Staircases"],
+  productTypes: ["Exterior Staircases"],
 
   // IMPORTANT: this thumbnail must exist under /public/images/work
   image:
