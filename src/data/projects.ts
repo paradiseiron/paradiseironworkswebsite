@@ -1033,7 +1033,73 @@ export const projects: ProjectDetails[] = [
     { label: "Design", value: "Custom-fabricated interior metal railing" },
   ],
 },
+{
+  id: 17,
+  slug: "residential-metal-stair-case-washington-dc",
+  name: "Residential Metal Stair Case",
+  location: "Washington, DC",
+  workType: "Residential",
+  productTypes: ["Interior Railings", "Exterior Staircases"],
 
+  // IMPORTANT: this thumbnail must exist under /public/images/work
+  image:
+    "/images/work/residential-metal-stair-case-washington-dc-thumb.jpg",
+  alt:
+    "Residential metal staircase project in Washington, DC",
+
+  description:
+    "Custom residential metal staircase project completed for a property in Washington, DC. This fabricated metal stair system was built to provide safe, durable access while fitting the style and layout of the home.",
+  year: 2026,
+
+  images: [
+    // ✅ Repeat thumbnail on the project detail page
+    {
+      src:
+        "/images/work/residential-metal-stair-case-washington-dc-thumb.jpg",
+      alt:
+        "Residential metal staircase in Washington, DC - completed overview",
+    },
+    {
+      src:
+        "/images/work/residential-metal-stair-case-washington-dc-01.jpg",
+      alt:
+        "Residential metal staircase - completed installation overview",
+    },
+    {
+      src:
+        "/images/work/residential-metal-stair-case-washington-dc-02.jpg",
+      alt:
+        "Custom residential metal staircase - angle view of finished installation",
+    },
+    {
+      src:
+        "/images/work/residential-metal-stair-case-washington-dc-03.jpg",
+      alt:
+        "Metal staircase detail - residential fabrication and finish",
+    },
+    {
+      src:
+        "/images/work/residential-metal-stair-case-washington-dc-04.jpg",
+      alt:
+        "Completed residential metal staircase - side view showing structure and railing",
+    },
+  ],
+
+  // Optional SEO fields
+  summary:
+    "Custom residential metal staircase fabricated and installed for a property in Washington, DC.",
+  seoTitle:
+    "Residential Metal Staircase in Washington, DC | Paradise Ironworks",
+  metaDescription:
+    "Custom residential metal staircase fabricated and installed for a property in Washington, DC. Durable, cleanly finished metalwork designed for residential use by Paradise Ironworks.",
+
+  specifications: [
+    { label: "Material", value: "Metal" },
+    { label: "Use", value: "Residential staircase" },
+    { label: "Location", value: "Washington, DC" },
+    { label: "Design", value: "Custom-fabricated metal staircase" },
+  ],
+},
 
 
 
