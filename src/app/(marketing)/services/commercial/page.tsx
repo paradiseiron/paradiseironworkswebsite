@@ -1,29 +1,30 @@
+// src/app/services/commercial/page.tsx
 import { ServicePage } from "@/components/ServicePage";
 
-export default function StructuralServicesPage() {
+export default function CommercialServicesPage() {
   return (
     <ServicePage
       service={{
-        key: "structural",
-        title: "Structural Steel",
+        key: "commercial",
+        title: "Commercial Metalwork",
         subtitle:
-          "Steel framing, supports, and structural fabrication for builds and renovations.",
-        heroImageSrc:
-          "/images/structural-steel-install.jpg", 
-        heroImageAlt: "Structural steel fabrication and installation services",
+          "Durable, code-conscious steel and ironwork for businesses, schools, and multi-unit properties.",
+        heroImageSrc: "/images/commercial-2000.webp",
+        heroImageAlt: "Commercial metal fabrication and installation services",
         heroPosition: "object-[50%_20%]",
+
         description:
-        "We provide structural steel fabrication and installation services for commercial builds, renovations, and specialty construction projects. Our work includes steel framing, beams, columns, supports, and custom structural assemblies designed to integrate cleanly with architectural and engineering requirements.\n\nWe regularly coordinate with general contractors, engineers, and project managers to ensure proper fit-up, alignment, and sequencing on active job sites. From small structural modifications to full facility builds, each component is fabricated and installed with accuracy, safety, and long-term performance in mind. Our team understands the demands of structural work, including tolerances, load considerations, and jobsite coordination, allowing us to deliver reliable steel solutions that support the success of the overall build.",
+          "We support commercial projects with fabricated steel and ironwork built for high-traffic environments. Our team handles fabrication and installation for properties where durability, safety, and clean execution matter.\n\nWe regularly work with property managers, general contractors, schools, and multi-unit facilities on projects that require code-compliant railings, secure access points, and custom metal solutions. Each project is measured, fabricated, and installed to meet project specifications, timelines, and long-term performance requirements.",
 
         exampleWork: [
-          "Structural steel frames and supports",
-          "Beams, columns, and connection assemblies",
-          "Canopy frame fabrication and installation",
-          "Steel stair stringers and structural stair components",
-          "Equipment supports and structural platforms",
-          "Custom structural fabrication for renovations",
+          "Security gates and access control assemblies",
+          "Commercial railings and stair handrails",
+          "Dumpster enclosures and protective barriers",
+          "Canopies and awnings (steel framing)",
+          "Equipment guards and protective steel",
+          "Custom metal fabrication for property upgrades",
         ],
-        
+
         // ✅ NEW: Credentials section placeholder content
         credentials: {
           title: "Credentials & Certifications",
@@ -83,7 +84,7 @@ export default function StructuralServicesPage() {
         },
 
         matchesProject: (p) =>
-          (p.workType || "").toLowerCase() === "structural",
+          (p.workType || "").toLowerCase() === "commercial",
       }}
     />
   );

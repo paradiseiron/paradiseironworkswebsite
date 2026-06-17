@@ -9,7 +9,7 @@ export default function ResidentialServicesPage() {
         subtitle:
           "Custom metalwork for homes—built for safety, curb appeal, and long-term durability.",
         heroImageSrc:
-          "/images/residential-metal-rail1.jpg", // ✅ use the same image as your Home Services section
+          "/images/residential-metal-rail1-2000.webp", // ✅ use the same image as your Home Services section
         heroImageAlt: "Residential ironwork and metal fabrication services",
         heroPosition: "object-[30%_60%]",
         description:

@@ -1,0 +1,516 @@
+"use client";
+
+import { useState } from "react";
+import { useSearchParams } from "next/navigation";
+import AddProjectActivityModal from "@/components/AddProjectActivityModal";
+
+type ProjectTab = "overview" | "proposal" | "timeline" | "invoice";
+
+type Props = {
+  project: any;
+  activities: any[] | null;
+  updateProjectStatus: (formData: FormData) => void;
+  updateProposal: (formData: FormData) => void;
+  addProjectActivity: (formData: FormData) => void;
+};
+
+export default function ProjectDetailTabs({
+  project,
+  activities,
+  updateProjectStatus,
+  updateProposal,
+  addProjectActivity,
+}: Props) {
+  const searchParams = useSearchParams();
+  const initialTab = searchParams.get("tab");
+
+  const [tab, setTab] = useState<ProjectTab>(
+    initialTab === "proposal" ||
+      initialTab === "timeline" ||
+      initialTab === "invoice"
+      ? initialTab
+      : "overview"
+  );
+
+  function handleTabChange(nextTab: ProjectTab) {
+    setTab(nextTab);
+
+    if (nextTab === "overview") {
+      window.history.replaceState(null, "", window.location.pathname);
+    } else {
+      window.history.replaceState(null, "", `?tab=${nextTab}`);
+    }
+  }
+
+  return (
+    <div>
+      <div className="mb-6 flex gap-2 border-b border-white/10">
+        {(["overview", "proposal", "timeline", "invoice"] as ProjectTab[]).map(
+          (item) => (
+            <button
+              key={item}
+              type="button"
+              onClick={() => handleTabChange(item)}
+              className={`px-4 py-3 text-sm capitalize ${
+                tab === item
+                  ? "border-b-2 border-[#fb5411] text-white"
+                  : "text-neutral-400 hover:text-white"
+              }`}
+            >
+              {item}
+            </button>
+          )
+        )}
+      </div>
+
+      {tab === "overview" && (
+        <div className="grid gap-6 lg:grid-cols-3">
+          <section className="rounded-2xl border border-white/10 bg-white/[0.03] p-6 lg:col-span-2">
+            <h2 className="text-xl font-semibold">Project Details</h2>
+
+            <div className="mt-6 grid gap-5 md:grid-cols-2">
+              <Detail label="Contact Name" value={project.contact_name} />
+              <Detail label="Phone" value={project.phone} />
+              <Detail label="Email" value={project.email} />
+              <Detail label="Source" value={project.lead_source} />
+              <Detail label="Address" value={project.project_address} />
+              <Detail label="City" value={project.city} />
+              <Detail label="State" value={project.state} />
+              <Detail label="ZIP" value={project.zip_code} />
+
+              <Detail
+                label="Received"
+                value={
+                  project.received_at
+                    ? new Date(project.received_at).toLocaleDateString()
+                    : null
+                }
+              />
+
+              <Detail
+                label="Next Follow-Up"
+                value={
+                  project.next_follow_up_at
+                    ? new Date(project.next_follow_up_at).toLocaleDateString()
+                    : null
+                }
+              />
+
+              <Detail
+                label="Proposal #"
+                value={project.proposal_number || "Not assigned"}
+              />
+
+              <Detail
+                label="Proposal Amount"
+                value={
+                  project.proposal_amount
+                    ? `$${Number(project.proposal_amount).toLocaleString()}`
+                    : null
+                }
+              />
+            </div>
+          </section>
+
+          <aside className="space-y-6">
+            <section className="rounded-2xl border border-white/10 bg-white/[0.03] p-6">
+              <h2 className="text-xl font-semibold">Status</h2>
+
+              <form action={updateProjectStatus} className="mt-4">
+                <input type="hidden" name="project_id" value={project.id} />
+
+                <div className="flex items-center gap-3">
+                  <div className="relative flex-1">
+                    <select
+                      name="status"
+                      defaultValue={project.status}
+                      className="w-full appearance-none rounded-xl border border-white/10 bg-neutral-900 px-4 py-3 pr-12 text-white outline-none focus:border-[#fb5411]"
+                    >
+                      <option value="lead">Lead</option>
+                      <option value="quoted">Quoted</option>
+                      <option value="pending">Pending</option>
+                      <option value="active">Active</option>
+                      <option value="completed">Completed</option>
+                      <option value="lost">Lost</option>
+                    </select>
+
+                    <div className="pointer-events-none absolute inset-y-0 right-4 flex items-center text-neutral-500">
+                      <svg
+                        xmlns="http://www.w3.org/2000/svg"
+                        className="h-4 w-4"
+                        fill="none"
+                        viewBox="0 0 24 24"
+                        stroke="currentColor"
+                        strokeWidth={2}
+                      >
+                        <path
+                          strokeLinecap="round"
+                          strokeLinejoin="round"
+                          d="M19 9l-7 7-7-7"
+                        />
+                      </svg>
+                    </div>
+                  </div>
+
+                  <button
+                    type="submit"
+                    className="inline-flex items-center gap-2 text-sm font-medium text-[#fb5411] transition hover:text-[#ff6a2b]"
+                  >
+                    <svg
+                      xmlns="http://www.w3.org/2000/svg"
+                      className="h-4 w-4"
+                      fill="none"
+                      viewBox="0 0 24 24"
+                      stroke="currentColor"
+                      strokeWidth={2}
+                    >
+                      <path
+                        strokeLinecap="round"
+                        strokeLinejoin="round"
+                        d="M4 12h16"
+                      />
+                      <path
+                        strokeLinecap="round"
+                        strokeLinejoin="round"
+                        d="M12 4l8 8-8 8"
+                      />
+                    </svg>
+
+                    <span>Update</span>
+                  </button>
+                </div>
+              </form>
+            </section>
+
+            <section className="rounded-2xl border border-white/10 bg-white/[0.03] p-6">
+              <h2 className="text-xl font-semibold">Notes</h2>
+
+              <p className="mt-4 whitespace-pre-wrap text-sm leading-6 text-neutral-300">
+                {project.notes || "No notes yet."}
+              </p>
+            </section>
+          </aside>
+        </div>
+      )}
+
+      {tab === "proposal" && (
+        <section className="rounded-2xl border border-white/10 bg-white/[0.03] p-6">
+          <div className="flex flex-wrap items-center justify-between gap-4">
+            <div>
+              <h2 className="text-xl font-semibold">Proposal Draft</h2>
+
+              <p className="mt-1 text-sm text-neutral-400">
+                Draft/edit proposal details. Proposal number is assigned once an
+                amount is saved.
+              </p>
+            </div>
+
+            <p className="text-sm text-neutral-400">
+              Proposal #:{" "}
+              <span className="text-white">
+                {project.proposal_number || "Not assigned"}
+              </span>
+            </p>
+          </div>
+
+          <form
+            id="proposal-form"
+            action={updateProposal}
+            className="mt-6 space-y-5"
+          >
+            <input type="hidden" name="project_id" value={project.id} />
+            <input
+              type="hidden"
+              name="project_category"
+              value={project.project_category}
+            />
+            <input
+              type="hidden"
+              name="existing_proposal_number"
+              value={project.proposal_number || ""}
+            />
+
+            <div className="grid gap-5 md:grid-cols-2">
+              <Field
+                label="Project Name"
+                name="proposal_project_name"
+                defaultValue={
+                  project.proposal_project_name || project.customer_name || ""
+                }
+              />
+
+              <Field
+                label="Attention"
+                name="proposal_attention"
+                defaultValue={
+                  project.proposal_attention || project.contact_name || ""
+                }
+              />
+
+              <Field
+                label="Office Phone"
+                name="proposal_office_phone"
+                defaultValue={project.proposal_office_phone || ""}
+              />
+
+              <Field
+                label="Cell Phone"
+                name="proposal_cell_phone"
+                defaultValue={project.proposal_cell_phone || project.phone || ""}
+              />
+
+              <Field
+                label="Proposal Email"
+                name="proposal_email"
+                type="email"
+                defaultValue={project.proposal_email || project.email || ""}
+              />
+
+              <Field
+                label="Proposal Amount"
+                name="proposal_amount"
+                type="number"
+                defaultValue={project.proposal_amount || ""}
+              />
+
+              <Field
+                label="Deposit Amount"
+                name="proposal_deposit_amount"
+                type="number"
+                defaultValue={project.proposal_deposit_amount || ""}
+              />
+            </div>
+
+            <TextArea
+              label="Intro"
+              name="proposal_intro"
+              defaultValue={project.proposal_intro || ""}
+              rows={3}
+            />
+
+            <TextArea
+              label="Scope of Work"
+              name="proposal_scope"
+              defaultValue={project.proposal_scope || ""}
+              rows={6}
+            />
+
+            <TextArea
+              label="Finish"
+              name="proposal_finish"
+              defaultValue={project.proposal_finish || ""}
+              rows={3}
+            />
+
+            <TextArea
+              label="Exclusions"
+              name="proposal_exclusions"
+              defaultValue={project.proposal_exclusions || ""}
+              rows={4}
+            />
+
+            <TextArea
+              label="Pricing"
+              name="proposal_pricing"
+              defaultValue={project.proposal_pricing || ""}
+              rows={4}
+            />
+
+            <TextArea
+              label="Payment Terms"
+              name="proposal_payment_terms"
+              defaultValue={project.proposal_payment_terms || ""}
+              rows={3}
+            />
+
+            <TextArea
+              label="Schedule"
+              name="proposal_schedule"
+              defaultValue={project.proposal_schedule || ""}
+              rows={3}
+            />
+
+            <TextArea
+              label="Clarifications"
+              name="proposal_clarifications"
+              defaultValue={project.proposal_clarifications || ""}
+              rows={4}
+            />
+
+            <div className="grid gap-5 md:grid-cols-2">
+              <Field
+                label="Prepared By"
+                name="proposal_prepared_by"
+                defaultValue={project.proposal_prepared_by || "Ronald Brown"}
+              />
+
+              <Field
+                label="Prepared By Title"
+                name="proposal_prepared_by_title"
+                defaultValue={
+                  project.proposal_prepared_by_title ||
+                  "Operations & Estimating Director"
+                }
+              />
+            </div>
+          </form>
+        </section>
+      )}
+
+      {tab === "timeline" && (
+        <section className="rounded-2xl border border-white/10 bg-white/[0.03] p-6">
+          <div className="flex items-center justify-between">
+            <h2 className="text-xl font-semibold">Project Timeline</h2>
+
+            <AddProjectActivityModal
+              projectId={project.id}
+              hasOpenFollowUp={project.has_open_follow_up}
+              currentFollowUpNote={project.latest_follow_up_note}
+              currentFollowUpDueAt={project.latest_follow_up_due_at}
+              action={addProjectActivity}
+            />
+          </div>
+
+          <div className="mt-6 space-y-4">
+            {activities && activities.length > 0 ? (
+              activities.map((activity) => (
+                <div
+                  key={activity.id}
+                  className="rounded-xl border border-white/10 bg-white/[0.02] p-4"
+                >
+                  <p className="font-medium capitalize text-white">
+                    {activity.activity_type.replaceAll("_", " ")}
+                  </p>
+
+                  <p className="mt-1 text-xs text-neutral-500">
+                    {activity.activity_date
+                      ? new Date(activity.activity_date).toLocaleString()
+                      : "No date"}
+                  </p>
+
+                  {activity.requires_follow_up && (
+                    <div className="mt-3 inline-flex items-center gap-2 rounded-full border border-red-500/20 bg-red-500/10 px-3 py-1 text-xs text-red-300">
+                      <span className="h-2 w-2 rounded-full bg-red-400" />
+                      <span>Follow-up required</span>
+                    </div>
+                  )}
+
+                  <p className="mt-3 whitespace-pre-wrap text-sm leading-6 text-neutral-300">
+                    {activity.summary}
+                  </p>
+
+                  {activity.follow_up_note && (
+                    <p className="mt-2 whitespace-pre-wrap text-sm leading-6 text-red-200/80">
+                      {activity.follow_up_note}
+                    </p>
+                  )}
+                </div>
+              ))
+            ) : (
+              <p className="text-sm text-neutral-400">
+                No project activity yet.
+              </p>
+            )}
+          </div>
+        </section>
+      )}
+
+      {tab === "invoice" && (
+        <section className="rounded-2xl border border-white/10 bg-white/[0.03] p-6">
+          <h2 className="text-xl font-semibold">Invoice</h2>
+
+          {["active", "completed"].includes(project.status) ? (
+            <div className="mt-4">
+              <p className="text-sm text-neutral-400">
+                Invoice creation will live here. This should unlock once the job
+                is active or completed.
+              </p>
+
+              <button
+                type="button"
+                disabled
+                className="mt-5 rounded-lg border border-white/10 px-4 py-2 text-sm text-neutral-500"
+              >
+                Generate Invoice later
+              </button>
+            </div>
+          ) : (
+            <p className="mt-4 text-sm text-neutral-400">
+              Invoice tools become available once this project is active or
+              completed.
+            </p>
+          )}
+        </section>
+      )}
+    </div>
+  );
+}
+
+function Detail({
+  label,
+  value,
+}: {
+  label: string;
+  value?: string | number | null;
+}) {
+  return (
+    <div>
+      <p className="text-xs uppercase tracking-[0.18em] text-neutral-500">
+        {label}
+      </p>
+
+      <p className="mt-1 text-neutral-200">{value || "—"}</p>
+    </div>
+  );
+}
+
+function Field({
+  label,
+  name,
+  type = "text",
+  defaultValue = "",
+}: {
+  label: string;
+  name: string;
+  type?: string;
+  defaultValue?: string | number;
+}) {
+  return (
+    <div>
+      <label className="mb-2 block text-sm text-neutral-300">{label}</label>
+
+      <input
+        name={name}
+        type={type}
+        defaultValue={defaultValue}
+        step={type === "number" ? "0.01" : undefined}
+        className="w-full rounded-xl border border-white/10 bg-white/5 px-4 py-3 text-white outline-none focus:border-[#fb5411]"
+      />
+    </div>
+  );
+}
+
+function TextArea({
+  label,
+  name,
+  defaultValue = "",
+  rows = 4,
+}: {
+  label: string;
+  name: string;
+  defaultValue?: string;
+  rows?: number;
+}) {
+  return (
+    <div>
+      <label className="mb-2 block text-sm text-neutral-300">{label}</label>
+
+      <textarea
+        name={name}
+        rows={rows}
+        defaultValue={defaultValue}
+        className="w-full rounded-xl border border-white/10 bg-white/5 px-4 py-3 text-white outline-none focus:border-[#fb5411]"
+      />
+    </div>
+  );
+}
