@@ -2,19 +2,6 @@
 
 import { useMemo, useState } from "react";
 
-const GOOGLE_FORM_ACTION =
-  "https://docs.google.com/forms/d/e/1FAIpQLSemG35X0R91Sdd-wt1OS-3Fxir9FBzsyPX0xws55ihM5bQ2-g/formResponse";
-
-const ENTRY = {
-  name: "entry.1515559186",
-  phone: "entry.1408470442",
-  email: "entry.1735989640",
-  zip: "entry.1141022115",
-  projectCategory: "entry.277952424",
-  projectType: "entry.1821304697",
-  comments: "entry.1864356264",
-};
-
 type FormState = {
   name: string;
   phone: string;
@@ -73,19 +60,13 @@ function SelectChevron() {
   );
 }
 
-// Option 1 fix:
-// Accept either:
-// - 10-digit US number
-// - 11-digit number starting with 1
-// Display as either:
-// - (202) 555-1234
-// - +1 (202) 555-1234
 function normalizePhone(value: string) {
   const raw = value.replace(/[^\d+]/g, "");
   const hasLeadingPlus = raw.startsWith("+");
   const digits = raw.replace(/\D/g, "");
 
   let normalizedDigits = digits;
+
   if (digits.startsWith("1")) {
     normalizedDigits = digits.slice(0, 11);
   } else {
@@ -94,11 +75,13 @@ function normalizePhone(value: string) {
 
   const hasCountryCode =
     normalizedDigits.length > 10 && normalizedDigits.startsWith("1");
+
   const local = hasCountryCode ? normalizedDigits.slice(1) : normalizedDigits;
 
   if (!local.length) return hasLeadingPlus ? "+" : "";
 
   let formattedLocal = "";
+
   if (local.length <= 3) {
     formattedLocal = local;
   } else if (local.length <= 6) {
@@ -232,6 +215,7 @@ export default function QuotePage() {
     });
 
     const currentErrors = validateForm(form);
+
     if (Object.keys(currentErrors).length > 0) {
       return;
     }
@@ -240,20 +224,26 @@ export default function QuotePage() {
     setSubmitting(true);
 
     try {
-      const fd = new FormData();
-      fd.append(ENTRY.name, form.name.trim());
-      fd.append(ENTRY.phone, normalizeSubmittedPhone(form.phone));
-      fd.append(ENTRY.email, form.email.trim());
-      fd.append(ENTRY.zip, form.zip.trim());
-      fd.append(ENTRY.projectCategory, form.projectCategory);
-      fd.append(ENTRY.projectType, form.projectType);
-      fd.append(ENTRY.comments, form.comments.trim());
-
-      await fetch(GOOGLE_FORM_ACTION, {
+      const res = await fetch("/api/quote-request", {
         method: "POST",
-        body: fd,
-        mode: "no-cors",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({
+          name: form.name.trim(),
+          phone: normalizeSubmittedPhone(form.phone),
+          email: form.email.trim(),
+          zip: form.zip.trim(),
+          projectCategory: form.projectCategory,
+          projectType: form.projectType,
+          comments: form.comments.trim(),
+        }),
       });
+
+      if (!res.ok) {
+        const data = await res.json().catch(() => null);
+        throw new Error(data?.error || "Failed to submit quote request.");
+      }
 
       setSubmitted(true);
 
@@ -262,8 +252,11 @@ export default function QuotePage() {
       }, 50);
     } catch (err) {
       console.error(err);
+
       setSubmitError(
-        "Something went wrong submitting the form. Please try again or call 301-441-4919."
+        err instanceof Error
+          ? err.message
+          : "Something went wrong submitting the form. Please try again or call 301-441-4919."
       );
     } finally {
       setSubmitting(false);
@@ -277,6 +270,7 @@ export default function QuotePage() {
           <h1 className="text-white text-3xl sm:text-4xl font-bold tracking-tight">
             Request a Free Quote
           </h1>
+
           <p className="text-white/75 mt-3 max-w-[720px]">
             Submitting this form initiates the estimation process. We’ll contact you
             within 24 hours to discuss your project and provide a firm quote based
@@ -299,6 +293,7 @@ export default function QuotePage() {
                 <h2 className="text-2xl font-semibold">
                   Thanks — we received your request.
                 </h2>
+
                 <p className="text-white/75 mt-2">
                   We’ll reach out within 24 hours. If it’s urgent, call{" "}
                   <a className="underline" href="tel:+13014414919">
@@ -313,7 +308,9 @@ export default function QuotePage() {
                 className="grid grid-cols-1 md:grid-cols-2 gap-5"
               >
                 <div>
-                  <label className="block text-white/85 text-sm mb-2">Name *</label>
+                  <label className="block text-white/85 text-sm mb-2">
+                    Name *
+                  </label>
                   <input
                     className={inputClass(Boolean(getFieldError("name")))}
                     value={form.name}
@@ -324,7 +321,9 @@ export default function QuotePage() {
                     aria-invalid={Boolean(getFieldError("name"))}
                   />
                   {getFieldError("name") && (
-                    <p className="mt-2 text-sm text-red-400">{getFieldError("name")}</p>
+                    <p className="mt-2 text-sm text-red-400">
+                      {getFieldError("name")}
+                    </p>
                   )}
                 </div>
 
@@ -335,7 +334,9 @@ export default function QuotePage() {
                   <input
                     className={inputClass(Boolean(getFieldError("phone")))}
                     value={form.phone}
-                    onChange={(e) => setField("phone", normalizePhone(e.target.value))}
+                    onChange={(e) =>
+                      setField("phone", normalizePhone(e.target.value))
+                    }
                     onBlur={() => markTouched("phone")}
                     placeholder="e.g. (202) 555-1234 or +1 (202) 555-1234"
                     inputMode="tel"
@@ -343,12 +344,16 @@ export default function QuotePage() {
                     aria-invalid={Boolean(getFieldError("phone"))}
                   />
                   {getFieldError("phone") && (
-                    <p className="mt-2 text-sm text-red-400">{getFieldError("phone")}</p>
+                    <p className="mt-2 text-sm text-red-400">
+                      {getFieldError("phone")}
+                    </p>
                   )}
                 </div>
 
                 <div>
-                  <label className="block text-white/85 text-sm mb-2">Email *</label>
+                  <label className="block text-white/85 text-sm mb-2">
+                    Email *
+                  </label>
                   <input
                     type="email"
                     className={inputClass(Boolean(getFieldError("email")))}
@@ -360,12 +365,16 @@ export default function QuotePage() {
                     aria-invalid={Boolean(getFieldError("email"))}
                   />
                   {getFieldError("email") && (
-                    <p className="mt-2 text-sm text-red-400">{getFieldError("email")}</p>
+                    <p className="mt-2 text-sm text-red-400">
+                      {getFieldError("email")}
+                    </p>
                   )}
                 </div>
 
                 <div>
-                  <label className="block text-white/85 text-sm mb-2">ZIP Code *</label>
+                  <label className="block text-white/85 text-sm mb-2">
+                    ZIP Code *
+                  </label>
                   <input
                     className={inputClass(Boolean(getFieldError("zip")))}
                     value={form.zip}
@@ -377,7 +386,9 @@ export default function QuotePage() {
                     aria-invalid={Boolean(getFieldError("zip"))}
                   />
                   {getFieldError("zip") && (
-                    <p className="mt-2 text-sm text-red-400">{getFieldError("zip")}</p>
+                    <p className="mt-2 text-sm text-red-400">
+                      {getFieldError("zip")}
+                    </p>
                   )}
                 </div>
 
@@ -391,13 +402,15 @@ export default function QuotePage() {
                         Boolean(getFieldError("projectCategory"))
                       )} appearance-none pr-12`}
                       value={form.projectCategory}
-                      onChange={(e) => setField("projectCategory", e.target.value)}
+                      onChange={(e) =>
+                        setField("projectCategory", e.target.value)
+                      }
                       onBlur={() => markTouched("projectCategory")}
                       aria-invalid={Boolean(getFieldError("projectCategory"))}
                     >
                       <option value="">Choose…</option>
-                      <option value="Residential">Residential</option>
-                      <option value="Commercial">Commercial</option>
+                      <option value="residential">Residential</option>
+                      <option value="commercial">Commercial</option>
                     </select>
                     <SelectChevron />
                   </div>
@@ -458,10 +471,13 @@ export default function QuotePage() {
                       type="checkbox"
                       className="mt-1 size-4 accent-[#fb5411]"
                       checked={form.disclaimer}
-                      onChange={(e) => setField("disclaimer", e.target.checked)}
+                      onChange={(e) =>
+                        setField("disclaimer", e.target.checked)
+                      }
                       onBlur={() => markTouched("disclaimer")}
                       aria-invalid={Boolean(getFieldError("disclaimer"))}
                     />
+
                     <span>
                       I understand that providing this information does not guarantee
                       service availability.
@@ -469,6 +485,7 @@ export default function QuotePage() {
                       me regarding my project inquiry.
                     </span>
                   </label>
+
                   {getFieldError("disclaimer") && (
                     <p className="mt-2 text-sm text-red-400">
                       {getFieldError("disclaimer")}
