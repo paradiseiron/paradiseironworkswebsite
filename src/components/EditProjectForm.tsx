@@ -3,7 +3,29 @@
 import { useRouter } from "next/navigation";
 import { useState } from "react";
 
-export default function EditProjectForm({ project }: { project: any }) {
+type EditableProject = {
+  id: string;
+  customer_name?: string | null;
+  contact_name?: string | null;
+  phone?: string | null;
+  email?: string | null;
+  project_address?: string | null;
+  city?: string | null;
+  state?: string | null;
+  zip_code?: string | null;
+  project_category?: string | null;
+  project_type?: string | null;
+  lead_source?: string | null;
+  priority?: string | null;
+  assigned_to?: string | null;
+  notes?: string | null;
+};
+
+export default function EditProjectForm({
+  project,
+}: {
+  project: EditableProject;
+}) {
   const router = useRouter();
   const [errorMessage, setErrorMessage] = useState("");
 
@@ -58,7 +80,7 @@ export default function EditProjectForm({ project }: { project: any }) {
           <Field
             label="Contact Name"
             name="contact_name"
-            defaultValue={project.contact_name}
+            defaultValue={project.contact_name || project.customer_name}
           />
 
           <Field label="Phone" name="phone" defaultValue={project.phone} />

@@ -1,5 +1,6 @@
 import { redirect } from "next/navigation";
 import { createClient } from "@/lib/supabase/server";
+import { requireAuthenticatedUser } from "@/lib/auth";
 
 export const dynamic = "force-dynamic";
 export const revalidate = 0;
@@ -7,6 +8,7 @@ export const revalidate = 0;
 async function createProject(formData: FormData) {
   "use server";
 
+  await requireAuthenticatedUser();
   const supabase = await createClient();
 
   const customer_name = String(formData.get("customer_name") || "");
@@ -24,10 +26,6 @@ async function createProject(formData: FormData) {
   const lead_source = String(formData.get("lead_source") || "");
   const priority = String(formData.get("priority") || "normal");
   const notes = String(formData.get("notes") || "");
-
-  const next_follow_up_at = String(
-    formData.get("next_follow_up_at") || ""
-  );
 
   if (!customer_name.trim()) {
     throw new Error("Customer name is required.");
@@ -54,7 +52,6 @@ async function createProject(formData: FormData) {
       priority,
       status: "lead",
       received_at: new Date().toISOString(),
-      next_follow_up_at: next_follow_up_at || null,
       notes,
     })
     .select("id")
@@ -80,15 +77,7 @@ async function createProject(formData: FormData) {
 }
 
 export default async function NewProjectPage() {
-  const supabase = await createClient();
-
- const {
-  data: { session },
-} = await supabase.auth.getSession();
-
-if (!session) {
-  redirect("/login");
-}
+  await requireAuthenticatedUser();
 
   return (
     <div>
@@ -276,18 +265,6 @@ if (!session) {
                 },
               ]}
             />
-
-            <div>
-              <label className="mb-2 block text-sm text-neutral-300">
-                Next Follow-Up
-              </label>
-
-              <input
-                name="next_follow_up_at"
-                type="date"
-                className="w-full rounded-xl border border-white/10 bg-white/5 px-4 py-3 text-white outline-none focus:border-[#fb5411]"
-              />
-            </div>
 
             <div className="md:col-span-2">
               <label className="mb-2 block text-sm text-neutral-300">

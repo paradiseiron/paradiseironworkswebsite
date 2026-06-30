@@ -3,12 +3,19 @@
 import { revalidatePath } from "next/cache";
 import { redirect } from "next/navigation";
 import { createClient } from "@/lib/supabase/server";
+import { requireAuthenticatedUser } from "@/lib/auth";
 
 export async function resolveFollowUp(formData: FormData) {
+  await requireAuthenticatedUser();
   const supabase = await createClient();
 
   const project_id = String(formData.get("project_id") || "");
-  const return_path = String(formData.get("return_path") || "/admin/projects");
+  const requestedReturnPath = String(
+    formData.get("return_path") || "/admin/projects"
+  );
+  const return_path = requestedReturnPath.startsWith("/admin/")
+    ? requestedReturnPath
+    : "/admin/projects";
   const resolution_note = String(formData.get("resolution_note") || "");
 
   if (!project_id) {

@@ -1,6 +1,7 @@
 import { NextResponse } from "next/server";
 import puppeteer from "puppeteer";
 import { createClient } from "@/lib/supabase/server";
+import { requireAuthenticatedUser } from "@/lib/auth";
 
 export const dynamic = "force-dynamic";
 
@@ -8,6 +9,7 @@ export async function GET(
   request: Request,
   context: { params: Promise<{ id: string }> }
 ) {
+  await requireAuthenticatedUser();
   const { id } = await context.params;
 
   const supabase = await createClient();

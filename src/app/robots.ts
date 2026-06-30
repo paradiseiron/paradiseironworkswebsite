@@ -5,6 +5,7 @@ export default function robots(): MetadataRoute.Robots {
     rules: {
       userAgent: "*",
       allow: "/",
+      disallow: ["/admin/", "/api/", "/login"],
     },
     sitemap: "https://www.paradiseironworks.com/sitemap.xml",
   };

@@ -1,5 +1,20 @@
 This is a [Next.js](https://nextjs.org) project bootstrapped with [`create-next-app`](https://nextjs.org/docs/app/api-reference/cli/create-next-app).
 
+## Lead notification email
+
+Website quote requests are saved even if notification delivery fails. Configure
+these deployment environment variables to send the internal notification:
+
+```text
+RESEND_API_KEY=re_...
+LEAD_NOTIFICATION_FROM_EMAIL=Paradise Ironworks Website <website@paradiseironworks.com>
+LEAD_NOTIFICATION_TO_EMAIL=info@paradiseironworks.com
+NEXT_PUBLIC_SITE_URL=https://www.paradiseironworks.com
+```
+
+The sender domain must be verified with Resend. Apply the Supabase migration in
+`supabase/migrations` before deploying the unread-lead interface.
+
 ## Getting Started
 
 First, run the development server:

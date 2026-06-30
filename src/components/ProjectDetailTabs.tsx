@@ -1,14 +1,62 @@
 "use client";
 
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { useSearchParams } from "next/navigation";
+import { CheckCircle2, X } from "lucide-react";
 import AddProjectActivityModal from "@/components/AddProjectActivityModal";
 
 type ProjectTab = "overview" | "proposal" | "timeline" | "invoice";
 
+type ProjectRecord = {
+  id: string;
+  customer_name?: string | null;
+  contact_name?: string | null;
+  phone?: string | null;
+  email?: string | null;
+  lead_source?: string | null;
+  project_address?: string | null;
+  city?: string | null;
+  state?: string | null;
+  zip_code?: string | null;
+  project_category?: string | null;
+  status?: string | null;
+  notes?: string | null;
+  received_at?: string | null;
+  has_open_follow_up?: boolean | null;
+  latest_follow_up_note?: string | null;
+  latest_follow_up_due_at?: string | null;
+  proposal_number?: string | null;
+  proposal_amount?: number | null;
+  proposal_project_name?: string | null;
+  proposal_attention?: string | null;
+  proposal_office_phone?: string | null;
+  proposal_cell_phone?: string | null;
+  proposal_email?: string | null;
+  proposal_intro?: string | null;
+  proposal_scope?: string | null;
+  proposal_finish?: string | null;
+  proposal_exclusions?: string | null;
+  proposal_pricing?: string | null;
+  proposal_deposit_amount?: number | null;
+  proposal_payment_terms?: string | null;
+  proposal_schedule?: string | null;
+  proposal_clarifications?: string | null;
+  proposal_prepared_by?: string | null;
+  proposal_prepared_by_title?: string | null;
+};
+
+type ProjectActivity = {
+  id: string;
+  activity_type?: string | null;
+  summary?: string | null;
+  activity_date?: string | null;
+  requires_follow_up?: boolean | null;
+  follow_up_note?: string | null;
+};
+
 type Props = {
-  project: any;
-  activities: any[] | null;
+  project: ProjectRecord;
+  activities: ProjectActivity[] | null;
   updateProjectStatus: (formData: FormData) => void;
   updateProposal: (formData: FormData) => void;
   addProjectActivity: (formData: FormData) => void;
@@ -23,6 +71,10 @@ export default function ProjectDetailTabs({
 }: Props) {
   const searchParams = useSearchParams();
   const initialTab = searchParams.get("tab");
+  const initialToast =
+    searchParams.get("toast") === "status-updated"
+      ? "Project status updated successfully."
+      : "";
 
   const [tab, setTab] = useState<ProjectTab>(
     initialTab === "proposal" ||
@@ -31,6 +83,47 @@ export default function ProjectDetailTabs({
       ? initialTab
       : "overview"
   );
+  const [toast, setToast] = useState(initialToast);
+  const [toastVisible, setToastVisible] = useState(false);
+
+  useEffect(() => {
+    if (!toast) return;
+
+    const showTimer = window.setTimeout(() => setToastVisible(true), 20);
+    const hideTimer = window.setTimeout(() => setToastVisible(false), 3500);
+    const removeTimer = window.setTimeout(() => {
+      setToast("");
+      const params = new URLSearchParams(window.location.search);
+      params.delete("toast");
+      const query = params.toString();
+      window.history.replaceState(
+        null,
+        "",
+        `${window.location.pathname}${query ? `?${query}` : ""}`
+      );
+    }, 3800);
+
+    return () => {
+      window.clearTimeout(showTimer);
+      window.clearTimeout(hideTimer);
+      window.clearTimeout(removeTimer);
+    };
+  }, [toast]);
+
+  function dismissToast() {
+    setToastVisible(false);
+    window.setTimeout(() => {
+      setToast("");
+      const params = new URLSearchParams(window.location.search);
+      params.delete("toast");
+      const query = params.toString();
+      window.history.replaceState(
+        null,
+        "",
+        `${window.location.pathname}${query ? `?${query}` : ""}`
+      );
+    }, 300);
+  }
 
   function handleTabChange(nextTab: ProjectTab) {
     setTab(nextTab);
@@ -44,6 +137,31 @@ export default function ProjectDetailTabs({
 
   return (
     <div>
+      {toast && (
+        <div
+          role="status"
+          className={`fixed right-6 top-24 z-50 flex w-[min(420px,calc(100vw-3rem))] items-start gap-3 rounded-2xl border border-emerald-500/30 bg-neutral-900 p-4 text-emerald-100 shadow-2xl transition-all duration-300 ${
+            toastVisible
+              ? "translate-y-0 opacity-100"
+              : "-translate-y-3 opacity-0"
+          }`}
+        >
+          <CheckCircle2
+            className="mt-0.5 h-5 w-5 shrink-0 text-emerald-400"
+            aria-hidden="true"
+          />
+          <p className="flex-1 text-sm font-medium">{toast}</p>
+          <button
+            type="button"
+            onClick={dismissToast}
+            aria-label="Dismiss notification"
+            className="cursor-pointer rounded-md p-0.5 text-emerald-200/60 transition hover:bg-white/5 hover:text-white"
+          >
+            <X className="h-4 w-4" aria-hidden="true" />
+          </button>
+        </div>
+      )}
+
       <div className="mb-6 flex gap-2 border-b border-white/10">
         {(["overview", "proposal", "timeline", "invoice"] as ProjectTab[]).map(
           (item) => (
@@ -69,7 +187,10 @@ export default function ProjectDetailTabs({
             <h2 className="text-xl font-semibold">Project Details</h2>
 
             <div className="mt-6 grid gap-5 md:grid-cols-2">
-              <Detail label="Contact Name" value={project.contact_name} />
+              <Detail
+                label="Contact Name"
+                value={project.contact_name || project.customer_name}
+              />
               <Detail label="Phone" value={project.phone} />
               <Detail label="Email" value={project.email} />
               <Detail label="Source" value={project.lead_source} />
@@ -83,15 +204,6 @@ export default function ProjectDetailTabs({
                 value={
                   project.received_at
                     ? new Date(project.received_at).toLocaleDateString()
-                    : null
-                }
-              />
-
-              <Detail
-                label="Next Follow-Up"
-                value={
-                  project.next_follow_up_at
-                    ? new Date(project.next_follow_up_at).toLocaleDateString()
                     : null
                 }
               />
@@ -123,7 +235,7 @@ export default function ProjectDetailTabs({
                   <div className="relative flex-1">
                     <select
                       name="status"
-                      defaultValue={project.status}
+                      defaultValue={project.status || "lead"}
                       className="w-full appearance-none rounded-xl border border-white/10 bg-neutral-900 px-4 py-3 pr-12 text-white outline-none focus:border-[#fb5411]"
                     >
                       <option value="lead">Lead</option>
@@ -154,7 +266,7 @@ export default function ProjectDetailTabs({
 
                   <button
                     type="submit"
-                    className="inline-flex items-center gap-2 text-sm font-medium text-[#fb5411] transition hover:text-[#ff6a2b]"
+                    className="inline-flex h-11 cursor-pointer items-center gap-2 rounded-xl border border-white/10 bg-white/[0.03] px-4 text-sm font-semibold text-neutral-200 transition hover:border-white/20 hover:bg-white/10 hover:text-white"
                   >
                     <svg
                       xmlns="http://www.w3.org/2000/svg"
@@ -222,7 +334,7 @@ export default function ProjectDetailTabs({
             <input
               type="hidden"
               name="project_category"
-              value={project.project_category}
+              value={project.project_category || ""}
             />
             <input
               type="hidden"
@@ -364,7 +476,7 @@ export default function ProjectDetailTabs({
 
             <AddProjectActivityModal
               projectId={project.id}
-              hasOpenFollowUp={project.has_open_follow_up}
+              hasOpenFollowUp={Boolean(project.has_open_follow_up)}
               currentFollowUpNote={project.latest_follow_up_note}
               currentFollowUpDueAt={project.latest_follow_up_due_at}
               action={addProjectActivity}
@@ -379,7 +491,7 @@ export default function ProjectDetailTabs({
                   className="rounded-xl border border-white/10 bg-white/[0.02] p-4"
                 >
                   <p className="font-medium capitalize text-white">
-                    {activity.activity_type.replaceAll("_", " ")}
+                    {(activity.activity_type || "activity").replaceAll("_", " ")}
                   </p>
 
                   <p className="mt-1 text-xs text-neutral-500">
@@ -419,7 +531,7 @@ export default function ProjectDetailTabs({
         <section className="rounded-2xl border border-white/10 bg-white/[0.03] p-6">
           <h2 className="text-xl font-semibold">Invoice</h2>
 
-          {["active", "completed"].includes(project.status) ? (
+          {["active", "completed"].includes(project.status || "") ? (
             <div className="mt-4">
               <p className="text-sm text-neutral-400">
                 Invoice creation will live here. This should unlock once the job

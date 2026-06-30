@@ -1,9 +1,10 @@
 import { notFound, redirect } from "next/navigation";
-import { createClient } from "@/lib/supabase/server";
 import { createAdminClient } from "@/lib/supabase/admin";
 import ProjectDetailTabs from "@/components/ProjectDetailTabs";
 import FollowUpAlertModal from "@/components/FollowUpAlertModal";
 import { resolveFollowUp } from "@/app/admin/projects/actions";
+import { requireAuthenticatedUser } from "@/lib/auth";
+import NewWebsiteLeadAlert from "@/components/NewWebsiteLeadAlert";
 
 export const dynamic = "force-dynamic";
 export const revalidate = 0;
@@ -31,6 +32,7 @@ async function generateProposalNumber(
 async function updateProjectStatus(formData: FormData) {
   "use server";
 
+  await requireAuthenticatedUser();
   const supabase = createAdminClient();
 
   const project_id = String(formData.get("project_id") || "");
@@ -61,12 +63,13 @@ async function updateProjectStatus(formData: FormData) {
         : `Project status changed to ${status}.`,
   });
 
-  redirect(`/admin/projects/${project_id}`);
+  redirect(`/admin/projects/${project_id}?toast=status-updated`);
 }
 
 async function updateProposal(formData: FormData) {
   "use server";
 
+  await requireAuthenticatedUser();
   const supabase = createAdminClient();
 
   const project_id = String(formData.get("project_id") || "");
@@ -141,6 +144,7 @@ async function updateProposal(formData: FormData) {
 async function addProjectActivity(formData: FormData) {
   "use server";
 
+  await requireAuthenticatedUser();
   const supabase = createAdminClient();
 
   const project_id = String(formData.get("project_id") || "");
@@ -194,13 +198,7 @@ export default async function ProjectDetailPage({
 }) {
   const { id } = await params;
 
-  const authSupabase = await createClient();
-
- const {
-  data: { session },
-} = await authSupabase.auth.getSession();
-
-if (!session) redirect("/login");
+  await requireAuthenticatedUser();
 
   const supabase = createAdminClient();
 
@@ -225,8 +223,15 @@ if (!session) redirect("/login");
     );
   }
 
+  const isNewWebsiteLead =
+    project.lead_source === "Website" && !project.website_lead_reviewed_at;
+
   return (
     <div>
+      {isNewWebsiteLead && (
+        <NewWebsiteLeadAlert projectId={String(project.id)} />
+      )}
+
       <div className="mt-0 flex flex-wrap items-start justify-between gap-4">
         <div>
           <h1 className="text-3xl font-semibold">{project.customer_name}</h1>

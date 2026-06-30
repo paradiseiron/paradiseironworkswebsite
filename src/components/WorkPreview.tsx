@@ -13,7 +13,7 @@ type NextImageLike = StaticImageData | string;
 
 function asNextImageSrc(src: unknown): NextImageLike {
   if (typeof src === "string") return src;
-  if (src && typeof src === "object" && "src" in (src as any)) return src as StaticImageData;
+  if (src && typeof src === "object" && "src" in src) return src as StaticImageData;
   return "";
 }
 

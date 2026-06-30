@@ -244,6 +244,207 @@ html {
     opacity: 0;
   }
 }
+
+/* Admin light theme. Scoped so the public marketing site is unaffected. */
+.admin-shell[data-theme="light"] {
+  background: #f5f5f4;
+  color: #171717;
+  color-scheme: light;
+}
+
+.admin-shell[data-theme="light"] .admin-sidebar {
+  background: rgba(255, 255, 255, 0.92);
+  border-color: rgba(0, 0, 0, 0.1);
+}
+
+.admin-shell[data-theme="light"] .admin-header {
+  background: rgba(245, 245, 244, 0.88);
+  border-color: rgba(0, 0, 0, 0.1);
+}
+
+.admin-shell[data-theme="light"] .admin-profile-popover,
+.admin-shell[data-theme="light"] [class~="bg-neutral-900"],
+.admin-shell[data-theme="light"] [class~="bg-neutral-950"] {
+  background-color: #fff;
+}
+
+.admin-shell[data-theme="light"] [class*="bg-neutral-950/"] {
+  background-color: rgba(255, 255, 255, 0.9);
+}
+
+.admin-shell[data-theme="light"] [class*="bg-white/"] {
+  background-color: rgba(0, 0, 0, 0.035);
+}
+
+.admin-shell[data-theme="light"] [class*="border-white/"] {
+  border-color: rgba(0, 0, 0, 0.12);
+}
+
+.admin-shell[data-theme="light"] [class~="text-white"],
+.admin-shell[data-theme="light"] [class~="text-neutral-200"] {
+  color: #171717;
+}
+
+.admin-shell[data-theme="light"] [class~="text-neutral-300"] {
+  color: #404040;
+}
+
+.admin-shell[data-theme="light"] [class~="text-neutral-400"] {
+  color: #525252;
+}
+
+.admin-shell[data-theme="light"] [class~="text-neutral-500"] {
+  color: #666;
+}
+
+.admin-shell[data-theme="light"] input,
+.admin-shell[data-theme="light"] textarea,
+.admin-shell[data-theme="light"] select {
+  background-color: #fff;
+  border-color: #767676;
+  color: #171717;
+  color-scheme: light;
+}
+
+.admin-shell[data-theme="light"] input::placeholder,
+.admin-shell[data-theme="light"] textarea::placeholder {
+  color: #666;
+}
+
+.admin-shell[data-theme="light"] :focus-visible {
+  outline: 2px solid #b83200;
+  outline-offset: 2px;
+}
+
+.admin-shell[data-theme="light"] [class*="text-[#fb5411]"] {
+  color: #d9470d;
+}
+
+.admin-shell[data-theme="light"] [class*="hover:text-[#ff6a2b]"]:hover {
+  color: #c83d08;
+}
+
+.admin-shell[data-theme="light"] [class*="hover:text-white"]:hover {
+  color: #171717;
+}
+
+.admin-shell[data-theme="light"] [class~="bg-[#fb5411]"] {
+  background-color: #e64d0f;
+  color: #fff;
+}
+
+.admin-shell[data-theme="light"] [class~="bg-[#e64d0f]"],
+.admin-shell[data-theme="light"] [class~="hover:bg-[#e64d0f]"]:hover {
+  background-color: #d9470d;
+  color: #fff;
+}
+
+.admin-shell[data-theme="light"] [class*="hover:bg-white/"]:hover {
+  background-color: rgba(0, 0, 0, 0.07);
+}
+
+.admin-shell[data-theme="light"] [class*="text-yellow-"] {
+  color: #a16207;
+}
+
+.admin-shell[data-theme="light"] [class*="text-amber-"] {
+  color: #b45309;
+}
+
+.admin-shell[data-theme="light"] [class*="text-emerald-"] {
+  color: #059669;
+}
+
+.admin-shell[data-theme="light"] [class*="text-green-"] {
+  color: #16a34a;
+}
+
+.admin-shell[data-theme="light"] [class*="text-red-"] {
+  color: #dc2626;
+}
+
+.admin-shell[data-theme="light"] [class*="text-sky-"] {
+  color: #0284c7;
+}
+
+.admin-shell[data-theme="light"] [class~="bg-yellow-500"] {
+  background-color: #eab308;
+}
+
+.admin-shell[data-theme="light"] [class~="bg-amber-500"] {
+  background-color: #f59e0b;
+}
+
+.admin-shell[data-theme="light"] [class~="bg-emerald-500"] {
+  background-color: #10b981;
+}
+
+.admin-shell[data-theme="light"] [class~="bg-green-500"] {
+  background-color: #22c55e;
+}
+
+.admin-shell[data-theme="light"] [class~="bg-neutral-500"] {
+  background-color: #525252;
+}
+
+.admin-shell[data-theme="light"] [class*="border-yellow-500/20"] {
+  border-color: #eab308;
+}
+
+.admin-shell[data-theme="light"] [class*="border-amber-500/20"] {
+  border-color: #f59e0b;
+}
+
+.admin-shell[data-theme="light"] [class*="border-emerald-500/20"] {
+  border-color: #10b981;
+}
+
+.admin-shell[data-theme="light"] [class*="border-green-500/20"] {
+  border-color: #22c55e;
+}
+
+.admin-shell[data-theme="light"] [class*="border-neutral-500/20"] {
+  border-color: #737373;
+}
+
+.admin-shell[data-theme="light"] [class*="border-[#fb5411]/20"] {
+  border-color: #fb5411;
+}
+
+.admin-shell[data-theme="light"] [class*="border-[#fb5411]/40"] {
+  border-color: #fb5411;
+  color: #d9470d;
+}
+
+.admin-shell[data-theme="light"] .admin-lead-graph-track {
+  border-color: #737373;
+}
+
+.admin-shell[data-theme="light"] .admin-lead-graph-fill {
+  background-color: #525252;
+  border-color: #525252;
+}
+
+html[data-admin-theme="light"] [role="alertdialog"] {
+  background-color: #fff;
+  border-color: rgba(0, 0, 0, 0.12);
+  color: #171717;
+  color-scheme: light;
+}
+
+html[data-admin-theme="light"] [role="alertdialog"] [class~="text-white"] {
+  color: #171717;
+}
+
+html[data-admin-theme="light"] [role="alertdialog"] [class*="text-neutral-"] {
+  color: #525252;
+}
+
+html[data-admin-theme="light"] [role="alertdialog"] :focus-visible {
+  outline: 2px solid #b83200;
+  outline-offset: 2px;
+}
+
 @layer base {
   /* Tell the browser these controls are dark-themed */
   .dark,

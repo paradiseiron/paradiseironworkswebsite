@@ -3,7 +3,7 @@ import Image from "next/image";
 import Link from "next/link";
 
 // Adjust these imports to match your project
-import { projects } from "@/data/projects";
+import { projects, type ProjectDetails } from "@/data/projects";
 
 function PhoneIcon({ className = "" }: { className?: string }) {
   return (
@@ -44,13 +44,13 @@ type ServiceConfig = {
   description: string;
   exampleWork: string[];
   heroPosition?: string;
-  matchesProject: (p: any) => boolean;
+  matchesProject: (project: ProjectDetails) => boolean;
 
   // Optional (commercial / structural)
   credentials?: ServiceCredentials;
 };
 
-function ProjectCard({ project }: { project: any }) {
+function ProjectCard({ project }: { project: ProjectDetails }) {
   return (
     <Link
       href={`/ironwork-projects/${project.slug}`}
@@ -307,7 +307,7 @@ export function ServicePage({ service }: { service: ServiceConfig }) {
 
         {featured.length ? (
           <div className="mt-8 grid gap-6 md:grid-cols-2 lg:grid-cols-3">
-            {featured.map((p: any) => (
+            {featured.map((p) => (
               <ProjectCard key={p.slug} project={p} />
             ))}
           </div>

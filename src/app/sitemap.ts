@@ -9,11 +9,12 @@ export default function sitemap(): MetadataRoute.Sitemap {
     "/about",
     "/contact",
     "/quote",
-    "/reviews",
-    "/faq",
-    "/service-areas",
-    "/work",
     "/ironwork-projects",
+    "/services/residential",
+    "/services/commercial",
+    "/services/structural",
+    "/privacy",
+    "/terms",
   ];
 
   const staticUrls = staticRoutes.map((route) => ({

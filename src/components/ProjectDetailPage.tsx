@@ -1,7 +1,7 @@
 // src/components/ProjectDetailPage.tsx
 "use client";
 
-import { useEffect, useMemo, useState } from "react";
+import { useEffect, useState } from "react";
 import Image from "next/image";
 import Link from "next/link";
 import {
@@ -28,7 +28,7 @@ export default function ProjectDetailsPage({
 
   const hasMany = images.length > 1;
 
-  const currentImage = useMemo(() => images[current], [images, current]);
+  const currentImage = images[current];
 
   const openLightbox = (index: number) => {
     setCurrent(index);
@@ -48,8 +48,12 @@ export default function ProjectDetailsPage({
     const onKeyDown = (e: KeyboardEvent) => {
       if (e.key === "Escape") closeLightbox();
       if (!hasMany) return;
-      if (e.key === "ArrowRight") next();
-      if (e.key === "ArrowLeft") prev();
+      if (e.key === "ArrowRight") {
+        setCurrent((value) => (value + 1) % images.length);
+      }
+      if (e.key === "ArrowLeft") {
+        setCurrent((value) => (value - 1 + images.length) % images.length);
+      }
     };
 
     document.addEventListener("keydown", onKeyDown);

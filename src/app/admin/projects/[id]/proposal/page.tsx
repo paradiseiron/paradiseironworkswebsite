@@ -1,6 +1,7 @@
-import { notFound, redirect } from "next/navigation";
+import { notFound } from "next/navigation";
+import Image from "next/image";
 import { createClient } from "@/lib/supabase/server";
-import Link from "next/link";
+import { requireAuthenticatedUser } from "@/lib/auth";
 
 export default async function ProposalPreviewPage({
   params,
@@ -10,14 +11,7 @@ export default async function ProposalPreviewPage({
   const { id } = await params;
 
   const supabase = await createClient();
-
-  const {
-  data: { session },
-} = await supabase.auth.getSession();
-
-if (!session) {
-  redirect("/login");
-}
+  await requireAuthenticatedUser();
 
   const { data: project, error } = await supabase
     .from("projects")
@@ -67,9 +61,11 @@ if (!session) {
       </div>
     </div>
 
-    <img
+    <Image
       src="/images/paradise_ironworks_logo.png"
       alt="Paradise Ironworks Logo"
+      width={320}
+      height={160}
       className="h-24 w-auto object-contain"
     />
   </div>

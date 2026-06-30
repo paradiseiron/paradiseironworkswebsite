@@ -1,7 +1,7 @@
 import Header from '@/components/Header';
 import Footer from '@/components/footer';
 
-const SITE_URL = 'https://paradiseironworks.com';
+const SITE_URL = 'https://www.paradiseironworks.com';
 
 export default function MarketingLayout({
   children,
@@ -14,7 +14,7 @@ export default function MarketingLayout({
     '@id': `${SITE_URL}/#localbusiness`,
     name: 'Paradise Ironworks & Construction',
     url: SITE_URL,
-    image: `${SITE_URL}/images/logo.png`,
+    image: `${SITE_URL}/images/paradise_ironworks_logo.png`,
     telephone: '+1-202-309-6610',
     description:
       'Custom ironwork, metal railings, gates, structural steel, and ornamental metal fabrication serving Washington DC, Maryland, and Northern Virginia.',

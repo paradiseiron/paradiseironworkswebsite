@@ -26,8 +26,14 @@ export default function LoginPage() {
       return;
     }
 
+    const requestedPath = new URLSearchParams(window.location.search).get("next");
+    const destination =
+      requestedPath?.startsWith("/admin/") && !requestedPath.startsWith("//")
+        ? requestedPath
+        : "/admin";
+
     router.refresh();
-    router.push("/admin");
+    router.push(destination);
   }
 
   return (

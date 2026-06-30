@@ -116,7 +116,7 @@ export default function Footer() {
               <li>Fairfax, VA</li>
               <li>Anne Arundel County, MD</li>
               <li>Baltimore County, MD</li>
-              <li>Prince George's County, MD</li>
+              <li>Prince George&apos;s County, MD</li>
               <li>Montgomery County, MD</li>
             </ul>
           </div>

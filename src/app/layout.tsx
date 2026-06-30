@@ -16,7 +16,11 @@ const montserrat = Montserrat({
 });
 
 export const metadata: Metadata = {
-  title: 'Paradise Ironworks - Custom Ironwork That Stands the Test of Time',
+  metadataBase: new URL('https://www.paradiseironworks.com'),
+  title: {
+    default: 'Paradise Ironworks - Custom Ironwork That Stands the Test of Time',
+    template: '%s | Paradise Ironworks',
+  },
   description:
     'Expert fabrication and installation of custom iron gates, railings, stairs, and architectural metalwork for residential and commercial properties.',
 };
