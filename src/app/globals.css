@@ -1,5 +1,35 @@
 @import "tailwindcss";
 
+@page {
+  size: letter;
+  margin: 0.45in 0.4in 0.7in;
+}
+
+@media print {
+  .proposal-document {
+    padding: 0;
+  }
+
+  .proposal-document header,
+  .proposal-document section:last-child {
+    break-inside: avoid;
+  }
+
+  .proposal-document section {
+    break-before: auto;
+    orphans: 4;
+    widows: 4;
+  }
+
+  .proposal-document section > h2 {
+    break-after: avoid;
+  }
+
+  .proposal-document section > h2 + * {
+    break-before: avoid;
+  }
+}
+
 @custom-variant dark (&:is(.dark *));
 
 :root {

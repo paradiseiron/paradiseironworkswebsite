@@ -33,8 +33,8 @@ export default async function ProposalPreviewPage({
     .join(", ");
 
   return (
-    <main className="min-h-screen bg-neutral-200 px-6 py-10 text-neutral-950 print:bg-white print:p-0">
-     <article className="mx-auto max-w-[850px] bg-white px-14 py-12 shadow-xl print:max-w-none print:shadow-none">
+    <main className="min-h-screen bg-neutral-200 px-6 py-10 text-neutral-950 print:min-h-0 print:bg-white print:p-0">
+     <article className="proposal-document mx-auto max-w-[850px] bg-white px-14 py-12 shadow-xl print:max-w-none print:shadow-none">
 
 
        <header className="border-b border-neutral-300 pb-6">

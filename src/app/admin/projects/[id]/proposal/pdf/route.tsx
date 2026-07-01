@@ -4,6 +4,7 @@ import { createClient } from "@/lib/supabase/server";
 import { requireAuthenticatedUser } from "@/lib/auth";
 
 export const dynamic = "force-dynamic";
+export const runtime = "nodejs";
 
 export async function GET(
   request: Request,
@@ -11,7 +12,6 @@ export async function GET(
 ) {
   await requireAuthenticatedUser();
   const { id } = await context.params;
-
   const supabase = await createClient();
 
   const { data: project, error } = await supabase
@@ -25,45 +25,67 @@ export async function GET(
   }
 
   const origin = new URL(request.url).origin;
-  const proposalUrl = `${origin}/admin/projects/${id}/proposal?pdf=1`;
-
-  const cookieHeader = request.headers.get("cookie") || "";
-
-  const browser = await puppeteer.launch({
-    headless: true,
-  });
+  const proposalUrl = `${origin}/admin/projects/${id}/proposal`;
+  const browser = await puppeteer.launch({ headless: true });
 
   try {
     const page = await browser.newPage();
+    const cookieHeader = request.headers.get("cookie");
 
-    await page.setExtraHTTPHeaders({
-      cookie: cookieHeader,
-    });
+    if (cookieHeader) {
+      await page.setExtraHTTPHeaders({ cookie: cookieHeader });
+    }
 
-    await page.goto(proposalUrl, {
+    const response = await page.goto(proposalUrl, {
       waitUntil: "networkidle0",
     });
 
+    if (!response?.ok()) {
+      throw new Error(
+        `Proposal preview returned ${response?.status() ?? "no response"}`
+      );
+    }
+
+    await page.emulateMediaType("print");
+    await page.evaluate(async () => {
+      await document.fonts.ready;
+      await Promise.all(
+        Array.from(document.images)
+          .filter((image) => !image.complete)
+          .map(
+            (image) =>
+              new Promise<void>((resolve) => {
+                image.addEventListener("load", () => resolve(), { once: true });
+                image.addEventListener("error", () => resolve(), { once: true });
+              })
+          )
+      );
+    });
+
     const pdfBuffer = await page.pdf({
-  format: "Letter",
-  printBackground: true,
-  margin: {
-    top: "0.4in",
-    right: "0.4in",
-    bottom: "0.4in",
-    left: "0.4in",
-  },
-});
+      format: "Letter",
+      printBackground: true,
+      preferCSSPageSize: true,
+    });
+    const filename = safeFilename(project.proposal_number || "proposal");
 
     return new NextResponse(Buffer.from(pdfBuffer), {
       headers: {
         "Content-Type": "application/pdf",
-        "Content-Disposition": `attachment; filename="${
-          project.proposal_number || "proposal"
-        }.pdf"`,
+        "Content-Disposition": `attachment; filename="${filename}.pdf"`,
+        "Cache-Control": "private, no-store",
       },
+    });
+  } catch (error) {
+    console.error("Proposal PDF generation failed:", error);
+    return new NextResponse("Unable to generate proposal PDF.", {
+      status: 500,
     });
   } finally {
     await browser.close();
   }
+}
+
+function safeFilename(value: string) {
+  return value.replace(/[^a-zA-Z0-9_-]/g, "-").replace(/-+/g, "-");
 }
