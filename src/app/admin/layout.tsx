@@ -2,7 +2,6 @@ import type { Metadata, Viewport } from "next";
 import AdminShell from "@/components/AdminShell";
 import AdminPwa from "@/components/AdminPwa";
 import { requireAuthenticatedUser } from "@/lib/auth";
-import { getProposalRenderProjectId } from "@/lib/proposal-render-auth";
 
 export const metadata: Metadata = {
   title: "Admin",
@@ -27,11 +26,10 @@ export default async function AdminLayout({
 }: {
   children: React.ReactNode;
 }) {
-  const renderProjectId = await getProposalRenderProjectId();
-  const user = renderProjectId ? null : await requireAuthenticatedUser();
+  const user = await requireAuthenticatedUser();
 
   return (
-    <AdminShell userEmail={user?.email}>
+    <AdminShell userEmail={user.email}>
       {children}
       <AdminPwa />
     </AdminShell>

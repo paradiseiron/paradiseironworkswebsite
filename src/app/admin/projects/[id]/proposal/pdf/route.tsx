@@ -1,21 +1,21 @@
-import { NextRequest, NextResponse } from "next/server";
-import puppeteer from "puppeteer";
-import type { Browser, BrowserContext, Page } from "puppeteer";
+import { NextResponse } from "next/server";
+import {
+  Document,
+  Image,
+  Page,
+  StyleSheet,
+  Text,
+  View,
+  renderToBuffer,
+} from "@react-pdf/renderer";
 import { createClient } from "@/lib/supabase/server";
 import { requireAuthenticatedUser } from "@/lib/auth";
-import {
-  createProposalRenderToken,
-  PROPOSAL_RENDER_COOKIE,
-} from "@/lib/proposal-render-auth";
 
 export const dynamic = "force-dynamic";
 export const runtime = "nodejs";
 
-let browserInstance: Browser | null = null;
-let browserLaunch: Promise<Browser> | null = null;
-
 export async function GET(
-  request: NextRequest,
+  request: Request,
   context: { params: Promise<{ id: string }> }
 ) {
   await requireAuthenticatedUser();
@@ -24,7 +24,7 @@ export async function GET(
 
   const { data: project, error } = await supabase
     .from("projects")
-    .select("proposal_number")
+    .select("*")
     .eq("id", id)
     .single();
 
@@ -32,63 +32,14 @@ export async function GET(
     return new NextResponse("Project not found", { status: 404 });
   }
 
-  const origin = new URL(request.url).origin;
-  const proposalUrl = `${origin}/admin/projects/${id}/proposal`;
-  let browserContext: BrowserContext | undefined;
-  let page: Page | undefined;
-
   try {
-    const browser = await getBrowser();
-    browserContext = await browser.createBrowserContext();
-    page = await browserContext.newPage();
-    await page.setCookie({
-      name: PROPOSAL_RENDER_COOKIE,
-      value: createProposalRenderToken(id),
-      url: proposalUrl,
-      httpOnly: true,
-      secure: new URL(origin).protocol === "https:",
-      sameSite: "Strict",
-    });
-
-    const response = await page.goto(proposalUrl, {
-      waitUntil: "networkidle0",
-    });
-
-    if (!response?.ok()) {
-      throw new Error(
-        `Proposal preview returned ${response?.status() ?? "no response"}`
-      );
-    }
-
-    const loadedUrl = new URL(page.url());
-    if (
-      loadedUrl.pathname !== `/admin/projects/${id}/proposal` ||
-      !(await page.$(".proposal-document"))
-    ) {
-      throw new Error(`Proposal preview redirected to ${loadedUrl.pathname}`);
-    }
-
-    await page.emulateMediaType("print");
-    await page.evaluate(async () => {
-      await document.fonts.ready;
-      await Promise.all(
-        Array.from(document.images)
-          .filter((image) => !image.complete)
-          .map(
-            (image) =>
-              new Promise<void>((resolve) => {
-                image.addEventListener("load", () => resolve(), { once: true });
-                image.addEventListener("error", () => resolve(), { once: true });
-              })
-          )
-      );
-    });
-
-    const pdfBuffer = await page.pdf({
-      format: "Letter",
-      printBackground: true,
-      preferCSSPageSize: true,
-    });
+    const origin = new URL(request.url).origin;
+    const pdfBuffer = await renderToBuffer(
+      <ProposalPdf
+        project={project}
+        logoUrl={`${origin}/images/paradise_ironworks_logo.png`}
+      />
+    );
     const filename = safeFilename(project.proposal_number || "proposal");
 
     return new NextResponse(Buffer.from(pdfBuffer), {
@@ -98,37 +49,292 @@ export async function GET(
         "Cache-Control": "private, no-store",
       },
     });
-  } catch (error) {
-    console.error("Proposal PDF generation failed:", error);
-    return new NextResponse("Unable to generate proposal PDF.", {
+  } catch (pdfError) {
+    console.error("Proposal PDF generation failed:", pdfError);
+    return new NextResponse("Unable to generate proposal PDF. Code: render", {
       status: 500,
     });
-  } finally {
-    await browserContext?.close().catch(() => undefined);
   }
 }
 
-async function getBrowser() {
-  if (browserInstance?.connected) {
-    return browserInstance;
+function ProposalPdf({
+  project,
+  logoUrl,
+}: {
+  project: Record<string, unknown>;
+  logoUrl: string;
+}) {
+  const value = (key: string) => String(project[key] || "");
+  const projectLocation = [
+    value("project_address"),
+    value("city"),
+    value("state"),
+    value("zip_code"),
+  ]
+    .filter(Boolean)
+    .join(", ");
+  const amount = Number(project.proposal_amount || 0);
+  const deposit = Number(project.proposal_deposit_amount || 0);
+
+  return (
+    <Document
+      title={`Proposal ${value("proposal_number") || "Draft"}`}
+      author="Paradise Ironworks & Construction LLC"
+    >
+      <Page size="LETTER" style={styles.page} wrap>
+        <View style={styles.header} wrap={false}>
+          <View style={styles.headerCopy}>
+            <Text style={styles.company}>
+              Paradise Ironworks & Construction LLC
+            </Text>
+            <Text style={styles.title}>Proposal</Text>
+            <Text style={styles.meta}>
+              Proposal #: {value("proposal_number") || "Draft"}
+            </Text>
+            <Text style={styles.meta}>
+              Date: {new Date().toLocaleDateString()}
+            </Text>
+          </View>
+          {/* react-pdf Image does not expose the HTML alt prop. */}
+          {/* eslint-disable-next-line jsx-a11y/alt-text */}
+          <Image src={logoUrl} style={styles.logo} />
+        </View>
+
+        <View style={styles.projectGrid} wrap={false}>
+          <View style={styles.column}>
+            <Label>Project</Label>
+            <Text style={styles.bodyStrong}>
+              {value("proposal_project_name") || value("customer_name")}
+            </Text>
+            <Label spaced>Project Location</Label>
+            <Text style={styles.body}>{projectLocation || "—"}</Text>
+          </View>
+          <View style={styles.column}>
+            <Label>Attention</Label>
+            <Text style={styles.body}>
+              {value("proposal_attention") || value("contact_name") || "—"}
+            </Text>
+            <View style={styles.contact}>
+              <Text style={styles.body}>
+                Office: {value("proposal_office_phone") || "—"}
+              </Text>
+              <Text style={styles.body}>
+                Cell: {value("proposal_cell_phone") || value("phone") || "—"}
+              </Text>
+              <Text style={styles.body}>
+                Email: {value("proposal_email") || value("email") || "—"}
+              </Text>
+            </View>
+          </View>
+        </View>
+
+        <Text style={styles.intro}>
+          {value("proposal_intro") ||
+            "Paradise Ironworks & Construction LLC (PIWC) is pleased to provide the following proposal for the above referenced project."}
+        </Text>
+
+        <PdfSection title="Scope of Work" content={value("proposal_scope")} />
+        <PdfSection title="Finish" content={value("proposal_finish")} />
+        <PdfSection title="Exclusions" content={value("proposal_exclusions")} />
+        <PdfSection
+          title="Pricing"
+          content={
+            value("proposal_pricing") ||
+            (amount
+              ? `Total Contract Amount: $${amount.toLocaleString()}`
+              : "")
+          }
+        />
+        <PdfSection
+          title="Payment Terms"
+          content={
+            value("proposal_payment_terms") || defaultPaymentTerms(deposit)
+          }
+        />
+        <PdfSection title="Schedule" content={value("proposal_schedule")} />
+        <PdfSection
+          title="Clarifications"
+          content={value("proposal_clarifications")}
+        />
+
+        <View style={styles.closing} wrap={false}>
+          <Text style={styles.body}>
+            We appreciate the opportunity to provide this proposal and look
+            forward to working with you on this project.
+          </Text>
+          <Text style={styles.submitted}>Respectfully Submitted,</Text>
+          <Text style={styles.bodyStrong}>
+            Paradise Ironworks & Construction LLC
+          </Text>
+          <Text style={styles.preparedBy}>
+            {value("proposal_prepared_by") || "Ronald Brown"}
+          </Text>
+          <Text style={styles.body}>
+            {value("proposal_prepared_by_title") ||
+              "Operations & Estimating Director"}
+          </Text>
+        </View>
+
+        <View style={styles.acceptance} break>
+          <Text style={styles.acceptanceTitle}>Acceptance of Proposal</Text>
+          <Text style={styles.acceptanceCopy}>
+            The above proposal, pricing, scope, and terms are hereby accepted.
+          </Text>
+          <SignatureLine label="Accepted By" />
+          <SignatureLine label="Company" />
+          <SignatureLine label="Signature" />
+          <SignatureLine label="Date" />
+          <SignatureLine label="Purchase Order / Authorization No." />
+        </View>
+
+        <Text
+          fixed
+          style={styles.pageNumber}
+          render={({ pageNumber, totalPages }) =>
+            `Page ${pageNumber} of ${totalPages}`
+          }
+        />
+      </Page>
+    </Document>
+  );
+}
+
+function Label({
+  children,
+  spaced = false,
+}: {
+  children: React.ReactNode;
+  spaced?: boolean;
+}) {
+  return (
+    <Text style={[styles.label, spaced ? styles.labelSpaced : {}]}>
+      {children}
+    </Text>
+  );
+}
+
+function PdfSection({
+  title,
+  content,
+}: {
+  title: string;
+  content: string;
+}) {
+  if (!content) return null;
+
+  return (
+    <View style={styles.section}>
+      <Text style={styles.sectionTitle}>{title}</Text>
+      <Text style={styles.sectionBody}>{content}</Text>
+    </View>
+  );
+}
+
+function SignatureLine({ label }: { label: string }) {
+  return (
+    <View style={styles.signatureLine} wrap={false}>
+      <Text style={styles.signatureLabel}>{label}:</Text>
+      <View style={styles.signatureRule} />
+    </View>
+  );
+}
+
+const styles = StyleSheet.create({
+  page: {
+    paddingTop: 34,
+    paddingRight: 42,
+    paddingBottom: 50,
+    paddingLeft: 42,
+    color: "#171717",
+    fontFamily: "Helvetica",
+    fontSize: 10,
+    lineHeight: 1.55,
+  },
+  header: {
+    flexDirection: "row",
+    justifyContent: "space-between",
+    paddingBottom: 18,
+    borderBottomWidth: 1,
+    borderBottomColor: "#d4d4d4",
+  },
+  headerCopy: { flexGrow: 1 },
+  company: {
+    color: "#737373",
+    fontSize: 9,
+    fontFamily: "Helvetica-Bold",
+    letterSpacing: 1.4,
+    textTransform: "uppercase",
+  },
+  title: {
+    marginTop: 18,
+    marginBottom: 10,
+    fontSize: 28,
+    fontFamily: "Helvetica-Bold",
+  },
+  meta: { color: "#525252", fontSize: 9.5, marginTop: 2 },
+  logo: { width: 105, height: 60, objectFit: "contain" },
+  projectGrid: {
+    flexDirection: "row",
+    gap: 34,
+    marginTop: 22,
+  },
+  column: { width: "50%" },
+  label: {
+    color: "#737373",
+    fontFamily: "Helvetica-Bold",
+    fontSize: 8.5,
+    letterSpacing: 0.7,
+    textTransform: "uppercase",
+  },
+  labelSpaced: { marginTop: 14 },
+  body: { marginTop: 5 },
+  bodyStrong: { marginTop: 5, fontFamily: "Helvetica-Bold" },
+  contact: { marginTop: 14 },
+  intro: { marginTop: 22, lineHeight: 1.65 },
+  section: { marginTop: 20 },
+  sectionTitle: { fontSize: 13, fontFamily: "Helvetica-Bold" },
+  sectionBody: { marginTop: 7, lineHeight: 1.65 },
+  closing: { marginTop: 24 },
+  submitted: { marginTop: 18 },
+  preparedBy: { marginTop: 12 },
+  acceptance: {
+    paddingTop: 20,
+    borderTopWidth: 1,
+    borderTopColor: "#d4d4d4",
+  },
+  acceptanceTitle: {
+    fontSize: 13,
+    fontFamily: "Helvetica-Bold",
+    letterSpacing: 0.6,
+    textTransform: "uppercase",
+  },
+  acceptanceCopy: { marginTop: 10, marginBottom: 10 },
+  signatureLine: {
+    flexDirection: "row",
+    alignItems: "flex-end",
+    marginTop: 14,
+  },
+  signatureLabel: { width: 172, fontFamily: "Helvetica-Bold" },
+  signatureRule: {
+    flexGrow: 1,
+    borderBottomWidth: 1,
+    borderBottomColor: "#737373",
+  },
+  pageNumber: {
+    position: "absolute",
+    right: 42,
+    bottom: 22,
+    color: "#a3a3a3",
+    fontSize: 8,
+  },
+});
+
+function defaultPaymentTerms(deposit: number) {
+  if (deposit) {
+    return `Deposit Due Upon Acceptance: $${deposit.toLocaleString()}\nRemaining Balance Due Upon Completion`;
   }
 
-  if (!browserLaunch) {
-    browserLaunch = puppeteer.launch({ headless: true });
-  }
-
-  try {
-    const browser = await browserLaunch;
-    browserInstance = browser;
-    browser.once("disconnected", () => {
-      if (browserInstance === browser) {
-        browserInstance = null;
-      }
-    });
-    return browser;
-  } finally {
-    browserLaunch = null;
-  }
+  return "Deposit due upon acceptance.\nRemaining balance due upon completion.";
 }
 
 function safeFilename(value: string) {
