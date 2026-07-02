@@ -1,8 +1,12 @@
 import { NextRequest, NextResponse } from "next/server";
 import puppeteer from "puppeteer";
-import type { Browser, Page } from "puppeteer";
+import type { Browser, BrowserContext, Page } from "puppeteer";
 import { createClient } from "@/lib/supabase/server";
 import { requireAuthenticatedUser } from "@/lib/auth";
+import {
+  createProposalRenderToken,
+  PROPOSAL_RENDER_COOKIE,
+} from "@/lib/proposal-render-auth";
 
 export const dynamic = "force-dynamic";
 export const runtime = "nodejs";
@@ -30,22 +34,21 @@ export async function GET(
 
   const origin = new URL(request.url).origin;
   const proposalUrl = `${origin}/admin/projects/${id}/proposal`;
+  let browserContext: BrowserContext | undefined;
   let page: Page | undefined;
 
   try {
     const browser = await getBrowser();
-    page = await browser.newPage();
-    const cookies = request.cookies.getAll();
-
-    if (cookies.length > 0) {
-      await page.setCookie(
-        ...cookies.map(({ name, value }) => ({
-          name,
-          value,
-          url: origin,
-        }))
-      );
-    }
+    browserContext = await browser.createBrowserContext();
+    page = await browserContext.newPage();
+    await page.setCookie({
+      name: PROPOSAL_RENDER_COOKIE,
+      value: createProposalRenderToken(id),
+      url: proposalUrl,
+      httpOnly: true,
+      secure: new URL(origin).protocol === "https:",
+      sameSite: "Strict",
+    });
 
     const response = await page.goto(proposalUrl, {
       waitUntil: "networkidle0",
@@ -101,7 +104,7 @@ export async function GET(
       status: 500,
     });
   } finally {
-    await page?.close().catch(() => undefined);
+    await browserContext?.close().catch(() => undefined);
   }
 }
 

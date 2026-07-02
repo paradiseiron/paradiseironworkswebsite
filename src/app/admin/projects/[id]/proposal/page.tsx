@@ -1,7 +1,9 @@
 import { notFound } from "next/navigation";
 import Image from "next/image";
 import { createClient } from "@/lib/supabase/server";
+import { createAdminClient } from "@/lib/supabase/admin";
 import { requireAuthenticatedUser } from "@/lib/auth";
+import { getProposalRenderProjectId } from "@/lib/proposal-render-auth";
 
 export default async function ProposalPreviewPage({
   params,
@@ -10,8 +12,16 @@ export default async function ProposalPreviewPage({
 }) {
   const { id } = await params;
 
-  const supabase = await createClient();
-  await requireAuthenticatedUser();
+  const renderProjectId = await getProposalRenderProjectId();
+  const isInternalRender = renderProjectId === id;
+
+  if (!isInternalRender) {
+    await requireAuthenticatedUser();
+  }
+
+  const supabase = isInternalRender
+    ? createAdminClient()
+    : await createClient();
 
   const { data: project, error } = await supabase
     .from("projects")
