@@ -1,6 +1,7 @@
 "use client";
 
 import { useState } from "react";
+import { formatCalendarDate } from "@/lib/date-time";
 
 export default function FollowUpAlertModal({
   projectId,
@@ -29,7 +30,7 @@ export default function FollowUpAlertModal({
 
         {dueAt && (
           <span className="text-red-200/60">
-            · Due {new Date(dueAt).toLocaleDateString()}
+            · Due {formatCalendarDate(dueAt)}
           </span>
         )}
       </button>
@@ -58,7 +59,7 @@ export default function FollowUpAlertModal({
 
               {dueAt && (
                 <p className="mt-3 text-red-200/70">
-                  Due {new Date(dueAt).toLocaleDateString()}
+                  Due {formatCalendarDate(dueAt)}
                 </p>
               )}
             </div>

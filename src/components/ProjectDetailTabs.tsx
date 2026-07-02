@@ -4,6 +4,10 @@ import { useEffect, useState } from "react";
 import { useSearchParams } from "next/navigation";
 import { CheckCircle2, Phone, X } from "lucide-react";
 import AddProjectActivityModal from "@/components/AddProjectActivityModal";
+import {
+  formatWashingtonDate,
+  formatWashingtonDateTime,
+} from "@/lib/date-time";
 
 type ProjectTab = "overview" | "proposal" | "timeline" | "invoice";
 
@@ -203,7 +207,7 @@ export default function ProjectDetailTabs({
                 label="Received"
                 value={
                   project.received_at
-                    ? new Date(project.received_at).toLocaleDateString()
+                    ? formatWashingtonDate(project.received_at)
                     : null
                 }
               />
@@ -496,7 +500,7 @@ export default function ProjectDetailTabs({
 
                   <p className="mt-1 text-xs text-neutral-500">
                     {activity.activity_date
-                      ? new Date(activity.activity_date).toLocaleString()
+                      ? formatWashingtonDateTime(activity.activity_date)
                       : "No date"}
                   </p>
 

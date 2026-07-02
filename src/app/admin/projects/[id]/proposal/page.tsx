@@ -2,6 +2,7 @@ import { notFound } from "next/navigation";
 import Image from "next/image";
 import { createClient } from "@/lib/supabase/server";
 import { requireAuthenticatedUser } from "@/lib/auth";
+import { formatWashingtonDate } from "@/lib/date-time";
 
 export default async function ProposalPreviewPage({
   params,
@@ -56,7 +57,7 @@ export default async function ProposalPreviewPage({
 
         <p>
           <strong>Date:</strong>{" "}
-          {new Date().toLocaleDateString()}
+          {formatWashingtonDate(new Date())}
         </p>
       </div>
     </div>

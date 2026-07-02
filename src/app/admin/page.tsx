@@ -9,6 +9,10 @@ import {
 import { requireAuthenticatedUser } from "@/lib/auth";
 import { createAdminClient } from "@/lib/supabase/admin";
 import DashboardDateFilter from "@/components/DashboardDateFilter";
+import {
+  formatWashingtonDate,
+  getWashingtonDateKey,
+} from "@/lib/date-time";
 
 export const dynamic = "force-dynamic";
 export const revalidate = 0;
@@ -58,7 +62,7 @@ export default async function AdminPage({
     filters.period === "month" || filters.period === "range"
       ? filters.period
       : "all";
-  const currentMonth = new Date().toISOString().slice(0, 7);
+  const currentMonth = getWashingtonDateKey(new Date()).slice(0, 7);
   const month = isMonth(filters.month) ? filters.month : currentMonth;
   const from = isDate(filters.from) ? filters.from : "";
   const to = isDate(filters.to) ? filters.to : "";
@@ -281,7 +285,7 @@ export default async function AdminPage({
                 <div className="mt-3 flex items-center justify-between text-xs text-neutral-500">
                   <span>
                     {project.received_at
-                      ? new Date(project.received_at).toLocaleDateString()
+                      ? formatWashingtonDate(project.received_at)
                       : "No received date"}
                   </span>
                   {project.has_open_follow_up && (
@@ -323,7 +327,7 @@ export default async function AdminPage({
                     </td>
                     <td className="px-6 py-4 text-neutral-400">
                       {project.received_at
-                        ? new Date(project.received_at).toLocaleDateString()
+                        ? formatWashingtonDate(project.received_at)
                         : "—"}
                     </td>
                     <td className="px-6 py-4">
@@ -458,18 +462,14 @@ function isWithinPeriod(
   if (period === "all") return true;
   if (!receivedAt) return false;
 
-  const received = new Date(receivedAt).getTime();
-  if (Number.isNaN(received)) return false;
+  const receivedDate = new Date(receivedAt);
+  if (Number.isNaN(receivedDate.getTime())) return false;
+  const receivedDateKey = getWashingtonDateKey(receivedDate);
 
   if (period === "month") {
-    const [year, monthNumber] = month.split("-").map(Number);
-    const start = Date.UTC(year, monthNumber - 1, 1);
-    const end = Date.UTC(year, monthNumber, 1);
-    return received >= start && received < end;
+    return receivedDateKey.startsWith(month);
   }
 
   if (!from || !to) return true;
-  const start = new Date(`${from}T00:00:00Z`).getTime();
-  const end = new Date(`${to}T23:59:59.999Z`).getTime();
-  return received >= start && received <= end;
+  return receivedDateKey >= from && receivedDateKey <= to;
 }

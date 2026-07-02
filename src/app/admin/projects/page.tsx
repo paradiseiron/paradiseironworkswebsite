@@ -2,6 +2,10 @@ import Link from "next/link";
 import { createAdminClient } from "@/lib/supabase/admin";
 import { requireAuthenticatedUser } from "@/lib/auth";
 import ProjectsTableFilter from "@/components/ProjectsTableFilter";
+import {
+  formatWashingtonDate,
+  getWashingtonDateKey,
+} from "@/lib/date-time";
 
 export const dynamic = "force-dynamic";
 export const revalidate = 0;
@@ -31,7 +35,7 @@ export default async function ProjectsPage({
     filters.period === "range"
       ? filters.period
       : "all";
-  const currentMonth = new Date().toISOString().slice(0, 7);
+  const currentMonth = getWashingtonDateKey(new Date()).slice(0, 7);
   const month = isMonth(filters.month) ? filters.month : currentMonth;
   const date = isDate(filters.date) ? filters.date : "";
   const from = isDate(filters.from) ? filters.from : "";
@@ -169,7 +173,7 @@ export default async function ProjectsPage({
                     label="Received"
                     value={
                       project.received_at
-                        ? new Date(project.received_at).toLocaleDateString()
+                        ? formatWashingtonDate(project.received_at)
                         : "—"
                     }
                   />
@@ -253,7 +257,7 @@ export default async function ProjectsPage({
                 >
                   <td className="px-4 py-3 text-neutral-300">
                     {project.received_at
-                      ? new Date(project.received_at).toLocaleDateString()
+                      ? formatWashingtonDate(project.received_at)
                       : "—"}
                   </td>
 
@@ -389,28 +393,19 @@ function isWithinPeriod(
   if (period === "all") return true;
   if (!receivedAt) return false;
 
-  const received = new Date(receivedAt).getTime();
-  if (Number.isNaN(received)) return false;
+  const receivedDate = new Date(receivedAt);
+  if (Number.isNaN(receivedDate.getTime())) return false;
+  const receivedDateKey = getWashingtonDateKey(receivedDate);
 
   if (period === "month") {
-    const [year, monthNumber] = month.split("-").map(Number);
-    return (
-      received >= Date.UTC(year, monthNumber - 1, 1) &&
-      received < Date.UTC(year, monthNumber, 1)
-    );
+    return receivedDateKey.startsWith(month);
   }
 
   if (period === "date") {
     if (!date) return true;
-    return (
-      received >= new Date(`${date}T00:00:00Z`).getTime() &&
-      received <= new Date(`${date}T23:59:59.999Z`).getTime()
-    );
+    return receivedDateKey === date;
   }
 
   if (!from || !to) return true;
-  return (
-    received >= new Date(`${from}T00:00:00Z`).getTime() &&
-    received <= new Date(`${to}T23:59:59.999Z`).getTime()
-  );
+  return receivedDateKey >= from && receivedDateKey <= to;
 }

@@ -1,6 +1,7 @@
 import type { Metadata, Viewport } from "next";
 import AdminShell from "@/components/AdminShell";
 import AdminPwa from "@/components/AdminPwa";
+import AdminPushNotifications from "@/components/AdminPushNotifications";
 import { requireAuthenticatedUser } from "@/lib/auth";
 
 export const metadata: Metadata = {
@@ -32,6 +33,9 @@ export default async function AdminLayout({
     <AdminShell userEmail={user.email}>
       {children}
       <AdminPwa />
+      <AdminPushNotifications
+        publicKey={process.env.NEXT_PUBLIC_VAPID_PUBLIC_KEY}
+      />
     </AdminShell>
   );
 }

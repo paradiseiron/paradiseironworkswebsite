@@ -2,7 +2,7 @@
 
 import { useState } from "react";
 import Link from "next/link";
-import { ChevronDown, Search } from "lucide-react";
+import { ChevronDown, Search, SlidersHorizontal, X } from "lucide-react";
 
 type Period = "all" | "month" | "date" | "range";
 
@@ -28,16 +28,47 @@ export default function ProjectsTableFilter({
   status: string;
 }) {
   const [selectedPeriod, setSelectedPeriod] = useState<Period>(period);
+  const [mobileOpen, setMobileOpen] = useState(false);
   const hasFilters = Boolean(
     query || period !== "all" || category || status
   );
 
   return (
-    <form
-      action="/admin/projects"
-      method="get"
-      className="mb-6 grid items-end gap-3 rounded-2xl border border-white/10 bg-white/[0.03] p-4 sm:grid-cols-2 lg:flex lg:flex-wrap"
-    >
+    <div className="mb-6">
+      <button
+        type="button"
+        onClick={() => setMobileOpen((open) => !open)}
+        aria-label={mobileOpen ? "Close project filters" : "Open project filters"}
+        aria-expanded={mobileOpen}
+        aria-controls="project-filters"
+        title={mobileOpen ? "Close filters" : "Filter projects"}
+        className={`relative inline-flex h-10 w-10 items-center justify-center rounded-xl border transition md:hidden ${
+          mobileOpen || hasFilters
+            ? "border-[#fb5411]/40 bg-[#fb5411]/10 text-[#fb5411]"
+            : "border-white/10 bg-white/[0.03] text-neutral-300 hover:bg-white/10 hover:text-white"
+        }`}
+      >
+        {mobileOpen ? (
+          <X className="h-4 w-4" aria-hidden="true" />
+        ) : (
+          <SlidersHorizontal className="h-4 w-4" aria-hidden="true" />
+        )}
+        {hasFilters && !mobileOpen && (
+          <span
+            className="absolute right-1.5 top-1.5 h-1.5 w-1.5 rounded-full bg-[#fb5411]"
+            aria-hidden="true"
+          />
+        )}
+      </button>
+
+      <form
+        id="project-filters"
+        action="/admin/projects"
+        method="get"
+        className={`items-end gap-3 rounded-2xl border border-white/10 bg-white/[0.03] p-4 sm:grid-cols-2 md:grid lg:flex lg:flex-wrap ${
+          mobileOpen ? "mt-3 grid" : "hidden"
+        }`}
+      >
       <div className="min-w-0 sm:col-span-2 lg:min-w-64 lg:flex-1">
         <label
           htmlFor="project-search"
@@ -158,7 +189,8 @@ export default function ProjectsTableFilter({
           Clear
         </Link>
       )}
-    </form>
+      </form>
+    </div>
   );
 }
 

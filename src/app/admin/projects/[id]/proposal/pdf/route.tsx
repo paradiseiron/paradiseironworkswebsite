@@ -10,6 +10,7 @@ import {
 } from "@react-pdf/renderer";
 import { createClient } from "@/lib/supabase/server";
 import { requireAuthenticatedUser } from "@/lib/auth";
+import { formatWashingtonDate } from "@/lib/date-time";
 
 export const dynamic = "force-dynamic";
 export const runtime = "nodejs";
@@ -95,7 +96,7 @@ export function ProposalPdf({
               </Text>
               <Text style={styles.meta}>
                 <Text style={styles.inlineLabel}>Date:</Text>{" "}
-                {new Date().toLocaleDateString()}
+                {formatWashingtonDate(new Date())}
               </Text>
             </View>
           </View>

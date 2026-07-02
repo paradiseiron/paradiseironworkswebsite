@@ -1,6 +1,7 @@
 import { NextResponse } from "next/server";
 import { createClient } from "@supabase/supabase-js";
 import { sendNewLeadNotification } from "@/lib/email/new-lead-notification";
+import { sendNewLeadPushNotification } from "@/lib/push/send-new-lead-push";
 
 const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL;
 const serviceRoleKey = process.env.SUPABASE_SERVICE_ROLE_KEY;
@@ -206,11 +207,20 @@ export async function POST(req: Request) {
       console.error("Lead notification email error:", notificationError);
       return false;
     });
+    const pushNotificationSent = await sendNewLeadPushNotification({
+      projectId: String(data.id),
+      name,
+      projectType,
+    }).catch((notificationError) => {
+      console.error("Lead push notification error:", notificationError);
+      return false;
+    });
 
     return NextResponse.json({
       success: true,
       projectId: data.id,
       emailNotificationSent,
+      pushNotificationSent,
     });
   } catch (err) {
     console.error("Quote request API error:", err);
