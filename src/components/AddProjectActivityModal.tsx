@@ -35,8 +35,8 @@ export default function AddProjectActivityModal({
       </button>
 
       {open && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/70 px-4">
-          <div className="w-full max-w-xl rounded-2xl border border-white/10 bg-neutral-950 p-6 text-white shadow-2xl">
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/70 p-3 sm:px-4">
+          <div className="max-h-[calc(100dvh-1.5rem)] w-full max-w-xl overflow-y-auto rounded-2xl border border-white/10 bg-neutral-950 p-4 text-white shadow-2xl sm:p-6">
             <div className="flex items-center justify-between">
               <h3 className="text-xl font-semibold">Add Activity</h3>
 
@@ -154,7 +154,7 @@ export default function AddProjectActivityModal({
                 )}
               </div>
 
-              <div className="flex justify-end gap-3 pt-2">
+              <div className="flex flex-col-reverse gap-3 pt-2 sm:flex-row sm:justify-end">
                 <button
                   type="button"
                   onClick={() => setOpen(false)}

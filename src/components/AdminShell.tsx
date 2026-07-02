@@ -76,7 +76,7 @@ export default function AdminShell({
       className="admin-shell min-h-screen bg-neutral-950 text-white transition-colors"
       data-theme={theme}
     >
-      <aside className="admin-sidebar fixed left-0 top-0 z-50 h-screen w-20 border-r border-white/10 bg-black/50 backdrop-blur-xl print:hidden">
+      <aside className="admin-sidebar fixed left-0 top-0 z-50 hidden h-screen w-20 border-r border-white/10 bg-black/50 backdrop-blur-xl md:block print:hidden">
         <div className="flex h-20 items-center justify-center border-b border-white/10">
           <Link href="/admin" className="group">
             <Image
@@ -112,10 +112,10 @@ export default function AdminShell({
         />
       </aside>
 
-      <div className="ml-20 print:ml-0">
+      <div className="md:ml-20 print:ml-0">
         <header className="admin-header sticky top-0 z-40 border-b border-white/10 bg-neutral-950/80 backdrop-blur-xl print:hidden">
-          <div className="flex items-center justify-between px-8 py-4">
-            <div>
+          <div className="flex min-h-16 flex-wrap items-center justify-between gap-3 px-4 py-3 sm:px-6 md:px-8 md:py-4">
+            <div className="shrink-0">
               {isNewProjectPage && (
                 <Link
                   href="/admin/projects"
@@ -144,11 +144,11 @@ export default function AdminShell({
               )}
             </div>
 
-            <div className="flex items-center gap-3">
+            <div className="flex min-w-0 flex-1 items-center justify-end gap-2 overflow-x-auto sm:gap-3">
               {(isDashboardPage || isProjectsPage) && (
                 <Link
                   href="/admin/projects/new"
-                  className="inline-flex h-10 items-center justify-center gap-2 rounded-xl bg-[#fb5411] px-5 text-sm font-semibold text-white transition hover:bg-[#e64d0f]"
+                  className="inline-flex h-10 shrink-0 items-center justify-center gap-2 rounded-xl bg-[#fb5411] px-4 text-sm font-semibold text-white transition hover:bg-[#e64d0f] sm:px-5"
                 >
                   <svg
                     xmlns="http://www.w3.org/2000/svg"
@@ -174,7 +174,7 @@ export default function AdminShell({
                 <button
                   type="submit"
                   form="new-project-form"
-                  className="inline-flex h-10 items-center justify-center rounded-xl bg-[#fb5411] px-5 text-sm font-semibold text-white transition hover:bg-[#e64d0f]"
+                  className="inline-flex h-10 shrink-0 items-center justify-center rounded-xl bg-[#fb5411] px-4 text-sm font-semibold text-white transition hover:bg-[#e64d0f] sm:px-5"
                 >
                   Save Project
                 </button>
@@ -183,7 +183,7 @@ export default function AdminShell({
   <>
     <Link
       href={`${pathname}/edit`}
-      className="inline-flex h-10 items-center justify-center rounded-xl border border-white/10 px-5 text-sm font-semibold text-neutral-300 transition hover:bg-white/5 hover:text-white"
+      className="inline-flex h-10 shrink-0 items-center justify-center rounded-xl border border-white/10 px-4 text-sm font-semibold text-neutral-300 transition hover:bg-white/5 hover:text-white sm:px-5"
     >
       Edit Project
     </Link>
@@ -194,7 +194,7 @@ export default function AdminShell({
   <button
     type="submit"
     form="edit-project-form"
-    className="inline-flex h-10 items-center justify-center rounded-xl bg-[#fb5411] px-5 text-sm font-semibold text-white transition hover:bg-[#e64d0f]"
+    className="inline-flex h-10 shrink-0 items-center justify-center rounded-xl bg-[#fb5411] px-4 text-sm font-semibold text-white transition hover:bg-[#e64d0f] sm:px-5"
   >
     Save Changes
   </button>
@@ -206,7 +206,7 @@ export default function AdminShell({
                   form="proposal-form"
                   name="intent"
                   value="preview"
-                  className="inline-flex h-10 items-center justify-center rounded-xl bg-[#fb5411] px-5 text-sm font-semibold text-white transition hover:bg-[#e64d0f]"
+                  className="inline-flex h-10 shrink-0 items-center justify-center rounded-xl bg-[#fb5411] px-4 text-sm font-semibold text-white transition hover:bg-[#e64d0f] sm:px-5"
                 >
                   Preview
                 </button>
@@ -234,11 +234,61 @@ export default function AdminShell({
           </div>
         </header>
 
-        <main className="overflow-x-hidden px-8 pb-8 pt-4 print:p-0 print:overflow-visible">
+        <main className="overflow-x-hidden px-4 pb-28 pt-4 sm:px-6 md:px-8 md:pb-8 print:p-0 print:overflow-visible">
           {children}
         </main>
       </div>
+
+      <nav
+        aria-label="Admin navigation"
+        className="fixed inset-x-0 bottom-0 z-50 flex items-center justify-around border-t border-white/10 bg-neutral-950/95 px-4 pb-[max(0.75rem,env(safe-area-inset-bottom))] pt-3 backdrop-blur-xl md:hidden print:hidden"
+      >
+        <MobileNavLink
+          href="/admin"
+          active={pathname === "/admin"}
+          label="Dashboard"
+        >
+          <LayoutDashboard className="h-5 w-5" aria-hidden="true" />
+        </MobileNavLink>
+        <MobileNavLink
+          href="/admin/projects"
+          active={pathname.startsWith("/admin/projects")}
+          label="Projects"
+        >
+          <Hammer className="h-5 w-5" aria-hidden="true" />
+        </MobileNavLink>
+        <AdminProfileMenu
+          email={userEmail}
+          theme={theme}
+          onToggleTheme={toggleTheme}
+          mobile
+        />
+      </nav>
     </div>
+  );
+}
+
+function MobileNavLink({
+  href,
+  active,
+  label,
+  children,
+}: {
+  href: string;
+  active?: boolean;
+  label: string;
+  children: React.ReactNode;
+}) {
+  return (
+    <Link
+      href={href}
+      className={`flex min-w-20 flex-col items-center gap-1 rounded-xl px-3 py-1.5 text-xs transition ${
+        active ? "text-[#fb5411]" : "text-neutral-400 hover:text-white"
+      }`}
+    >
+      {children}
+      <span>{label}</span>
+    </Link>
   );
 }
 

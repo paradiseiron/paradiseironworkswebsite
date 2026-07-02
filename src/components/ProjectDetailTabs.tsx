@@ -140,7 +140,7 @@ export default function ProjectDetailTabs({
       {toast && (
         <div
           role="status"
-          className={`fixed right-6 top-24 z-50 flex w-[min(420px,calc(100vw-3rem))] items-start gap-3 rounded-2xl border border-emerald-500/30 bg-neutral-900 p-4 text-emerald-100 shadow-2xl transition-all duration-300 ${
+          className={`fixed left-4 right-4 top-20 z-50 flex items-start gap-3 rounded-2xl border border-emerald-500/30 bg-neutral-900 p-4 text-emerald-100 shadow-2xl transition-all duration-300 sm:left-auto sm:right-6 sm:top-24 sm:w-[min(420px,calc(100vw-3rem))] ${
             toastVisible
               ? "translate-y-0 opacity-100"
               : "-translate-y-3 opacity-0"
@@ -162,14 +162,14 @@ export default function ProjectDetailTabs({
         </div>
       )}
 
-      <div className="mb-6 flex gap-2 border-b border-white/10">
+      <div className="mb-6 flex gap-1 overflow-x-auto border-b border-white/10">
         {(["overview", "proposal", "timeline", "invoice"] as ProjectTab[]).map(
           (item) => (
             <button
               key={item}
               type="button"
               onClick={() => handleTabChange(item)}
-              className={`px-4 py-3 text-sm capitalize ${
+              className={`shrink-0 px-3 py-3 text-sm capitalize sm:px-4 ${
                 tab === item
                   ? "border-b-2 border-[#fb5411] text-white"
                   : "text-neutral-400 hover:text-white"
@@ -183,7 +183,7 @@ export default function ProjectDetailTabs({
 
       {tab === "overview" && (
         <div className="grid gap-6 lg:grid-cols-3">
-          <section className="rounded-2xl border border-white/10 bg-white/[0.03] p-6 lg:col-span-2">
+          <section className="rounded-2xl border border-white/10 bg-white/[0.03] p-4 sm:p-6 lg:col-span-2">
             <h2 className="text-xl font-semibold">Project Details</h2>
 
             <div className="mt-6 grid gap-5 md:grid-cols-2">
@@ -225,13 +225,13 @@ export default function ProjectDetailTabs({
           </section>
 
           <aside className="space-y-6">
-            <section className="rounded-2xl border border-white/10 bg-white/[0.03] p-6">
+            <section className="rounded-2xl border border-white/10 bg-white/[0.03] p-4 sm:p-6">
               <h2 className="text-xl font-semibold">Status</h2>
 
               <form action={updateProjectStatus} className="mt-4">
                 <input type="hidden" name="project_id" value={project.id} />
 
-                <div className="flex items-center gap-3">
+                <div className="flex flex-col gap-3 sm:flex-row sm:items-center">
                   <div className="relative flex-1">
                     <select
                       name="status"
@@ -294,7 +294,7 @@ export default function ProjectDetailTabs({
               </form>
             </section>
 
-            <section className="rounded-2xl border border-white/10 bg-white/[0.03] p-6">
+            <section className="rounded-2xl border border-white/10 bg-white/[0.03] p-4 sm:p-6">
               <h2 className="text-xl font-semibold">Notes</h2>
 
               <p className="mt-4 whitespace-pre-wrap text-sm leading-6 text-neutral-300">
@@ -306,7 +306,7 @@ export default function ProjectDetailTabs({
       )}
 
       {tab === "proposal" && (
-        <section className="rounded-2xl border border-white/10 bg-white/[0.03] p-6">
+        <section className="rounded-2xl border border-white/10 bg-white/[0.03] p-4 sm:p-6">
           <div className="flex flex-wrap items-center justify-between gap-4">
             <div>
               <h2 className="text-xl font-semibold">Proposal Draft</h2>
@@ -470,8 +470,8 @@ export default function ProjectDetailTabs({
       )}
 
       {tab === "timeline" && (
-        <section className="rounded-2xl border border-white/10 bg-white/[0.03] p-6">
-          <div className="flex items-center justify-between">
+        <section className="rounded-2xl border border-white/10 bg-white/[0.03] p-4 sm:p-6">
+          <div className="flex flex-wrap items-center justify-between gap-3">
             <h2 className="text-xl font-semibold">Project Timeline</h2>
 
             <AddProjectActivityModal
@@ -528,7 +528,7 @@ export default function ProjectDetailTabs({
       )}
 
       {tab === "invoice" && (
-        <section className="rounded-2xl border border-white/10 bg-white/[0.03] p-6">
+        <section className="rounded-2xl border border-white/10 bg-white/[0.03] p-4 sm:p-6">
           <h2 className="text-xl font-semibold">Invoice</h2>
 
           {["active", "completed"].includes(project.status || "") ? (

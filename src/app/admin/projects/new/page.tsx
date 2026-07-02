@@ -82,15 +82,15 @@ export default async function NewProjectPage() {
   return (
     <div>
       <div className="mb-8">
-        <h1 className="text-3xl font-semibold">New Project</h1>
+        <h1 className="text-2xl font-semibold sm:text-3xl">New Project</h1>
 
         <p className="mt-2 text-neutral-400">
           Add a new project or lead to the Paradise project pipeline.
         </p>
       </div>
 
-      <form id="new-project-form" action={createProject} className="max-w-4xl space-y-8">
-        <section className="rounded-2xl border border-white/10 bg-white/[0.03] p-6">
+      <form id="new-project-form" action={createProject} className="max-w-4xl space-y-5 sm:space-y-8">
+        <section className="rounded-2xl border border-white/10 bg-white/[0.03] p-4 sm:p-6">
           <h2 className="text-xl font-semibold">
             Customer Information
           </h2>
@@ -110,7 +110,7 @@ export default async function NewProjectPage() {
           </div>
         </section>
 
-        <section className="rounded-2xl border border-white/10 bg-white/[0.03] p-6">
+        <section className="rounded-2xl border border-white/10 bg-white/[0.03] p-4 sm:p-6">
           <h2 className="text-xl font-semibold">
             Project Location
           </h2>
@@ -129,7 +129,7 @@ export default async function NewProjectPage() {
           </div>
         </section>
 
-        <section className="rounded-2xl border border-white/10 bg-white/[0.03] p-6">
+        <section className="rounded-2xl border border-white/10 bg-white/[0.03] p-4 sm:p-6">
           <h2 className="text-xl font-semibold">
             Project Details
           </h2>

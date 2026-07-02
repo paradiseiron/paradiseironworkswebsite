@@ -9,10 +9,12 @@ export default function AdminProfileMenu({
   email,
   theme,
   onToggleTheme,
+  mobile = false,
 }: {
   email?: string;
   theme: "dark" | "light";
   onToggleTheme: () => void;
+  mobile?: boolean;
 }) {
   const router = useRouter();
   const menuRef = useRef<HTMLDivElement>(null);
@@ -45,9 +47,18 @@ export default function AdminProfileMenu({
   }
 
   return (
-    <div ref={menuRef} className="absolute bottom-4 left-4">
+    <div
+      ref={menuRef}
+      className={mobile ? "relative" : "absolute bottom-4 left-4"}
+    >
       {open && (
-        <div className="admin-profile-popover absolute bottom-0 left-16 w-64 rounded-2xl border border-white/10 bg-neutral-900 p-2 shadow-2xl">
+        <div
+          className={`admin-profile-popover w-64 rounded-2xl border border-white/10 bg-neutral-900 p-2 shadow-2xl ${
+            mobile
+              ? "fixed bottom-20 right-3"
+              : "absolute bottom-0 left-16"
+          }`}
+        >
           <div className="border-b border-white/10 px-3 py-3">
             <p className="text-xs uppercase tracking-wide text-neutral-500">
               Signed in as
@@ -99,13 +110,22 @@ export default function AdminProfileMenu({
         onClick={() => setOpen((value) => !value)}
         aria-label="Open profile menu"
         aria-expanded={open}
-        className={`flex h-12 w-12 items-center justify-center rounded-2xl border transition ${
+        className={`flex items-center justify-center transition ${
+          mobile
+            ? "min-w-20 flex-col gap-1 rounded-xl px-3 py-1.5 text-xs"
+            : "h-12 w-12 rounded-2xl border"
+        } ${
           open
-            ? "border-[#fb5411]/40 bg-[#fb5411]/15 text-[#fb5411]"
-            : "border-white/10 bg-white/[0.03] text-neutral-300 hover:bg-white/10 hover:text-white"
+            ? mobile
+              ? "text-[#fb5411]"
+              : "border-[#fb5411]/40 bg-[#fb5411]/15 text-[#fb5411]"
+            : mobile
+              ? "text-neutral-400 hover:text-white"
+              : "border-white/10 bg-white/[0.03] text-neutral-300 hover:bg-white/10 hover:text-white"
         }`}
       >
-        <UserRound className="h-6 w-6" aria-hidden="true" />
+        <UserRound className={mobile ? "h-5 w-5" : "h-6 w-6"} aria-hidden="true" />
+        {mobile && <span>Account</span>}
       </button>
     </div>
   );

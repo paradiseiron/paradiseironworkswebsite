@@ -36,9 +36,9 @@ export default function ProjectsTableFilter({
     <form
       action="/admin/projects"
       method="get"
-      className="mb-6 flex flex-wrap items-end gap-3 rounded-2xl border border-white/10 bg-white/[0.03] p-4"
+      className="mb-6 grid items-end gap-3 rounded-2xl border border-white/10 bg-white/[0.03] p-4 sm:grid-cols-2 lg:flex lg:flex-wrap"
     >
-      <div className="min-w-64 flex-1">
+      <div className="min-w-0 sm:col-span-2 lg:min-w-64 lg:flex-1">
         <label
           htmlFor="project-search"
           className="mb-2 block text-xs font-medium uppercase tracking-wide text-neutral-500"
@@ -61,7 +61,7 @@ export default function ProjectsTableFilter({
         />
       </div>
 
-      <div>
+      <div className="min-w-0">
         <label
           htmlFor="project-category-filter"
           className="mb-2 block text-xs font-medium uppercase tracking-wide text-neutral-500"
@@ -82,7 +82,7 @@ export default function ProjectsTableFilter({
         </FilterSelect>
       </div>
 
-      <div>
+      <div className="min-w-0">
         <label
           htmlFor="project-status-filter"
           className="mb-2 block text-xs font-medium uppercase tracking-wide text-neutral-500"
@@ -105,7 +105,7 @@ export default function ProjectsTableFilter({
         </FilterSelect>
       </div>
 
-      <div>
+      <div className="min-w-0">
         <label
           htmlFor="project-period"
           className="mb-2 block text-xs font-medium uppercase tracking-wide text-neutral-500"
@@ -174,7 +174,7 @@ function FilterInput({
   value: string;
 }) {
   return (
-    <div>
+    <div className="min-w-0">
       <label
         htmlFor={`project-${name}`}
         className="mb-2 block text-xs font-medium uppercase tracking-wide text-neutral-500"
@@ -187,7 +187,7 @@ function FilterInput({
         type={type}
         required
         defaultValue={value}
-        className="h-10 rounded-xl border border-white/10 bg-neutral-900 px-3 text-sm text-white outline-none focus:border-[#fb5411]"
+        className="h-10 w-full rounded-xl border border-white/10 bg-neutral-900 px-3 text-sm text-white outline-none focus:border-[#fb5411]"
       />
     </div>
   );
@@ -201,7 +201,7 @@ function FilterSelect({
     <div className="relative">
       <select
         {...props}
-        className="h-10 max-w-52 appearance-none rounded-xl border border-white/10 bg-neutral-900 py-0 pl-3 pr-10 text-sm capitalize text-white outline-none focus:border-[#fb5411]"
+        className="h-10 w-full appearance-none rounded-xl border border-white/10 bg-neutral-900 py-0 pl-3 pr-10 text-sm capitalize text-white outline-none focus:border-[#fb5411] lg:max-w-52"
       >
         {children}
       </select>

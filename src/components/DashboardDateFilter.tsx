@@ -22,9 +22,9 @@ export default function DashboardDateFilter({
     <form
       action="/admin"
       method="get"
-      className="mt-6 flex flex-wrap items-end gap-3 rounded-2xl border border-white/10 bg-white/[0.03] p-4"
+      className="mt-6 grid items-end gap-3 rounded-2xl border border-white/10 bg-white/[0.03] p-4 sm:grid-cols-2 lg:flex lg:flex-wrap"
     >
-      <div>
+      <div className="min-w-0">
         <label
           htmlFor="dashboard-period"
           className="mb-2 block text-xs font-medium uppercase tracking-wide text-neutral-500"
@@ -39,7 +39,7 @@ export default function DashboardDateFilter({
             onChange={(event) =>
               setSelectedPeriod(event.target.value as Period)
             }
-            className="h-10 appearance-none rounded-xl border border-white/10 bg-neutral-900 py-0 pl-3 pr-10 text-sm text-white outline-none focus:border-[#fb5411]"
+            className="h-10 w-full appearance-none rounded-xl border border-white/10 bg-neutral-900 py-0 pl-3 pr-10 text-sm text-white outline-none focus:border-[#fb5411]"
           >
             <option value="all">All time</option>
             <option value="month">By month</option>
@@ -53,7 +53,7 @@ export default function DashboardDateFilter({
       </div>
 
       {selectedPeriod === "month" && (
-        <div>
+        <div className="min-w-0">
           <label
             htmlFor="dashboard-month"
             className="mb-2 block text-xs font-medium uppercase tracking-wide text-neutral-500"
@@ -66,14 +66,14 @@ export default function DashboardDateFilter({
             type="month"
             required
             defaultValue={month}
-            className="h-10 rounded-xl border border-white/10 bg-neutral-900 px-3 text-sm text-white outline-none focus:border-[#fb5411]"
+            className="h-10 w-full rounded-xl border border-white/10 bg-neutral-900 px-3 text-sm text-white outline-none focus:border-[#fb5411]"
           />
         </div>
       )}
 
       {selectedPeriod === "range" && (
         <>
-          <div>
+          <div className="min-w-0">
             <label
               htmlFor="dashboard-from"
               className="mb-2 block text-xs font-medium uppercase tracking-wide text-neutral-500"
@@ -86,10 +86,10 @@ export default function DashboardDateFilter({
               type="date"
               required
               defaultValue={from}
-              className="h-10 rounded-xl border border-white/10 bg-neutral-900 px-3 text-sm text-white outline-none focus:border-[#fb5411]"
+              className="h-10 w-full rounded-xl border border-white/10 bg-neutral-900 px-3 text-sm text-white outline-none focus:border-[#fb5411]"
             />
           </div>
-          <div>
+          <div className="min-w-0">
             <label
               htmlFor="dashboard-to"
               className="mb-2 block text-xs font-medium uppercase tracking-wide text-neutral-500"
@@ -103,7 +103,7 @@ export default function DashboardDateFilter({
               required
               min={from || undefined}
               defaultValue={to}
-              className="h-10 rounded-xl border border-white/10 bg-neutral-900 px-3 text-sm text-white outline-none focus:border-[#fb5411]"
+              className="h-10 w-full rounded-xl border border-white/10 bg-neutral-900 px-3 text-sm text-white outline-none focus:border-[#fb5411]"
             />
           </div>
         </>

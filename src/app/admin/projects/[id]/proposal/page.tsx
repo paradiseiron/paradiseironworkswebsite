@@ -33,18 +33,18 @@ export default async function ProposalPreviewPage({
     .join(", ");
 
   return (
-    <main className="min-h-screen bg-neutral-200 px-6 py-10 text-neutral-950 print:min-h-0 print:bg-white print:p-0">
-     <article className="proposal-document mx-auto max-w-[850px] bg-white px-14 py-12 shadow-xl print:max-w-none print:shadow-none">
+    <main className="min-h-screen bg-neutral-200 py-4 text-neutral-950 sm:px-4 sm:py-8 print:min-h-0 print:bg-white print:p-0">
+     <article className="proposal-document mx-auto max-w-[850px] bg-white px-5 py-8 shadow-xl sm:px-10 sm:py-10 md:px-14 md:py-12 print:max-w-none print:shadow-none">
 
 
        <header className="border-b border-neutral-300 pb-6">
-  <div className="flex items-start justify-between gap-8">
+  <div className="flex flex-col-reverse gap-5 sm:flex-row sm:items-start sm:justify-between sm:gap-8">
     <div>
       <p className="text-sm font-semibold uppercase tracking-[0.25em] text-neutral-500">
         Paradise Ironworks & Construction LLC
       </p>
 
-      <h1 className="mt-6 text-4xl font-bold tracking-tight">
+      <h1 className="mt-4 text-3xl font-bold tracking-tight sm:mt-6 sm:text-4xl">
         Proposal
       </h1>
 
@@ -66,12 +66,12 @@ export default async function ProposalPreviewPage({
       alt="Paradise Ironworks Logo"
       width={320}
       height={160}
-      className="h-24 w-auto object-contain"
+      className="h-16 w-auto self-start object-contain sm:h-24"
     />
   </div>
 </header>
 
-        <section className="mt-8 grid grid-cols-2 gap-10 text-sm">
+        <section className="mt-8 grid gap-6 text-sm sm:grid-cols-2 sm:gap-10">
           <div>
             <h2 className="font-semibold uppercase tracking-wide text-neutral-500">
               Project
@@ -236,8 +236,8 @@ function ProposalSection({
 
 function SignatureLine({ label }: { label: string }) {
   return (
-    <div className="flex gap-3">
-      <span className="w-56 font-medium">{label}:</span>
+    <div className="flex flex-col gap-2 sm:flex-row sm:gap-3">
+      <span className="font-medium sm:w-56">{label}:</span>
       <span className="flex-1 border-b border-neutral-500" />
     </div>
   );

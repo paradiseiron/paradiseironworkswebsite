@@ -118,7 +118,7 @@ export default async function AdminPage({
     <div className="mx-auto max-w-[1500px]">
       <div>
         <div>
-          <h1 className="text-3xl font-semibold">Dashboard</h1>
+          <h1 className="text-2xl font-semibold sm:text-3xl">Dashboard</h1>
           <p className="mt-2 text-neutral-400">
             A live snapshot of your project pipeline and follow-up workload.
           </p>
@@ -242,7 +242,7 @@ export default async function AdminPage({
       </div>
 
       <section className="mt-6 overflow-hidden rounded-2xl border border-white/10 bg-white/[0.03]">
-        <div className="flex items-center justify-between gap-4 border-b border-white/10 px-6 py-5">
+        <div className="flex items-center justify-between gap-4 border-b border-white/10 px-4 py-4 sm:px-6 sm:py-5">
           <div>
             <h2 className="text-lg font-semibold">Recent projects</h2>
             <p className="mt-1 text-sm text-neutral-400">
@@ -259,7 +259,39 @@ export default async function AdminPage({
         </div>
 
         {records.length ? (
-          <div className="overflow-x-auto">
+          <>
+          <div className="divide-y divide-white/10 md:hidden">
+            {records.slice(0, 6).map((project) => (
+              <Link
+                key={project.id}
+                href={`/admin/projects/${project.id}`}
+                className="block px-4 py-4 transition hover:bg-white/[0.025]"
+              >
+                <div className="flex items-start justify-between gap-3">
+                  <div className="min-w-0">
+                    <p className="truncate font-medium">{project.customer_name}</p>
+                    <p className="mt-1 truncate text-sm text-neutral-400">
+                      {project.project_type || project.project_category || "Project"}
+                    </p>
+                  </div>
+                  <span className="shrink-0 rounded-full border border-white/10 bg-white/5 px-2.5 py-1 text-xs capitalize text-neutral-200">
+                    {project.status || "lead"}
+                  </span>
+                </div>
+                <div className="mt-3 flex items-center justify-between text-xs text-neutral-500">
+                  <span>
+                    {project.received_at
+                      ? new Date(project.received_at).toLocaleDateString()
+                      : "No received date"}
+                  </span>
+                  {project.has_open_follow_up && (
+                    <span className="text-red-300">Needs follow-up</span>
+                  )}
+                </div>
+              </Link>
+            ))}
+          </div>
+          <div className="hidden overflow-x-auto md:block">
             <table className="w-full min-w-[760px] text-left text-sm">
               <thead className="text-xs uppercase tracking-wide text-neutral-500">
                 <tr>
@@ -317,6 +349,7 @@ export default async function AdminPage({
               </tbody>
             </table>
           </div>
+          </>
         ) : (
           <div className="p-6">
             <EmptyState>No projects yet. Add one to populate the dashboard.</EmptyState>

@@ -29,8 +29,8 @@ export default async function EditProjectPage({
 
   return (
     <div className="mx-auto max-w-5xl">
-      <div className="rounded-3xl border border-white/10 bg-white/[0.02] p-8">
-        <h1 className="text-3xl font-semibold">Edit Project</h1>
+      <div className="rounded-2xl border border-white/10 bg-white/[0.02] p-4 sm:rounded-3xl sm:p-8">
+        <h1 className="text-2xl font-semibold sm:text-3xl">Edit Project</h1>
 
         <p className="mt-2 text-neutral-400">Update project information.</p>
 

@@ -1,13 +1,17 @@
-import { NextResponse } from "next/server";
+import { NextRequest, NextResponse } from "next/server";
 import puppeteer from "puppeteer";
+import type { Browser, Page } from "puppeteer";
 import { createClient } from "@/lib/supabase/server";
 import { requireAuthenticatedUser } from "@/lib/auth";
 
 export const dynamic = "force-dynamic";
 export const runtime = "nodejs";
 
+let browserInstance: Browser | null = null;
+let browserLaunch: Promise<Browser> | null = null;
+
 export async function GET(
-  request: Request,
+  request: NextRequest,
   context: { params: Promise<{ id: string }> }
 ) {
   await requireAuthenticatedUser();
@@ -26,14 +30,21 @@ export async function GET(
 
   const origin = new URL(request.url).origin;
   const proposalUrl = `${origin}/admin/projects/${id}/proposal`;
-  const browser = await puppeteer.launch({ headless: true });
+  let page: Page | undefined;
 
   try {
-    const page = await browser.newPage();
-    const cookieHeader = request.headers.get("cookie");
+    const browser = await getBrowser();
+    page = await browser.newPage();
+    const cookies = request.cookies.getAll();
 
-    if (cookieHeader) {
-      await page.setExtraHTTPHeaders({ cookie: cookieHeader });
+    if (cookies.length > 0) {
+      await page.setCookie(
+        ...cookies.map(({ name, value }) => ({
+          name,
+          value,
+          url: origin,
+        }))
+      );
     }
 
     const response = await page.goto(proposalUrl, {
@@ -44,6 +55,14 @@ export async function GET(
       throw new Error(
         `Proposal preview returned ${response?.status() ?? "no response"}`
       );
+    }
+
+    const loadedUrl = new URL(page.url());
+    if (
+      loadedUrl.pathname !== `/admin/projects/${id}/proposal` ||
+      !(await page.$(".proposal-document"))
+    ) {
+      throw new Error(`Proposal preview redirected to ${loadedUrl.pathname}`);
     }
 
     await page.emulateMediaType("print");
@@ -82,7 +101,30 @@ export async function GET(
       status: 500,
     });
   } finally {
-    await browser.close();
+    await page?.close().catch(() => undefined);
+  }
+}
+
+async function getBrowser() {
+  if (browserInstance?.connected) {
+    return browserInstance;
+  }
+
+  if (!browserLaunch) {
+    browserLaunch = puppeteer.launch({ headless: true });
+  }
+
+  try {
+    const browser = await browserLaunch;
+    browserInstance = browser;
+    browser.once("disconnected", () => {
+      if (browserInstance === browser) {
+        browserInstance = null;
+      }
+    });
+    return browser;
+  } finally {
+    browserLaunch = null;
   }
 }
 

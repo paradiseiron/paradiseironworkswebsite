@@ -92,9 +92,9 @@ export default async function ProjectsPage({
 
   return (
     <div>
-      <div className="mb-8 flex items-center justify-between">
+      <div className="mb-6 sm:mb-8">
         <div>
-          <h1 className="text-3xl font-semibold">Projects</h1>
+          <h1 className="text-2xl font-semibold sm:text-3xl">Projects</h1>
 
           <p className="mt-2 text-neutral-400">
             Track jobs from lead through proposal, production, completion, and
@@ -129,7 +129,99 @@ export default async function ProjectsPage({
         status={status}
       />
 
-      <div className="overflow-x-auto rounded-2xl border border-white/10">
+      <div className="grid gap-3 md:hidden">
+        {projects && projects.length > 0 ? (
+          projects.map((project) => {
+            const isNewWebsiteLead =
+              project.lead_source === "Website" &&
+              !project.website_lead_reviewed_at;
+
+            return (
+              <Link
+                key={project.id}
+                href={`/admin/projects/${project.id}`}
+                className={`rounded-2xl border p-4 transition active:scale-[0.99] ${
+                  isNewWebsiteLead
+                    ? "border-sky-400/25 bg-sky-400/[0.06]"
+                    : "border-white/10 bg-white/[0.03]"
+                }`}
+              >
+                <div className="flex items-start justify-between gap-3">
+                  <div className="min-w-0">
+                    <p className="truncate font-semibold">
+                      {project.customer_name}
+                    </p>
+                    <p className="mt-1 truncate text-sm text-neutral-400">
+                      {project.project_type || project.project_category || "Project"}
+                    </p>
+                  </div>
+                  <span
+                    className={`shrink-0 rounded-full border px-2.5 py-1 text-xs capitalize ${getStatusStyles(
+                      project.status
+                    )}`}
+                  >
+                    {project.status || "lead"}
+                  </span>
+                </div>
+
+                <dl className="mt-4 grid grid-cols-2 gap-x-4 gap-y-3 text-sm">
+                  <MobileProjectDetail
+                    label="Received"
+                    value={
+                      project.received_at
+                        ? new Date(project.received_at).toLocaleDateString()
+                        : "—"
+                    }
+                  />
+                  <MobileProjectDetail
+                    label="Proposal"
+                    value={project.proposal_number || "—"}
+                  />
+                  <MobileProjectDetail
+                    label="Proposal amount"
+                    value={
+                      project.proposal_amount
+                        ? `$${Number(project.proposal_amount).toLocaleString()}`
+                        : "—"
+                    }
+                  />
+                  <MobileProjectDetail
+                    label="Balance due"
+                    value={
+                      project.balance_due
+                        ? `$${Number(project.balance_due).toLocaleString()}`
+                        : "—"
+                    }
+                  />
+                </dl>
+
+                {(isNewWebsiteLead || project.has_open_follow_up) && (
+                  <div className="mt-4 flex flex-wrap gap-2">
+                    {isNewWebsiteLead && (
+                      <span className="rounded-full bg-sky-400/10 px-2.5 py-1 text-xs font-medium text-sky-300">
+                        New website lead
+                      </span>
+                    )}
+                    {project.has_open_follow_up && (
+                      <span className="rounded-full bg-red-500/10 px-2.5 py-1 text-xs font-medium text-red-300">
+                        Needs follow-up
+                      </span>
+                    )}
+                  </div>
+                )}
+              </Link>
+            );
+          })
+        ) : (
+          <p className="rounded-2xl border border-white/10 p-5 text-sm text-neutral-400">
+            {query || period !== "all" || category || status
+              ? "No projects match the selected filters."
+              : "No projects yet."}
+          </p>
+        )}
+      </div>
+
+      <div className="hidden overflow-x-auto rounded-2xl border border-white/10 md:block">
         <table className="w-full min-w-[1260px] text-left text-sm">
           <thead className="bg-white/5 text-neutral-300">
             <tr>
@@ -239,6 +331,21 @@ export default async function ProjectsPage({
           </tbody>
         </table>
       </div>
+    </div>
+  );
+}
+
+function MobileProjectDetail({
+  label,
+  value,
+}: {
+  label: string;
+  value: string;
+}) {
+  return (
+    <div className="min-w-0">
+      <dt className="text-xs uppercase tracking-wide text-neutral-500">{label}</dt>
+      <dd className="mt-1 truncate text-neutral-200">{value}</dd>
     </div>
   );
 }
