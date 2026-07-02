@@ -8,12 +8,24 @@ interface BeforeInstallPromptEvent extends Event {
   userChoice: Promise<{ outcome: "accepted" | "dismissed"; platform: string }>;
 }
 
+const INSTALL_PROMPT_ACKNOWLEDGED_KEY =
+  "paradise-admin-install-prompt-acknowledged";
+
+function wasInstallPromptAcknowledged() {
+  if (typeof window === "undefined") return false;
+
+  return (
+    window.localStorage.getItem(INSTALL_PROMPT_ACKNOWLEDGED_KEY) === "true" ||
+    window.localStorage.getItem("admin-pwa-ios-dismissed") === "true"
+  );
+}
+
 export default function AdminPwa() {
   const [installPrompt, setInstallPrompt] =
     useState<BeforeInstallPromptEvent | null>(null);
   const [waitingWorker, setWaitingWorker] = useState<ServiceWorker | null>(null);
   const [showIosInstall, setShowIosInstall] = useState(false);
-  const [dismissed, setDismissed] = useState(false);
+  const [dismissed, setDismissed] = useState(wasInstallPromptAcknowledged);
   const refreshing = useRef(false);
 
   useEffect(() => {
@@ -25,21 +37,37 @@ export default function AdminPwa() {
       Boolean(
         (navigator as Navigator & { standalone?: boolean }).standalone
       );
+    const installPromptAcknowledged = wasInstallPromptAcknowledged();
+
+    if (installPromptAcknowledged) {
+      window.localStorage.setItem(INSTALL_PROMPT_ACKNOWLEDGED_KEY, "true");
+    }
+
     const shouldShowIosInstall =
       isIos &&
       !isStandalone &&
-      window.localStorage.getItem("admin-pwa-ios-dismissed") !== "true";
+      !installPromptAcknowledged;
     const iosPromptTimer = shouldShowIosInstall
       ? window.setTimeout(() => setShowIosInstall(true), 0)
       : undefined;
 
     const handleInstallPrompt = (event: Event) => {
       event.preventDefault();
+      if (
+        window.localStorage.getItem(INSTALL_PROMPT_ACKNOWLEDGED_KEY) === "true"
+      ) {
+        return;
+      }
       setInstallPrompt(event as BeforeInstallPromptEvent);
       setDismissed(false);
     };
 
-    const handleInstalled = () => setInstallPrompt(null);
+    const handleInstalled = () => {
+      window.localStorage.setItem(INSTALL_PROMPT_ACKNOWLEDGED_KEY, "true");
+      setInstallPrompt(null);
+      setShowIosInstall(false);
+      setDismissed(true);
+    };
     const handleControllerChange = () => {
       if (refreshing.current) return;
       refreshing.current = true;
@@ -90,18 +118,21 @@ export default function AdminPwa() {
     };
   }, []);
 
-  if (
-    dismissed ||
-    (!installPrompt && !waitingWorker && !showIosInstall)
-  ) {
+  const installPromptAcknowledged = wasInstallPromptAcknowledged();
+  const hasInstallNotice =
+    !installPromptAcknowledged && Boolean(installPrompt || showIosInstall);
+
+  if (dismissed || (!hasInstallNotice && !waitingWorker)) {
     return null;
   }
 
   async function install() {
     if (!installPrompt) return;
     await installPrompt.prompt();
-    const choice = await installPrompt.userChoice;
-    if (choice.outcome === "accepted") setInstallPrompt(null);
+    await installPrompt.userChoice;
+    window.localStorage.setItem(INSTALL_PROMPT_ACKNOWLEDGED_KEY, "true");
+    setInstallPrompt(null);
+    setDismissed(true);
   }
 
   function update() {
@@ -109,11 +140,17 @@ export default function AdminPwa() {
   }
 
   const isUpdate = Boolean(waitingWorker);
-  const isIosInstall = !isUpdate && !installPrompt && showIosInstall;
+  const isIosInstall =
+    !isUpdate &&
+    !installPromptAcknowledged &&
+    !installPrompt &&
+    showIosInstall;
 
   function dismiss() {
-    if (isIosInstall) {
-      window.localStorage.setItem("admin-pwa-ios-dismissed", "true");
+    if (!isUpdate) {
+      window.localStorage.setItem(INSTALL_PROMPT_ACKNOWLEDGED_KEY, "true");
+      setInstallPrompt(null);
+      setShowIosInstall(false);
     }
     setDismissed(true);
   }

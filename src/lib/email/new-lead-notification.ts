@@ -20,19 +20,35 @@ function escapeHtml(value: string) {
     .replaceAll("'", "&#039;");
 }
 
+function normalizeMailbox(value: string) {
+  const unquoted = value
+    .trim()
+    .replace(/^["'“”]+|["'“”]+$/g, "")
+    .trim();
+  const mailbox = unquoted.match(/^(.*?)<\s*([^<>\s]+@[^<>\s]+)\s*>$/);
+
+  if (!mailbox) return unquoted;
+
+  const name = mailbox[1].trim();
+  const email = mailbox[2].trim();
+  return name ? `${name} <${email}>` : email;
+}
+
 export async function sendNewLeadNotification(lead: NewLeadNotification) {
   const apiKey = process.env.RESEND_API_KEY;
-  const from = process.env.LEAD_NOTIFICATION_FROM_EMAIL;
-  const to =
+  const configuredFrom = process.env.LEAD_NOTIFICATION_FROM_EMAIL;
+  const configuredTo =
     process.env.LEAD_NOTIFICATION_TO_EMAIL || "info@paradiseironworks.com";
 
-  if (!apiKey || !from) {
+  if (!apiKey || !configuredFrom) {
     console.warn(
       "Lead notification email skipped: RESEND_API_KEY or LEAD_NOTIFICATION_FROM_EMAIL is missing."
     );
     return false;
   }
 
+  const from = normalizeMailbox(configuredFrom);
+  const to = normalizeMailbox(configuredTo);
   const siteUrl = (
     process.env.NEXT_PUBLIC_SITE_URL || "https://www.paradiseironworks.com"
   ).replace(/\/$/, "");

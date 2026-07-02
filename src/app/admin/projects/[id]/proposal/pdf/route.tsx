@@ -88,14 +88,16 @@ export function ProposalPdf({
               Paradise Ironworks & Construction LLC
             </Text>
             <Text style={styles.title}>Proposal</Text>
-            <Text style={styles.meta}>
-              <Text style={styles.inlineLabel}>Proposal #:</Text>{" "}
-              {value("proposal_number") || "Draft"}
-            </Text>
-            <Text style={styles.meta}>
-              <Text style={styles.inlineLabel}>Date:</Text>{" "}
-              {new Date().toLocaleDateString()}
-            </Text>
+            <View style={styles.metaGroup}>
+              <Text style={styles.meta}>
+                <Text style={styles.inlineLabel}>Proposal #:</Text>{" "}
+                {value("proposal_number") || "Draft"}
+              </Text>
+              <Text style={styles.meta}>
+                <Text style={styles.inlineLabel}>Date:</Text>{" "}
+                {new Date().toLocaleDateString()}
+              </Text>
+            </View>
           </View>
           {/* react-pdf Image does not expose the HTML alt prop. */}
           {/* eslint-disable-next-line jsx-a11y/alt-text */}
@@ -140,11 +142,7 @@ export function ProposalPdf({
 
         <PdfSection title="Scope of Work" content={value("proposal_scope")} />
         <PdfSection title="Finish" content={value("proposal_finish")} />
-        <PdfSection
-          title="Exclusions"
-          content={value("proposal_exclusions")}
-          breakBefore
-        />
+        <PdfSection title="Exclusions" content={value("proposal_exclusions")} />
         <PdfSection
           title="Pricing"
           content={
@@ -184,7 +182,7 @@ export function ProposalPdf({
           </Text>
         </View>
 
-        <View style={styles.acceptance} wrap={false} break>
+        <View style={styles.acceptance} wrap={false}>
           <Text style={styles.acceptanceTitle}>Acceptance of Proposal</Text>
           <Text style={styles.acceptanceCopy}>
             The above proposal, pricing, scope, and terms are hereby accepted.
@@ -218,16 +216,14 @@ function Label({
 function PdfSection({
   title,
   content,
-  breakBefore = false,
 }: {
   title: string;
   content: string;
-  breakBefore?: boolean;
 }) {
   if (!content) return null;
 
   return (
-    <View style={styles.section} minPresenceAhead={60} break={breakBefore}>
+    <View style={styles.section} minPresenceAhead={42}>
       <Text style={styles.sectionTitle}>{title}</Text>
       <PdfContent content={content} />
     </View>
@@ -235,35 +231,37 @@ function PdfSection({
 }
 
 function PdfContent({ content }: { content: string }) {
-  const lines = content
-    .split(/\r?\n/)
-    .map((line) => line.trim())
-    .filter(Boolean);
-  const hasBullets = lines.some((line) => line.startsWith("●"));
+  const lines = content.split(/\r?\n/);
+  const hasBullets = lines.some((line) => /^\s*[●•]\s*/.test(line));
 
   if (!hasBullets) {
     return <Text style={styles.sectionBody}>{content}</Text>;
   }
 
-  const items = lines.reduce<string[]>((groups, line) => {
-    if (line.startsWith("●")) {
-      groups.push(line.replace(/^●\s*/, ""));
-    } else if (groups.length) {
-      groups[groups.length - 1] += ` ${line}`;
-    } else {
-      groups.push(line);
-    }
-    return groups;
-  }, []);
-
   return (
     <View style={styles.list}>
-      {items.map((item, index) => (
-        <View key={`${index}-${item}`} style={styles.listItem} wrap={false}>
-          <View style={styles.bullet} />
-          <Text style={styles.listItemText}>{item}</Text>
-        </View>
-      ))}
+      {lines.map((line, index) => {
+        const bulletMatch = line.match(/^\s*[●•]\s*(.*)$/);
+
+        if (bulletMatch) {
+          return (
+            <View key={index} style={styles.listItem} wrap={false}>
+              <View style={styles.bullet} />
+              <Text style={styles.listItemText}>{bulletMatch[1]}</Text>
+            </View>
+          );
+        }
+
+        if (!line.trim()) {
+          return <View key={index} style={styles.blankLine} />;
+        }
+
+        return (
+          <Text key={index} style={styles.listContinuation}>
+            {line}
+          </Text>
+        );
+      })}
     </View>
   );
 }
@@ -286,13 +284,13 @@ const styles = StyleSheet.create({
     color: "#171717",
     backgroundColor: "#ffffff",
     fontFamily: "Helvetica",
-    fontSize: 10.5,
-    lineHeight: 1.35,
+    fontSize: 10,
+    lineHeight: 1.55,
   },
   header: {
     flexDirection: "row",
     justifyContent: "space-between",
-    paddingBottom: 27,
+    paddingBottom: 18,
     borderBottomWidth: 1,
     borderBottomColor: "#d4d4d4",
   },
@@ -300,23 +298,25 @@ const styles = StyleSheet.create({
   company: {
     color: "#737373",
     fontSize: 9,
+    lineHeight: 1.25,
     fontFamily: "Helvetica-Bold",
     letterSpacing: 1.4,
     textTransform: "uppercase",
   },
   title: {
     marginTop: 18,
-    marginBottom: 10,
     fontSize: 28,
+    lineHeight: 1.1,
     fontFamily: "Helvetica-Bold",
   },
-  meta: { color: "#525252", fontSize: 9.5, marginTop: 2 },
+  metaGroup: { marginTop: 12 },
+  meta: { color: "#525252", fontSize: 9.5, lineHeight: 1.55 },
   inlineLabel: { fontFamily: "Helvetica-Bold" },
   logo: { width: 72, height: 72, objectFit: "contain" },
   projectGrid: {
     flexDirection: "row",
     gap: 34,
-    marginTop: 25,
+    marginTop: 22,
   },
   column: { flexBasis: 0, flexGrow: 1 },
   label: {
@@ -329,10 +329,10 @@ const styles = StyleSheet.create({
   labelSpaced: { marginTop: 14 },
   body: { marginTop: 5 },
   bodyStrong: { marginTop: 5, fontFamily: "Helvetica-Bold" },
-  contact: { marginTop: 8 },
+  contact: { marginTop: 14 },
   contactLine: { marginTop: 3 },
   intro: { marginTop: 22, lineHeight: 1.65 },
-  section: { marginTop: 16 },
+  section: { marginTop: 24 },
   sectionTitle: { fontSize: 13, fontFamily: "Helvetica-Bold" },
   sectionBody: { marginTop: 7, lineHeight: 1.65 },
   list: { marginTop: 7 },
@@ -348,11 +348,14 @@ const styles = StyleSheet.create({
     borderRadius: 3.5,
     backgroundColor: "#171717",
   },
-  listItemText: { flexGrow: 1, flexBasis: 0, lineHeight: 1.2 },
+  listItemText: { flexGrow: 1, flexBasis: 0, lineHeight: 1.65 },
+  listContinuation: { lineHeight: 1.65 },
+  blankLine: { height: 16.5 },
   closing: { marginTop: 30 },
   submitted: { marginTop: 18 },
   preparedBy: { marginTop: 12 },
   acceptance: {
+    marginTop: 36,
     paddingTop: 24,
     borderTopWidth: 1,
     borderTopColor: "#d4d4d4",
