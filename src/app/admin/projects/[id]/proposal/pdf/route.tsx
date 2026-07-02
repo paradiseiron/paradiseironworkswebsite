@@ -157,7 +157,7 @@ function ProposalPdf({
           content={value("proposal_clarifications")}
         />
 
-        <View style={styles.closing} wrap={false}>
+        <View style={styles.closing}>
           <Text style={styles.body}>
             We appreciate the opportunity to provide this proposal and look
             forward to working with you on this project.
@@ -175,7 +175,7 @@ function ProposalPdf({
           </Text>
         </View>
 
-        <View style={styles.acceptance} break>
+        <View style={styles.acceptance} wrap={false}>
           <Text style={styles.acceptanceTitle}>Acceptance of Proposal</Text>
           <Text style={styles.acceptanceCopy}>
             The above proposal, pricing, scope, and terms are hereby accepted.
@@ -187,13 +187,6 @@ function ProposalPdf({
           <SignatureLine label="Purchase Order / Authorization No." />
         </View>
 
-        <Text
-          fixed
-          style={styles.pageNumber}
-          render={({ pageNumber, totalPages }) =>
-            `Page ${pageNumber} of ${totalPages}`
-          }
-        />
       </Page>
     </Document>
   );
@@ -223,7 +216,7 @@ function PdfSection({
   if (!content) return null;
 
   return (
-    <View style={styles.section}>
+    <View style={styles.section} minPresenceAhead={42}>
       <Text style={styles.sectionTitle}>{title}</Text>
       <Text style={styles.sectionBody}>{content}</Text>
     </View>
@@ -246,6 +239,7 @@ const styles = StyleSheet.create({
     paddingBottom: 50,
     paddingLeft: 42,
     color: "#171717",
+    backgroundColor: "#ffffff",
     fontFamily: "Helvetica",
     fontSize: 10,
     lineHeight: 1.55,
@@ -272,13 +266,13 @@ const styles = StyleSheet.create({
     fontFamily: "Helvetica-Bold",
   },
   meta: { color: "#525252", fontSize: 9.5, marginTop: 2 },
-  logo: { width: 105, height: 60, objectFit: "contain" },
+  logo: { width: 80, height: 80, objectFit: "contain" },
   projectGrid: {
     flexDirection: "row",
     gap: 34,
     marginTop: 22,
   },
-  column: { width: "50%" },
+  column: { flexBasis: 0, flexGrow: 1 },
   label: {
     color: "#737373",
     fontFamily: "Helvetica-Bold",
@@ -291,14 +285,15 @@ const styles = StyleSheet.create({
   bodyStrong: { marginTop: 5, fontFamily: "Helvetica-Bold" },
   contact: { marginTop: 14 },
   intro: { marginTop: 22, lineHeight: 1.65 },
-  section: { marginTop: 20 },
+  section: { marginTop: 24 },
   sectionTitle: { fontSize: 13, fontFamily: "Helvetica-Bold" },
   sectionBody: { marginTop: 7, lineHeight: 1.65 },
-  closing: { marginTop: 24 },
+  closing: { marginTop: 30 },
   submitted: { marginTop: 18 },
   preparedBy: { marginTop: 12 },
   acceptance: {
-    paddingTop: 20,
+    marginTop: 36,
+    paddingTop: 24,
     borderTopWidth: 1,
     borderTopColor: "#d4d4d4",
   },
@@ -319,13 +314,6 @@ const styles = StyleSheet.create({
     flexGrow: 1,
     borderBottomWidth: 1,
     borderBottomColor: "#737373",
-  },
-  pageNumber: {
-    position: "absolute",
-    right: 42,
-    bottom: 22,
-    color: "#a3a3a3",
-    fontSize: 8,
   },
 });
 
