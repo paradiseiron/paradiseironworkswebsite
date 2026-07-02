@@ -57,7 +57,7 @@ export async function GET(
   }
 }
 
-function ProposalPdf({
+export function ProposalPdf({
   project,
   logoUrl,
 }: {
@@ -89,10 +89,12 @@ function ProposalPdf({
             </Text>
             <Text style={styles.title}>Proposal</Text>
             <Text style={styles.meta}>
-              Proposal #: {value("proposal_number") || "Draft"}
+              <Text style={styles.inlineLabel}>Proposal #:</Text>{" "}
+              {value("proposal_number") || "Draft"}
             </Text>
             <Text style={styles.meta}>
-              Date: {new Date().toLocaleDateString()}
+              <Text style={styles.inlineLabel}>Date:</Text>{" "}
+              {new Date().toLocaleDateString()}
             </Text>
           </View>
           {/* react-pdf Image does not expose the HTML alt prop. */}
@@ -115,14 +117,17 @@ function ProposalPdf({
               {value("proposal_attention") || value("contact_name") || "—"}
             </Text>
             <View style={styles.contact}>
-              <Text style={styles.body}>
-                Office: {value("proposal_office_phone") || "—"}
+              <Text style={styles.contactLine}>
+                <Text style={styles.inlineLabel}>Office:</Text>{" "}
+                {value("proposal_office_phone") || "—"}
               </Text>
-              <Text style={styles.body}>
-                Cell: {value("proposal_cell_phone") || value("phone") || "—"}
+              <Text style={styles.contactLine}>
+                <Text style={styles.inlineLabel}>Cell:</Text>{" "}
+                {value("proposal_cell_phone") || value("phone") || "—"}
               </Text>
-              <Text style={styles.body}>
-                Email: {value("proposal_email") || value("email") || "—"}
+              <Text style={styles.contactLine}>
+                <Text style={styles.inlineLabel}>Email:</Text>{" "}
+                {value("proposal_email") || value("email") || "—"}
               </Text>
             </View>
           </View>
@@ -135,7 +140,11 @@ function ProposalPdf({
 
         <PdfSection title="Scope of Work" content={value("proposal_scope")} />
         <PdfSection title="Finish" content={value("proposal_finish")} />
-        <PdfSection title="Exclusions" content={value("proposal_exclusions")} />
+        <PdfSection
+          title="Exclusions"
+          content={value("proposal_exclusions")}
+          breakBefore
+        />
         <PdfSection
           title="Pricing"
           content={
@@ -175,7 +184,7 @@ function ProposalPdf({
           </Text>
         </View>
 
-        <View style={styles.acceptance} wrap={false}>
+        <View style={styles.acceptance} wrap={false} break>
           <Text style={styles.acceptanceTitle}>Acceptance of Proposal</Text>
           <Text style={styles.acceptanceCopy}>
             The above proposal, pricing, scope, and terms are hereby accepted.
@@ -209,16 +218,52 @@ function Label({
 function PdfSection({
   title,
   content,
+  breakBefore = false,
 }: {
   title: string;
   content: string;
+  breakBefore?: boolean;
 }) {
   if (!content) return null;
 
   return (
-    <View style={styles.section} minPresenceAhead={42}>
+    <View style={styles.section} minPresenceAhead={60} break={breakBefore}>
       <Text style={styles.sectionTitle}>{title}</Text>
-      <Text style={styles.sectionBody}>{content}</Text>
+      <PdfContent content={content} />
+    </View>
+  );
+}
+
+function PdfContent({ content }: { content: string }) {
+  const lines = content
+    .split(/\r?\n/)
+    .map((line) => line.trim())
+    .filter(Boolean);
+  const hasBullets = lines.some((line) => line.startsWith("●"));
+
+  if (!hasBullets) {
+    return <Text style={styles.sectionBody}>{content}</Text>;
+  }
+
+  const items = lines.reduce<string[]>((groups, line) => {
+    if (line.startsWith("●")) {
+      groups.push(line.replace(/^●\s*/, ""));
+    } else if (groups.length) {
+      groups[groups.length - 1] += ` ${line}`;
+    } else {
+      groups.push(line);
+    }
+    return groups;
+  }, []);
+
+  return (
+    <View style={styles.list}>
+      {items.map((item, index) => (
+        <View key={`${index}-${item}`} style={styles.listItem} wrap={false}>
+          <View style={styles.bullet} />
+          <Text style={styles.listItemText}>{item}</Text>
+        </View>
+      ))}
     </View>
   );
 }
@@ -241,13 +286,13 @@ const styles = StyleSheet.create({
     color: "#171717",
     backgroundColor: "#ffffff",
     fontFamily: "Helvetica",
-    fontSize: 10,
-    lineHeight: 1.55,
+    fontSize: 10.5,
+    lineHeight: 1.35,
   },
   header: {
     flexDirection: "row",
     justifyContent: "space-between",
-    paddingBottom: 18,
+    paddingBottom: 27,
     borderBottomWidth: 1,
     borderBottomColor: "#d4d4d4",
   },
@@ -266,11 +311,12 @@ const styles = StyleSheet.create({
     fontFamily: "Helvetica-Bold",
   },
   meta: { color: "#525252", fontSize: 9.5, marginTop: 2 },
-  logo: { width: 80, height: 80, objectFit: "contain" },
+  inlineLabel: { fontFamily: "Helvetica-Bold" },
+  logo: { width: 72, height: 72, objectFit: "contain" },
   projectGrid: {
     flexDirection: "row",
     gap: 34,
-    marginTop: 22,
+    marginTop: 25,
   },
   column: { flexBasis: 0, flexGrow: 1 },
   label: {
@@ -283,16 +329,30 @@ const styles = StyleSheet.create({
   labelSpaced: { marginTop: 14 },
   body: { marginTop: 5 },
   bodyStrong: { marginTop: 5, fontFamily: "Helvetica-Bold" },
-  contact: { marginTop: 14 },
+  contact: { marginTop: 8 },
+  contactLine: { marginTop: 3 },
   intro: { marginTop: 22, lineHeight: 1.65 },
-  section: { marginTop: 24 },
+  section: { marginTop: 16 },
   sectionTitle: { fontSize: 13, fontFamily: "Helvetica-Bold" },
   sectionBody: { marginTop: 7, lineHeight: 1.65 },
+  list: { marginTop: 7 },
+  listItem: {
+    flexDirection: "row",
+    alignItems: "flex-start",
+  },
+  bullet: {
+    width: 7,
+    height: 7,
+    marginTop: 5,
+    marginRight: 4,
+    borderRadius: 3.5,
+    backgroundColor: "#171717",
+  },
+  listItemText: { flexGrow: 1, flexBasis: 0, lineHeight: 1.2 },
   closing: { marginTop: 30 },
   submitted: { marginTop: 18 },
   preparedBy: { marginTop: 12 },
   acceptance: {
-    marginTop: 36,
     paddingTop: 24,
     borderTopWidth: 1,
     borderTopColor: "#d4d4d4",
@@ -309,7 +369,7 @@ const styles = StyleSheet.create({
     alignItems: "flex-end",
     marginTop: 14,
   },
-  signatureLabel: { width: 172, fontFamily: "Helvetica-Bold" },
+  signatureLabel: { width: 172 },
   signatureRule: {
     flexGrow: 1,
     borderBottomWidth: 1,
