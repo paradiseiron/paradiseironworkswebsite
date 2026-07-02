@@ -2,7 +2,7 @@
 
 import { useEffect, useState } from "react";
 import { useSearchParams } from "next/navigation";
-import { CheckCircle2, X } from "lucide-react";
+import { CheckCircle2, Phone, X } from "lucide-react";
 import AddProjectActivityModal from "@/components/AddProjectActivityModal";
 
 type ProjectTab = "overview" | "proposal" | "timeline" | "invoice";
@@ -191,7 +191,7 @@ export default function ProjectDetailTabs({
                 label="Contact Name"
                 value={project.contact_name || project.customer_name}
               />
-              <Detail label="Phone" value={project.phone} />
+              <PhoneDetail value={project.phone} />
               <Detail label="Email" value={project.email} />
               <Detail label="Source" value={project.lead_source} />
               <Detail label="Address" value={project.project_address} />
@@ -572,6 +572,31 @@ function Detail({
       </p>
 
       <p className="mt-1 text-neutral-200">{value || "—"}</p>
+    </div>
+  );
+}
+
+function PhoneDetail({ value }: { value?: string | null }) {
+  const dialableNumber = value?.replace(/[^\d+]/g, "");
+
+  return (
+    <div>
+      <p className="text-xs uppercase tracking-[0.18em] text-neutral-500">
+        Phone
+      </p>
+
+      {value && dialableNumber ? (
+        <a
+          href={`tel:${dialableNumber}`}
+          className="mt-1 inline-flex items-center gap-2 text-sm font-medium text-[#fb5411] hover:text-[#ff6a2b]"
+          aria-label={`Call ${value}`}
+        >
+          <Phone className="h-4 w-4" aria-hidden="true" />
+          {value}
+        </a>
+      ) : (
+        <p className="mt-1 text-neutral-200">—</p>
+      )}
     </div>
   );
 }

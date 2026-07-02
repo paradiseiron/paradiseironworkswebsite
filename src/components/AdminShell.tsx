@@ -4,7 +4,13 @@ import { useEffect, useState } from "react";
 import Image from "next/image";
 import Link from "next/link";
 import { usePathname, useSearchParams } from "next/navigation";
-import { Hammer, LayoutDashboard } from "lucide-react";
+import {
+  ArrowLeft,
+  Download,
+  Hammer,
+  LayoutDashboard,
+  Pencil,
+} from "lucide-react";
 import DeleteProjectButton from "@/components/DeleteProjectButton";
 import AdminProfileMenu from "@/components/AdminProfileMenu";
 
@@ -119,27 +125,36 @@ export default function AdminShell({
               {isNewProjectPage && (
                 <Link
                   href="/admin/projects"
-                  className="rounded-xl border border-white/10 px-4 py-2 text-sm text-neutral-300 transition hover:bg-white/5 hover:text-white"
+                  aria-label="Back to Projects"
+                  title="Back to Projects"
+                  className="inline-flex h-10 items-center justify-center gap-2 rounded-xl border border-white/10 px-3 text-sm text-neutral-300 transition hover:bg-white/5 hover:text-white sm:px-4"
                 >
-                  ← Back to Projects
+                  <ArrowLeft className="h-4 w-4" aria-hidden="true" />
+                  <span className="hidden sm:inline">Back to Projects</span>
                 </Link>
               )}
 
               {isProjectDetail && (
                 <Link
                   href="/admin/projects"
-                  className="rounded-xl border border-white/10 px-4 py-2 text-sm text-neutral-300 transition hover:bg-white/5 hover:text-white"
+                  aria-label="Back to Projects"
+                  title="Back to Projects"
+                  className="inline-flex h-10 items-center justify-center gap-2 rounded-xl border border-white/10 px-3 text-sm text-neutral-300 transition hover:bg-white/5 hover:text-white sm:px-4"
                 >
-                  ← Back to Projects
+                  <ArrowLeft className="h-4 w-4" aria-hidden="true" />
+                  <span className="hidden sm:inline">Back to Projects</span>
                 </Link>
               )}
 
               {isProposalPreview && (
                 <Link
                   href={projectPath}
-                  className="rounded-xl border border-white/10 px-4 py-2 text-sm text-neutral-300 transition hover:bg-white/5 hover:text-white"
+                  aria-label="Back to Project"
+                  title="Back to Project"
+                  className="inline-flex h-10 items-center justify-center gap-2 rounded-xl border border-white/10 px-3 text-sm text-neutral-300 transition hover:bg-white/5 hover:text-white sm:px-4"
                 >
-                  ← Back to Project
+                  <ArrowLeft className="h-4 w-4" aria-hidden="true" />
+                  <span className="hidden sm:inline">Back to Project</span>
                 </Link>
               )}
             </div>
@@ -183,9 +198,12 @@ export default function AdminShell({
   <>
     <Link
       href={`${pathname}/edit`}
-      className="inline-flex h-10 shrink-0 items-center justify-center rounded-xl border border-white/10 px-4 text-sm font-semibold text-neutral-300 transition hover:bg-white/5 hover:text-white sm:px-5"
+      aria-label="Edit Project"
+      title="Edit Project"
+      className="inline-flex h-10 shrink-0 items-center justify-center gap-2 rounded-xl border border-white/10 px-3 text-sm font-semibold text-neutral-300 transition hover:bg-white/5 hover:text-white sm:px-5"
     >
-      Edit Project
+      <Pencil className="h-4 w-4" aria-hidden="true" />
+      <span className="hidden sm:inline">Edit Project</span>
     </Link>
     <DeleteProjectButton projectId={pathname.split("/").pop() || ""} />
   </>
@@ -224,9 +242,12 @@ export default function AdminShell({
 
     <Link
   href={`${pathname}/pdf`}
-  className="rounded-xl bg-[#fb5411] px-5 py-2 text-sm font-semibold text-white hover:bg-[#e64d0f]"
+  aria-label="Download PDF"
+  title="Download PDF"
+  className="inline-flex h-10 items-center justify-center gap-2 rounded-xl bg-[#fb5411] px-3 text-sm font-semibold text-white hover:bg-[#e64d0f] sm:px-5"
 >
-  Download PDF
+  <Download className="h-4 w-4" aria-hidden="true" />
+  <span className="hidden sm:inline">Download PDF</span>
 </Link>
   </>
 )}

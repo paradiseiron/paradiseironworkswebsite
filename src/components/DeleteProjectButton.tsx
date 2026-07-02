@@ -70,10 +70,12 @@ export default function DeleteProjectButton({
       <button
         type="button"
         onClick={() => setOpen(true)}
-        className="inline-flex h-10 items-center justify-center gap-2 rounded-xl border border-red-500/30 px-5 text-sm font-semibold text-red-300 transition hover:bg-red-500/10 hover:text-red-200"
+        aria-label="Delete Project"
+        title="Delete Project"
+        className="inline-flex h-10 items-center justify-center gap-2 rounded-xl border border-red-500/30 px-3 text-sm font-semibold text-red-300 transition hover:bg-red-500/10 hover:text-red-200 sm:px-5"
       >
         <Trash2 className="h-4 w-4" aria-hidden="true" />
-        Delete
+        <span className="hidden sm:inline">Delete</span>
       </button>
 
       {open &&
