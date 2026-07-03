@@ -2,6 +2,7 @@ import { createAdminClient } from "@/lib/supabase/admin";
 import { notFound } from "next/navigation";
 import EditProjectForm from "@/components/EditProjectForm";
 import { requireAuthenticatedUser } from "@/lib/auth";
+import { requireRole } from "@/lib/roles";
 
 export const dynamic = "force-dynamic";
 export const revalidate = 0;
@@ -13,7 +14,8 @@ export default async function EditProjectPage({
 }) {
   const { id } = await params;
 
-  await requireAuthenticatedUser();
+  const user = await requireAuthenticatedUser();
+  await requireRole(user.id, "admin");
 
   const supabase = createAdminClient();
 

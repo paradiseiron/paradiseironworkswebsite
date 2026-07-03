@@ -3,6 +3,7 @@ import AdminShell from "@/components/AdminShell";
 import AdminPwa from "@/components/AdminPwa";
 import AdminPushNotifications from "@/components/AdminPushNotifications";
 import { requireAuthenticatedUser } from "@/lib/auth";
+import { getUserRole } from "@/lib/roles";
 
 export const metadata: Metadata = {
   title: "Admin",
@@ -28,9 +29,10 @@ export default async function AdminLayout({
   children: React.ReactNode;
 }) {
   const user = await requireAuthenticatedUser();
+  const role = await getUserRole(user.id);
 
   return (
-    <AdminShell userEmail={user.email}>
+    <AdminShell userEmail={user.email} userRole={role}>
       {children}
       <AdminPwa />
       <AdminPushNotifications

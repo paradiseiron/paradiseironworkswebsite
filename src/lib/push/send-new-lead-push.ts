@@ -32,9 +32,23 @@ export async function sendNewLeadPushNotification(lead: LeadPush) {
   webPush.setVapidDetails(subject, publicKey, privateKey);
 
   const supabase = createAdminClient();
+  const { data: admins, error: roleError } = await supabase
+    .from("user_roles")
+    .select("user_id")
+    .eq("role", "admin");
+
+  if (roleError || !admins?.length) {
+    console.error("Unable to load admin push recipients:", roleError);
+    return false;
+  }
+
   const { data, error } = await supabase
     .from("admin_push_subscriptions")
-    .select("id, endpoint, p256dh, auth");
+    .select("id, endpoint, p256dh, auth")
+    .in(
+      "user_id",
+      admins.map((admin) => admin.user_id)
+    );
 
   if (error) {
     console.error("Unable to load push subscriptions:", error);

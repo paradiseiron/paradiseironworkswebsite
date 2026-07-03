@@ -5,6 +5,7 @@ import FollowUpAlertModal from "@/components/FollowUpAlertModal";
 import { resolveFollowUp } from "@/app/admin/projects/actions";
 import { requireAuthenticatedUser } from "@/lib/auth";
 import NewWebsiteLeadAlert from "@/components/NewWebsiteLeadAlert";
+import { getUserRole, requireOperationalRole } from "@/lib/roles";
 
 export const dynamic = "force-dynamic";
 export const revalidate = 0;
@@ -32,7 +33,8 @@ async function generateProposalNumber(
 async function updateProjectStatus(formData: FormData) {
   "use server";
 
-  await requireAuthenticatedUser();
+  const user = await requireAuthenticatedUser();
+  await requireOperationalRole(user.id);
   const supabase = createAdminClient();
 
   const project_id = String(formData.get("project_id") || "");
@@ -69,7 +71,8 @@ async function updateProjectStatus(formData: FormData) {
 async function updateProposal(formData: FormData) {
   "use server";
 
-  await requireAuthenticatedUser();
+  const user = await requireAuthenticatedUser();
+  await requireOperationalRole(user.id);
   const supabase = createAdminClient();
 
   const project_id = String(formData.get("project_id") || "");
@@ -144,7 +147,8 @@ async function updateProposal(formData: FormData) {
 async function addProjectActivity(formData: FormData) {
   "use server";
 
-  await requireAuthenticatedUser();
+  const user = await requireAuthenticatedUser();
+  await requireOperationalRole(user.id);
   const supabase = createAdminClient();
 
   const project_id = String(formData.get("project_id") || "");
@@ -198,7 +202,8 @@ export default async function ProjectDetailPage({
 }) {
   const { id } = await params;
 
-  await requireAuthenticatedUser();
+  const user = await requireAuthenticatedUser();
+  const role = await getUserRole(user.id);
 
   const supabase = createAdminClient();
 
@@ -223,12 +228,27 @@ export default async function ProjectDetailPage({
     );
   }
 
+  const imagePaths: string[] = Array.isArray(project.site_visit_image_paths)
+    ? project.site_visit_image_paths.filter(
+        (path: unknown): path is string => typeof path === "string"
+      )
+    : [];
+  const { data: signedImages } = imagePaths.length
+    ? await supabase.storage
+        .from("site-visit-images")
+        .createSignedUrls(imagePaths, 60 * 60)
+    : { data: [] };
+  const siteVisitImages = imagePaths.map((path, index) => ({
+    path,
+    url: signedImages?.[index]?.signedUrl || "",
+  }));
+
   const isNewWebsiteLead =
     project.lead_source === "Website" && !project.website_lead_reviewed_at;
 
   return (
     <div>
-      {isNewWebsiteLead && (
+      {role === "admin" && isNewWebsiteLead && (
         <NewWebsiteLeadAlert projectId={String(project.id)} />
       )}
 
@@ -270,6 +290,8 @@ export default async function ProjectDetailPage({
         updateProjectStatus={updateProjectStatus}
         updateProposal={updateProposal}
         addProjectActivity={addProjectActivity}
+        role={role}
+        siteVisitImages={siteVisitImages}
       />
     </div>
   );

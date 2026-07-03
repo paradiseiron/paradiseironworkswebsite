@@ -8,8 +8,15 @@ import {
   formatWashingtonDate,
   formatWashingtonDateTime,
 } from "@/lib/date-time";
+import type { UserRole } from "@/lib/roles";
+import SiteVisitPanel from "@/components/SiteVisitPanel";
 
-type ProjectTab = "overview" | "proposal" | "timeline" | "invoice";
+type ProjectTab =
+  | "overview"
+  | "proposal"
+  | "site-visit"
+  | "timeline"
+  | "invoice";
 
 type ProjectRecord = {
   id: string;
@@ -47,6 +54,17 @@ type ProjectRecord = {
   proposal_clarifications?: string | null;
   proposal_prepared_by?: string | null;
   proposal_prepared_by_title?: string | null;
+  site_visit_status?: string | null;
+  site_visit_scheduled_date?: string | null;
+  site_visit_window_start?: string | null;
+  site_visit_window_end?: string | null;
+  site_visit_location?: string | null;
+  site_visit_admin_notes?: string | null;
+  site_visit_scope_observations?: string | null;
+  site_visit_notes?: string | null;
+  site_visit_exclusion_notes?: string | null;
+  site_visit_access_safety_concerns?: string | null;
+  site_visit_completed_at?: string | null;
 };
 
 type ProjectActivity = {
@@ -64,6 +82,8 @@ type Props = {
   updateProjectStatus: (formData: FormData) => void;
   updateProposal: (formData: FormData) => void;
   addProjectActivity: (formData: FormData) => void;
+  role: UserRole;
+  siteVisitImages: { path: string; url: string }[];
 };
 
 export default function ProjectDetailTabs({
@@ -72,6 +92,8 @@ export default function ProjectDetailTabs({
   updateProjectStatus,
   updateProposal,
   addProjectActivity,
+  role,
+  siteVisitImages,
 }: Props) {
   const searchParams = useSearchParams();
   const initialTab = searchParams.get("tab");
@@ -82,6 +104,7 @@ export default function ProjectDetailTabs({
 
   const [tab, setTab] = useState<ProjectTab>(
     initialTab === "proposal" ||
+      initialTab === "site-visit" ||
       initialTab === "timeline" ||
       initialTab === "invoice"
       ? initialTab
@@ -238,7 +261,15 @@ export default function ProjectDetailTabs({
       )}
 
       <div className="mb-6 flex gap-1 overflow-x-auto border-b border-white/10">
-        {(["overview", "proposal", "timeline", "invoice"] as ProjectTab[]).map(
+        {(
+          [
+            "overview",
+            "site-visit",
+            "proposal",
+            "timeline",
+            "invoice",
+          ] as ProjectTab[]
+        ).map(
           (item) => (
             <button
               key={item}
@@ -250,7 +281,7 @@ export default function ProjectDetailTabs({
                   : "text-neutral-400 hover:text-white"
               }`}
             >
-              {item}
+              {item.replaceAll("-", " ")}
             </button>
           )
         )}
@@ -561,6 +592,14 @@ export default function ProjectDetailTabs({
             </div>
           </form>
         </section>
+      )}
+
+      {tab === "site-visit" && (
+        <SiteVisitPanel
+          project={project}
+          role={role}
+          images={siteVisitImages}
+        />
       )}
 
       {tab === "timeline" && (

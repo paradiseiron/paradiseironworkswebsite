@@ -6,6 +6,7 @@ import {
   formatWashingtonDate,
   getWashingtonDateKey,
 } from "@/lib/date-time";
+import { getUserRole } from "@/lib/roles";
 
 export const dynamic = "force-dynamic";
 export const revalidate = 0;
@@ -26,7 +27,8 @@ export default async function ProjectsPage({
     status?: string;
   }>;
 }) {
-  await requireAuthenticatedUser();
+  const user = await requireAuthenticatedUser();
+  const role = await getUserRole(user.id);
   const filters = await searchParams;
   const query = filters.q?.trim() || "";
   const period: ProjectPeriod =
@@ -69,23 +71,33 @@ export default async function ProjectsPage({
   ).sort((a, b) => a.localeCompare(b));
 
   const normalizedQuery = query.toLowerCase();
-  const projects = (allProjects || []).filter((project) => {
-    const matchesQuery =
-      !normalizedQuery ||
-      project.customer_name?.toLowerCase().includes(normalizedQuery) ||
-      project.proposal_number?.toLowerCase().includes(normalizedQuery);
-    const matchesCategory =
-      !category || project.project_category === category;
-    const matchesStatus =
-      !status || (project.status || "lead").toLowerCase() === status;
+  const projects = (allProjects || [])
+    .filter((project) => {
+      const matchesQuery =
+        !normalizedQuery ||
+        project.customer_name?.toLowerCase().includes(normalizedQuery) ||
+        project.proposal_number?.toLowerCase().includes(normalizedQuery);
+      const matchesCategory =
+        !category || project.project_category === category;
+      const matchesStatus =
+        !status || (project.status || "lead").toLowerCase() === status;
 
-    return (
-      matchesQuery &&
-      matchesCategory &&
-      matchesStatus &&
-      isWithinPeriod(project.received_at, period, month, date, from, to)
-    );
-  });
+      return (
+        matchesQuery &&
+        matchesCategory &&
+        matchesStatus &&
+        isWithinPeriod(project.received_at, period, month, date, from, to)
+      );
+    })
+    .sort((a, b) => {
+      const aReady = a.site_visit_status === "ready" ? 1 : 0;
+      const bReady = b.site_visit_status === "ready" ? 1 : 0;
+      if (aReady !== bReady) return bReady - aReady;
+      return (
+        new Date(b.received_at || 0).getTime() -
+        new Date(a.received_at || 0).getTime()
+      );
+    });
 
   const newWebsiteLeadCount =
     allProjects?.filter(
@@ -93,6 +105,9 @@ export default async function ProjectsPage({
         project.lead_source === "Website" &&
         !project.website_lead_reviewed_at
     ).length || 0;
+  const readySiteVisitCount =
+    allProjects?.filter((project) => project.site_visit_status === "ready")
+      .length || 0;
 
   return (
     <div>
@@ -107,7 +122,7 @@ export default async function ProjectsPage({
         </div>
       </div>
 
-      {newWebsiteLeadCount > 0 && (
+      {role === "admin" && newWebsiteLeadCount > 0 && (
         <div
           role="status"
           className="mb-6 flex items-center gap-3 rounded-2xl border border-sky-400/25 bg-sky-400/10 px-5 py-4 text-sky-100"
@@ -117,6 +132,20 @@ export default async function ProjectsPage({
             <span className="font-semibold">{newWebsiteLeadCount} new website</span>{" "}
             {newWebsiteLeadCount === 1 ? "lead is" : "leads are"} waiting to be
             reviewed.
+          </p>
+        </div>
+      )}
+
+      {readySiteVisitCount > 0 && (
+        <div
+          role="status"
+          className="mb-6 flex items-center gap-3 rounded-2xl border border-[#fb5411]/25 bg-[#fb5411]/10 px-5 py-4 text-orange-100"
+        >
+          <span className="h-2.5 w-2.5 rounded-full bg-[#fb5411]" />
+          <p>
+            <span className="font-semibold">{readySiteVisitCount}</span>{" "}
+            {readySiteVisitCount === 1 ? "project is" : "projects are"} ready
+            for a site visit.
           </p>
         </div>
       )}
@@ -137,6 +166,7 @@ export default async function ProjectsPage({
         {projects && projects.length > 0 ? (
           projects.map((project) => {
             const isNewWebsiteLead =
+              role === "admin" &&
               project.lead_source === "Website" &&
               !project.website_lead_reviewed_at;
 
@@ -213,6 +243,13 @@ export default async function ProjectsPage({
                     )}
                   </div>
                 )}
+                {project.site_visit_status === "ready" && (
+                  <div className="mt-4">
+                    <span className="rounded-full bg-[#fb5411]/10 px-2.5 py-1 text-xs font-medium text-[#ff7a45]">
+                      Site visit ready
+                    </span>
+                  </div>
+                )}
               </Link>
             );
           })
@@ -245,6 +282,7 @@ export default async function ProjectsPage({
             {projects && projects.length > 0 ? (
               projects.map((project) => {
                 const isNewWebsiteLead =
+                  role === "admin" &&
                   project.lead_source === "Website" &&
                   !project.website_lead_reviewed_at;
 
@@ -272,6 +310,11 @@ export default async function ProjectsPage({
                       <span className="ml-2 inline-flex items-center gap-1.5 rounded-full border border-sky-400/25 bg-sky-400/10 px-2 py-0.5 text-[11px] font-semibold uppercase tracking-wide text-sky-300">
                         <span className="h-1.5 w-1.5 rounded-full bg-sky-400" />
                         New
+                      </span>
+                    )}
+                    {project.site_visit_status === "ready" && (
+                      <span className="ml-2 inline-flex items-center gap-1.5 rounded-full border border-[#fb5411]/25 bg-[#fb5411]/10 px-2 py-0.5 text-[11px] font-semibold uppercase tracking-wide text-[#ff7a45]">
+                        Site visit
                       </span>
                     )}
                   </td>

@@ -13,13 +13,16 @@ import {
 } from "lucide-react";
 import DeleteProjectButton from "@/components/DeleteProjectButton";
 import AdminProfileMenu from "@/components/AdminProfileMenu";
+import type { UserRole } from "@/lib/roles";
 
 export default function AdminShell({
   children,
   userEmail,
+  userRole,
 }: {
   children: React.ReactNode;
   userEmail?: string;
+  userRole: UserRole;
 }) {
   const [theme, setTheme] = useState<"dark" | "light">("dark");
   const pathname = usePathname();
@@ -194,7 +197,7 @@ export default function AdminShell({
                   Save Project
                 </button>
               )}
-{isProjectDetail && !isProjectProposalTab && !isEditProjectPage &&  (
+{userRole === "admin" && isProjectDetail && !isProjectProposalTab && !isEditProjectPage &&  (
   <>
     <Link
       href={`${pathname}/edit`}
@@ -208,7 +211,7 @@ export default function AdminShell({
     <DeleteProjectButton projectId={pathname.split("/").pop() || ""} />
   </>
 )}
-{isEditProjectPage && (
+{userRole === "admin" && isEditProjectPage && (
   <button
     type="submit"
     form="edit-project-form"

@@ -2,6 +2,7 @@ import { NextResponse } from "next/server";
 import { revalidatePath } from "next/cache";
 import { createAdminClient } from "@/lib/supabase/admin";
 import { createClient } from "@/lib/supabase/server";
+import { getUserRole } from "@/lib/roles";
 
 type ProjectUpdateBody = {
   customer_name?: unknown;
@@ -36,6 +37,9 @@ export async function PATCH(
 
   if (authError || !user) {
     return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+  }
+  if ((await getUserRole(user.id)) !== "admin") {
+    return NextResponse.json({ error: "Forbidden" }, { status: 403 });
   }
 
   const { id } = await context.params;
@@ -84,6 +88,9 @@ export async function DELETE(
 
   if (authError || !user) {
     return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+  }
+  if ((await getUserRole(user.id)) !== "admin") {
+    return NextResponse.json({ error: "Forbidden" }, { status: 403 });
   }
 
   const { id } = await context.params;

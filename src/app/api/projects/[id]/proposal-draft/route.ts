@@ -1,6 +1,7 @@
 import { NextResponse } from "next/server";
 import { requireAuthenticatedUser } from "@/lib/auth";
 import { createAdminClient } from "@/lib/supabase/admin";
+import { requireOperationalRole } from "@/lib/roles";
 
 type ProposalDraftBody = Record<string, unknown>;
 
@@ -26,7 +27,8 @@ export async function PATCH(
   request: Request,
   context: { params: Promise<{ id: string }> }
 ) {
-  await requireAuthenticatedUser();
+  const user = await requireAuthenticatedUser();
+  await requireOperationalRole(user.id);
   const { id } = await context.params;
   const body = (await request.json()) as ProposalDraftBody;
 

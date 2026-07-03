@@ -1,6 +1,7 @@
 import { redirect } from "next/navigation";
 import { createClient } from "@/lib/supabase/server";
 import { requireAuthenticatedUser } from "@/lib/auth";
+import { requireOperationalRole } from "@/lib/roles";
 
 export const dynamic = "force-dynamic";
 export const revalidate = 0;
@@ -8,7 +9,8 @@ export const revalidate = 0;
 async function createProject(formData: FormData) {
   "use server";
 
-  await requireAuthenticatedUser();
+  const user = await requireAuthenticatedUser();
+  await requireOperationalRole(user.id);
   const supabase = await createClient();
 
   const customer_name = String(formData.get("customer_name") || "");
@@ -77,7 +79,8 @@ async function createProject(formData: FormData) {
 }
 
 export default async function NewProjectPage() {
-  await requireAuthenticatedUser();
+  const user = await requireAuthenticatedUser();
+  await requireOperationalRole(user.id);
 
   return (
     <div>
