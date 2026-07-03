@@ -40,7 +40,9 @@ function validDate(value?: string) {
 
 function receivedDate(value?: string) {
   if (!value || !/^\d{4}-\d{2}$/.test(value)) return null;
-  return `${value}-01T00:00:00.000Z`;
+  // CSV values represent a calendar month, not a precise instant. Noon UTC
+  // preserves the intended first-of-month date in Washington, DC.
+  return `${value}-01T12:00:00.000Z`;
 }
 
 function proposalAmount(value?: string) {

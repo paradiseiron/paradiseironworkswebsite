@@ -18,31 +18,19 @@ export default function AdminPushNotifications({
 
   useEffect(() => {
     const timer = window.setTimeout(async () => {
-      const isStandalone =
-        window.matchMedia("(display-mode: standalone)").matches ||
-        Boolean(
-          (navigator as Navigator & { standalone?: boolean }).standalone
-        );
-      const installPromptAcknowledged =
-        window.localStorage.getItem(
-          "paradise-admin-install-prompt-acknowledged"
-        ) === "true";
       const canPush =
-        Boolean(publicKey) &&
         "serviceWorker" in navigator &&
-        "PushManager" in window &&
-        "Notification" in window &&
-        (isStandalone || installPromptAcknowledged);
+        "Notification" in window;
 
       setSupported(canPush);
       setDismissed(
-        window.localStorage.getItem(DISMISSED_KEY) === "true" ||
-          Notification.permission === "denied"
+        window.localStorage.getItem(DISMISSED_KEY) === "true"
       );
 
       if (!canPush) return;
 
       const registration = await navigator.serviceWorker.ready;
+      if (!("pushManager" in registration)) return;
       const existingSubscription =
         await registration.pushManager.getSubscription();
       setSubscribed(Boolean(existingSubscription));
@@ -51,23 +39,50 @@ export default function AdminPushNotifications({
     return () => window.clearTimeout(timer);
   }, [publicKey]);
 
-  if (!supported || subscribed || dismissed) return null;
+  if (!supported || subscribed) return null;
+
+  if (dismissed) {
+    return (
+      <button
+        type="button"
+        onClick={() => {
+          window.localStorage.removeItem(DISMISSED_KEY);
+          setDismissed(false);
+        }}
+        aria-label="Set up lead notifications"
+        title="Set up lead notifications"
+        className="fixed bottom-24 right-4 z-[60] inline-flex h-11 w-11 items-center justify-center rounded-full border border-[#fb5411]/40 bg-neutral-900 text-[#fb5411] shadow-2xl md:bottom-6 md:right-6"
+      >
+        <Bell className="h-5 w-5" aria-hidden="true" />
+      </button>
+    );
+  }
 
   async function enableNotifications() {
-    if (!publicKey) return;
-
     setBusy(true);
     setError("");
 
     try {
+      if (!publicKey) {
+        throw new Error(
+          "Push configuration is unavailable. Verify the VAPID public key and redeploy."
+        );
+      }
+
       const permission = await Notification.requestPermission();
       if (permission !== "granted") {
-        window.localStorage.setItem(DISMISSED_KEY, "true");
-        setDismissed(true);
+        setError(
+          "Notifications are blocked. Enable them in iPhone Settings, then try again."
+        );
         return;
       }
 
       const registration = await navigator.serviceWorker.ready;
+      if (!("pushManager" in registration)) {
+        throw new Error(
+          "Push notifications require the Paradise Admin app installed on your Home Screen."
+        );
+      }
       const subscription =
         (await registration.pushManager.getSubscription()) ||
         (await registration.pushManager.subscribe({

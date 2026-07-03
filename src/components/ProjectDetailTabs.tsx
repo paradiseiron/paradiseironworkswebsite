@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { useSearchParams } from "next/navigation";
 import { CheckCircle2, Phone, X } from "lucide-react";
 import AddProjectActivityModal from "@/components/AddProjectActivityModal";
@@ -89,6 +89,10 @@ export default function ProjectDetailTabs({
   );
   const [toast, setToast] = useState(initialToast);
   const [toastVisible, setToastVisible] = useState(false);
+  const [autosaveStatus, setAutosaveStatus] = useState<
+    "idle" | "saving" | "saved" | "error"
+  >("idle");
+  const autosaveTimer = useRef<number | null>(null);
 
   useEffect(() => {
     if (!toast) return;
@@ -113,6 +117,73 @@ export default function ProjectDetailTabs({
       window.clearTimeout(removeTimer);
     };
   }, [toast]);
+
+  useEffect(() => {
+    const form = document.getElementById(
+      "proposal-form"
+    ) as HTMLFormElement | null;
+    if (!form) return;
+
+    const save = async (keepalive = false, updateStatus = true) => {
+      if (autosaveTimer.current !== null) {
+        window.clearTimeout(autosaveTimer.current);
+        autosaveTimer.current = null;
+      }
+
+      if (updateStatus) setAutosaveStatus("saving");
+
+      try {
+        const response = await fetch(
+          `/api/projects/${encodeURIComponent(project.id)}/proposal-draft`,
+          {
+            method: "PATCH",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify(proposalDraftFromForm(form)),
+            keepalive,
+          }
+        );
+
+        if (updateStatus) {
+          setAutosaveStatus(response.ok ? "saved" : "error");
+        }
+      } catch {
+        if (updateStatus) setAutosaveStatus("error");
+      }
+    };
+
+    const scheduleSave = () => {
+      setAutosaveStatus("saving");
+      if (autosaveTimer.current !== null) {
+        window.clearTimeout(autosaveTimer.current);
+      }
+      autosaveTimer.current = window.setTimeout(() => save(), 900);
+    };
+
+    const flushSave = () => {
+      if (autosaveTimer.current !== null) void save(true, false);
+    };
+
+    const stopAutosave = () => {
+      if (autosaveTimer.current !== null) {
+        window.clearTimeout(autosaveTimer.current);
+        autosaveTimer.current = null;
+      }
+    };
+
+    form.addEventListener("input", scheduleSave);
+    form.addEventListener("change", scheduleSave);
+    form.addEventListener("submit", stopAutosave);
+    window.addEventListener("pagehide", flushSave);
+
+    return () => {
+      flushSave();
+      stopAutosave();
+      form.removeEventListener("input", scheduleSave);
+      form.removeEventListener("change", scheduleSave);
+      form.removeEventListener("submit", stopAutosave);
+      window.removeEventListener("pagehide", flushSave);
+    };
+  }, [project.id, tab]);
 
   function dismissToast() {
     setToastVisible(false);
@@ -195,7 +266,7 @@ export default function ProjectDetailTabs({
                 label="Contact Name"
                 value={project.contact_name || project.customer_name}
               />
-              <PhoneDetail value={project.phone} />
+              <PhoneDetail projectId={project.id} value={project.phone} />
               <Detail label="Email" value={project.email} />
               <Detail label="Source" value={project.lead_source} />
               <Detail label="Address" value={project.project_address} />
@@ -321,12 +392,31 @@ export default function ProjectDetailTabs({
               </p>
             </div>
 
-            <p className="text-sm text-neutral-400">
-              Proposal #:{" "}
-              <span className="text-white">
-                {project.proposal_number || "Not assigned"}
-              </span>
-            </p>
+            <div className="text-right text-sm text-neutral-400">
+              <p>
+                Proposal #:{" "}
+                <span className="text-white">
+                  {project.proposal_number || "Not assigned"}
+                </span>
+              </p>
+              <p
+                className={`mt-1 text-xs ${
+                  autosaveStatus === "error"
+                    ? "text-red-300"
+                    : autosaveStatus === "saved"
+                      ? "text-emerald-400"
+                      : "text-neutral-500"
+                }`}
+              >
+                {autosaveStatus === "saving"
+                  ? "Saving draft…"
+                  : autosaveStatus === "saved"
+                    ? "Draft saved"
+                    : autosaveStatus === "error"
+                      ? "Draft not saved"
+                      : "Autosave on"}
+              </p>
+            </div>
           </div>
 
           <form
@@ -562,6 +652,15 @@ export default function ProjectDetailTabs({
   );
 }
 
+function proposalDraftFromForm(form: HTMLFormElement) {
+  const formData = new FormData(form);
+  return Object.fromEntries(
+    [...formData.entries()]
+      .filter(([, value]) => typeof value === "string")
+      .map(([key, value]) => [key, value])
+  );
+}
+
 function Detail({
   label,
   value,
@@ -580,7 +679,13 @@ function Detail({
   );
 }
 
-function PhoneDetail({ value }: { value?: string | null }) {
+function PhoneDetail({
+  projectId,
+  value,
+}: {
+  projectId: string;
+  value?: string | null;
+}) {
   const dialableNumber = value?.replace(/[^\d+]/g, "");
 
   return (
@@ -592,6 +697,15 @@ function PhoneDetail({ value }: { value?: string | null }) {
       {value && dialableNumber ? (
         <a
           href={`tel:${dialableNumber}`}
+          onClick={() => {
+            void fetch(
+              `/api/projects/${encodeURIComponent(projectId)}/call-events`,
+              {
+                method: "POST",
+                keepalive: true,
+              }
+            );
+          }}
           className="mt-1 inline-flex items-center gap-2 text-sm font-medium text-[#fb5411] hover:text-[#ff6a2b]"
           aria-label={`Call ${value}`}
         >
