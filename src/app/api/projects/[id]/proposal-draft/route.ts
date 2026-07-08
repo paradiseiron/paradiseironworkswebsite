@@ -2,6 +2,10 @@ import { NextResponse } from "next/server";
 import { requireAuthenticatedUser } from "@/lib/auth";
 import { createAdminClient } from "@/lib/supabase/admin";
 import { requireOperationalRole } from "@/lib/roles";
+import {
+  normalizeProposalPricingItems,
+  proposalPricingTotal,
+} from "@/lib/proposal-pricing";
 
 type ProposalDraftBody = Record<string, unknown>;
 
@@ -15,7 +19,6 @@ const TEXT_FIELDS = [
   "proposal_scope",
   "proposal_finish",
   "proposal_exclusions",
-  "proposal_pricing",
   "proposal_payment_terms",
   "proposal_schedule",
   "proposal_clarifications",
@@ -32,7 +35,7 @@ export async function PATCH(
   const { id } = await context.params;
   const body = (await request.json()) as ProposalDraftBody;
 
-  const update: Record<string, string | number | null> = {};
+  const update: Record<string, string | number | unknown[] | null> = {};
 
   for (const field of TEXT_FIELDS) {
     if (typeof body[field] === "string") {
@@ -40,7 +43,17 @@ export async function PATCH(
     }
   }
 
-  update.proposal_amount = optionalAmount(body.proposal_amount);
+  const proposalPricingItems = normalizeProposalPricingItems(
+    body.proposal_pricing_items
+  ).filter(
+    (item) => item.description || item.amount !== null || item.price !== null
+  );
+
+  update.proposal_pricing = "";
+  update.proposal_pricing_items = proposalPricingItems;
+  update.proposal_amount = proposalPricingItems.length
+    ? proposalPricingTotal(proposalPricingItems)
+    : null;
   update.proposal_deposit_amount = optionalAmount(
     body.proposal_deposit_amount
   );

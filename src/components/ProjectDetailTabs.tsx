@@ -2,7 +2,7 @@
 
 import { useEffect, useRef, useState } from "react";
 import { useSearchParams } from "next/navigation";
-import { CheckCircle2, Phone, X } from "lucide-react";
+import { CheckCircle2, Phone, Plus, Trash2, X } from "lucide-react";
 import AddProjectActivityModal from "@/components/AddProjectActivityModal";
 import {
   formatWashingtonDate,
@@ -10,6 +10,13 @@ import {
 } from "@/lib/date-time";
 import type { UserRole } from "@/lib/roles";
 import SiteVisitPanel from "@/components/SiteVisitPanel";
+import {
+  formatCurrency,
+  normalizeProposalPricingItems,
+  parseProposalPricingItemsFromForm,
+  proposalPricingTotal,
+  type ProposalPricingLineItem,
+} from "@/lib/proposal-pricing";
 
 type ProjectTab =
   | "overview"
@@ -48,6 +55,7 @@ type ProjectRecord = {
   proposal_finish?: string | null;
   proposal_exclusions?: string | null;
   proposal_pricing?: string | null;
+  proposal_pricing_items?: unknown;
   proposal_deposit_amount?: number | null;
   proposal_payment_terms?: string | null;
   proposal_schedule?: string | null;
@@ -74,6 +82,13 @@ type ProjectActivity = {
   activity_date?: string | null;
   requires_follow_up?: boolean | null;
   follow_up_note?: string | null;
+};
+
+type PricingLineItemFormState = {
+  id: string;
+  description: string;
+  amount: string;
+  price: string;
 };
 
 type Props = {
@@ -115,7 +130,20 @@ export default function ProjectDetailTabs({
   const [autosaveStatus, setAutosaveStatus] = useState<
     "idle" | "saving" | "saved" | "error"
   >("idle");
+  const [pricingItems, setPricingItems] = useState<PricingLineItemFormState[]>(
+    () =>
+      pricingItemsToFormState(
+        normalizeProposalPricingItems(
+          project.proposal_pricing_items,
+          project.proposal_amount,
+          project.proposal_pricing
+        )
+      )
+  );
   const autosaveTimer = useRef<number | null>(null);
+  const pricingTotal = proposalPricingTotal(
+    pricingFormStateToLineItems(pricingItems)
+  );
 
   useEffect(() => {
     if (!toast) return;
@@ -504,13 +532,6 @@ export default function ProjectDetailTabs({
               />
 
               <Field
-                label="Proposal Amount"
-                name="proposal_amount"
-                type="number"
-                defaultValue={project.proposal_amount || ""}
-              />
-
-              <Field
                 label="Deposit Amount"
                 name="proposal_deposit_amount"
                 type="number"
@@ -546,11 +567,10 @@ export default function ProjectDetailTabs({
               rows={4}
             />
 
-            <TextArea
-              label="Pricing"
-              name="proposal_pricing"
-              defaultValue={project.proposal_pricing || ""}
-              rows={4}
+            <PricingLineItems
+              items={pricingItems}
+              total={pricingTotal}
+              onChange={setPricingItems}
             />
 
             <TextArea
@@ -693,11 +713,183 @@ export default function ProjectDetailTabs({
 
 function proposalDraftFromForm(form: HTMLFormElement) {
   const formData = new FormData(form);
-  return Object.fromEntries(
-    [...formData.entries()]
-      .filter(([, value]) => typeof value === "string")
-      .map(([key, value]) => [key, value])
+  return {
+    ...Object.fromEntries(
+      [...formData.entries()]
+        .filter(([, value]) => typeof value === "string")
+        .map(([key, value]) => [key, value])
+    ),
+    proposal_pricing_items: parseProposalPricingItemsFromForm(formData),
+  };
+}
+
+function PricingLineItems({
+  items,
+  total,
+  onChange,
+}: {
+  items: PricingLineItemFormState[];
+  total: number;
+  onChange: (items: PricingLineItemFormState[]) => void;
+}) {
+  function updateItem(
+    index: number,
+    field: keyof Omit<PricingLineItemFormState, "id">,
+    value: string
+  ) {
+    onChange(
+      items.map((item, itemIndex) =>
+        itemIndex === index
+          ? {
+              ...item,
+              [field]: value,
+            }
+          : item
+      )
+    );
+  }
+
+  function addItem() {
+    onChange([
+      ...items,
+      {
+        id: `new-${Date.now()}-${items.length}`,
+        description: "",
+        amount: "1",
+        price: "",
+      },
+    ]);
+    notifyFormChanged();
+  }
+
+  function removeItem(index: number) {
+    const nextItems = items.filter((_, itemIndex) => itemIndex !== index);
+    onChange(
+      nextItems.length
+        ? nextItems
+        : [{ id: "empty-0", description: "", amount: "1", price: "" }]
+    );
+    notifyFormChanged();
+  }
+
+  return (
+    <section className="rounded-xl border border-white/10 bg-white/[0.02] p-4">
+      <div className="flex flex-wrap items-center justify-between gap-3">
+        <div>
+          <h3 className="text-sm font-semibold text-white">Pricing</h3>
+          <p className="mt-1 text-xs text-neutral-400">
+            Total is calculated from amount multiplied by price.
+          </p>
+        </div>
+
+        <button
+          type="button"
+          onClick={addItem}
+          className="inline-flex h-10 cursor-pointer items-center gap-2 rounded-lg border border-white/10 px-3 text-sm font-semibold text-neutral-200 transition hover:border-white/20 hover:bg-white/10 hover:text-white"
+        >
+          <Plus className="h-4 w-4" aria-hidden="true" />
+          <span>Add line item</span>
+        </button>
+      </div>
+
+      <div className="mt-4 overflow-x-auto">
+        <div className="min-w-[680px]">
+          <div className="grid grid-cols-[minmax(260px,1fr)_120px_160px_44px] gap-3 border-b border-white/10 pb-2 text-xs font-semibold uppercase tracking-[0.16em] text-neutral-500">
+            <span>Description</span>
+            <span>Amount</span>
+            <span>Price</span>
+            <span className="sr-only">Remove</span>
+          </div>
+
+          <div className="space-y-3 pt-3">
+            {items.map((item, index) => (
+              <div
+                key={item.id}
+                className="grid grid-cols-[minmax(260px,1fr)_120px_160px_44px] gap-3"
+              >
+                <input
+                  name="proposal_pricing_description"
+                  value={item.description}
+                  onChange={(event) =>
+                    updateItem(index, "description", event.target.value)
+                  }
+                  className="h-11 rounded-lg border border-white/10 bg-neutral-900 px-3 text-sm text-white outline-none focus:border-[#fb5411]"
+                />
+                <input
+                  name="proposal_pricing_amount"
+                  type="number"
+                  min="0"
+                  step="0.01"
+                  value={item.amount}
+                  onChange={(event) =>
+                    updateItem(index, "amount", event.target.value)
+                  }
+                  className="h-11 rounded-lg border border-white/10 bg-neutral-900 px-3 text-sm text-white outline-none focus:border-[#fb5411]"
+                />
+                <input
+                  name="proposal_pricing_price"
+                  type="number"
+                  min="0"
+                  step="0.01"
+                  value={item.price}
+                  onChange={(event) =>
+                    updateItem(index, "price", event.target.value)
+                  }
+                  className="h-11 rounded-lg border border-white/10 bg-neutral-900 px-3 text-sm text-white outline-none focus:border-[#fb5411]"
+                />
+                <button
+                  type="button"
+                  onClick={() => removeItem(index)}
+                  aria-label="Remove line item"
+                  title="Remove line item"
+                  className="flex h-11 w-11 cursor-pointer items-center justify-center rounded-lg border border-white/10 text-neutral-400 transition hover:border-red-500/30 hover:bg-red-500/10 hover:text-red-200"
+                >
+                  <Trash2 className="h-4 w-4" aria-hidden="true" />
+                </button>
+              </div>
+            ))}
+          </div>
+        </div>
+      </div>
+
+      <div className="mt-4 flex justify-end border-t border-white/10 pt-4">
+        <p className="text-sm font-semibold text-white">
+          Total: <span className="text-[#fb5411]">{formatCurrency(total)}</span>
+        </p>
+      </div>
+    </section>
   );
+}
+
+function pricingItemsToFormState(items: ProposalPricingLineItem[]) {
+  return items.map((item, index) => ({
+    id: `existing-${index}`,
+    description: item.description,
+    amount: item.amount === null ? "" : String(item.amount),
+    price: item.price === null ? "" : String(item.price),
+  }));
+}
+
+function pricingFormStateToLineItems(items: PricingLineItemFormState[]) {
+  return items.map((item) => ({
+    description: item.description,
+    amount: optionalPricingNumber(item.amount),
+    price: optionalPricingNumber(item.price),
+  }));
+}
+
+function optionalPricingNumber(value: string) {
+  if (value === "") return null;
+  const number = Number(value);
+  return Number.isFinite(number) ? number : null;
+}
+
+function notifyFormChanged() {
+  window.setTimeout(() => {
+    document
+      .getElementById("proposal-form")
+      ?.dispatchEvent(new Event("input", { bubbles: true }));
+  }, 0);
 }
 
 function Detail({

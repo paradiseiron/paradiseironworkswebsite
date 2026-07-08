@@ -3,6 +3,12 @@ import Image from "next/image";
 import { createClient } from "@/lib/supabase/server";
 import { requireAuthenticatedUser } from "@/lib/auth";
 import { formatWashingtonDate } from "@/lib/date-time";
+import {
+  formatCurrency,
+  normalizeProposalPricingItems,
+  proposalPricingTotal,
+  type ProposalPricingLineItem,
+} from "@/lib/proposal-pricing";
 
 export default async function ProposalPreviewPage({
   params,
@@ -32,6 +38,14 @@ export default async function ProposalPreviewPage({
   ]
     .filter(Boolean)
     .join(", ");
+  const pricingItems = normalizeProposalPricingItems(
+    project.proposal_pricing_items,
+    project.proposal_amount,
+    project.proposal_pricing
+  ).filter(
+    (item) => item.description || item.amount !== null || item.price !== null
+  );
+  const pricingTotal = proposalPricingTotal(pricingItems);
 
   return (
     <main className="min-h-screen bg-neutral-200 py-4 text-neutral-950 sm:px-4 sm:py-8 print:min-h-0 print:bg-white print:p-0">
@@ -143,17 +157,7 @@ export default async function ProposalPreviewPage({
           content={project.proposal_exclusions}
         />
 
-        <ProposalSection
-          title="Pricing"
-          content={
-            project.proposal_pricing ||
-            (project.proposal_amount
-              ? `Total Contract Amount: $${Number(
-                  project.proposal_amount
-                ).toLocaleString()}`
-              : "")
-          }
-        />
+        <PricingSection items={pricingItems} total={pricingTotal} />
 
         <ProposalSection
           title="Payment Terms"
@@ -216,6 +220,58 @@ export default async function ProposalPreviewPage({
   );
 }
 
+function PricingSection({
+  items,
+  total,
+}: {
+  items: ProposalPricingLineItem[];
+  total: number;
+}) {
+  if (!items.length) return null;
+
+  return (
+    <section className="mt-8">
+      <h2 className="text-lg font-bold">Pricing</h2>
+
+        <div className="mt-3 overflow-hidden border border-neutral-300 text-sm">
+          <div className="grid grid-cols-[1fr_90px_130px] bg-neutral-100 font-semibold">
+          <div className="border-r border-neutral-300 px-3 py-2">
+            Description
+          </div>
+          <div className="border-r border-neutral-300 px-3 py-2 text-right">
+            Amount
+          </div>
+          <div className="px-3 py-2 text-right">Price</div>
+        </div>
+
+        {items.map((item, index) => (
+          <div
+            key={index}
+            className="grid grid-cols-[1fr_90px_130px] border-t border-neutral-300"
+          >
+            <div className="whitespace-pre-wrap border-r border-neutral-300 px-3 py-2">
+              {item.description || "—"}
+            </div>
+            <div className="border-r border-neutral-300 px-3 py-2 text-right">
+              {formatAmount(item.amount)}
+            </div>
+            <div className="px-3 py-2 text-right">
+              {item.price === null ? "—" : formatCurrency(item.price)}
+            </div>
+          </div>
+        ))}
+
+        <div className="grid grid-cols-[1fr_130px] border-t border-neutral-400 font-bold">
+          <div className="px-3 py-2 text-right">Total</div>
+          <div className="border-l border-neutral-300 px-3 py-2 text-right">
+            {formatCurrency(total)}
+          </div>
+        </div>
+      </div>
+    </section>
+  );
+}
+
 function ProposalSection({
   title,
   content,
@@ -242,6 +298,11 @@ function SignatureLine({ label }: { label: string }) {
       <span className="flex-1 border-b border-neutral-500" />
     </div>
   );
+}
+
+function formatAmount(value: number | null) {
+  if (value === null) return "—";
+  return Number.isInteger(value) ? String(value) : String(value);
 }
 
 function defaultPaymentTerms(deposit?: number | null) {

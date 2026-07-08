@@ -6,6 +6,10 @@ import { resolveFollowUp } from "@/app/admin/projects/actions";
 import { requireAuthenticatedUser } from "@/lib/auth";
 import NewWebsiteLeadAlert from "@/components/NewWebsiteLeadAlert";
 import { getUserRole, requireOperationalRole } from "@/lib/roles";
+import {
+  parseProposalPricingItemsFromForm,
+  proposalPricingTotal,
+} from "@/lib/proposal-pricing";
 
 export const dynamic = "force-dynamic";
 export const revalidate = 0;
@@ -82,12 +86,14 @@ async function updateProposal(formData: FormData) {
     formData.get("existing_proposal_number") || ""
   );
 
-  const proposal_amount_raw = String(formData.get("proposal_amount") || "");
   const proposal_deposit_raw = String(
     formData.get("proposal_deposit_amount") || ""
   );
 
-  const proposal_amount = proposal_amount_raw ? Number(proposal_amount_raw) : null;
+  const proposal_pricing_items = parseProposalPricingItemsFromForm(formData);
+  const proposal_amount = proposal_pricing_items.length
+    ? proposalPricingTotal(proposal_pricing_items)
+    : null;
   const proposal_deposit_amount = proposal_deposit_raw
     ? Number(proposal_deposit_raw)
     : null;
@@ -111,7 +117,8 @@ async function updateProposal(formData: FormData) {
       proposal_scope: String(formData.get("proposal_scope") || ""),
       proposal_finish: String(formData.get("proposal_finish") || ""),
       proposal_exclusions: String(formData.get("proposal_exclusions") || ""),
-      proposal_pricing: String(formData.get("proposal_pricing") || ""),
+      proposal_pricing: "",
+      proposal_pricing_items,
       proposal_deposit_amount,
       proposal_payment_terms: String(formData.get("proposal_payment_terms") || ""),
       proposal_schedule: String(formData.get("proposal_schedule") || ""),

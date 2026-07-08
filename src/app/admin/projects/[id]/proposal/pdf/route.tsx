@@ -11,6 +11,12 @@ import {
 import { createClient } from "@/lib/supabase/server";
 import { requireAuthenticatedUser } from "@/lib/auth";
 import { formatWashingtonDate } from "@/lib/date-time";
+import {
+  formatCurrency,
+  normalizeProposalPricingItems,
+  proposalPricingTotal,
+  type ProposalPricingLineItem,
+} from "@/lib/proposal-pricing";
 
 export const dynamic = "force-dynamic";
 export const runtime = "nodejs";
@@ -74,8 +80,15 @@ export function ProposalPdf({
   ]
     .filter(Boolean)
     .join(", ");
-  const amount = Number(project.proposal_amount || 0);
   const deposit = Number(project.proposal_deposit_amount || 0);
+  const pricingItems = normalizeProposalPricingItems(
+    project.proposal_pricing_items,
+    project.proposal_amount,
+    project.proposal_pricing
+  ).filter(
+    (item) => item.description || item.amount !== null || item.price !== null
+  );
+  const pricingTotal = proposalPricingTotal(pricingItems);
 
   return (
     <Document
@@ -144,15 +157,7 @@ export function ProposalPdf({
         <PdfSection title="Scope of Work" content={value("proposal_scope")} />
         <PdfSection title="Finish" content={value("proposal_finish")} />
         <PdfSection title="Exclusions" content={value("proposal_exclusions")} />
-        <PdfSection
-          title="Pricing"
-          content={
-            value("proposal_pricing") ||
-            (amount
-              ? `Total Contract Amount: $${amount.toLocaleString()}`
-              : "")
-          }
-        />
+        <PdfPricingSection items={pricingItems} total={pricingTotal} />
         <PdfSection
           title="Payment Terms"
           content={
@@ -227,6 +232,48 @@ function PdfSection({
     <View style={styles.section} minPresenceAhead={42}>
       <Text style={styles.sectionTitle}>{title}</Text>
       <PdfContent content={content} />
+    </View>
+  );
+}
+
+function PdfPricingSection({
+  items,
+  total,
+}: {
+  items: ProposalPricingLineItem[];
+  total: number;
+}) {
+  if (!items.length) return null;
+
+  return (
+    <View style={styles.section} minPresenceAhead={70}>
+      <Text style={styles.sectionTitle}>Pricing</Text>
+      <View style={styles.pricingTable}>
+        <View style={[styles.pricingRow, styles.pricingHeader]} wrap={false}>
+          <Text style={[styles.pricingCell, styles.pricingDescription]}>
+            Description
+          </Text>
+          <Text style={[styles.pricingCell, styles.pricingAmount]}>Amount</Text>
+          <Text style={[styles.pricingCell, styles.pricingPrice]}>Price</Text>
+        </View>
+        {items.map((item, index) => (
+          <View key={index} style={styles.pricingRow} wrap={false}>
+            <Text style={[styles.pricingCell, styles.pricingDescription]}>
+              {item.description || "—"}
+            </Text>
+            <Text style={[styles.pricingCell, styles.pricingAmount]}>
+              {formatAmount(item.amount)}
+            </Text>
+            <Text style={[styles.pricingCell, styles.pricingPrice]}>
+              {item.price === null ? "—" : formatCurrency(item.price)}
+            </Text>
+          </View>
+        ))}
+        <View style={[styles.pricingRow, styles.pricingTotalRow]} wrap={false}>
+          <Text style={styles.pricingTotalLabel}>Total</Text>
+          <Text style={styles.pricingTotalValue}>{formatCurrency(total)}</Text>
+        </View>
+      </View>
     </View>
   );
 }
@@ -336,6 +383,55 @@ const styles = StyleSheet.create({
   section: { marginTop: 24 },
   sectionTitle: { fontSize: 13, fontFamily: "Helvetica-Bold" },
   sectionBody: { marginTop: 7, lineHeight: 1.65 },
+  pricingTable: {
+    marginTop: 8,
+    borderWidth: 1,
+    borderColor: "#d4d4d4",
+  },
+  pricingRow: {
+    flexDirection: "row",
+    borderTopWidth: 1,
+    borderTopColor: "#d4d4d4",
+  },
+  pricingHeader: {
+    borderTopWidth: 0,
+    backgroundColor: "#f5f5f5",
+    fontFamily: "Helvetica-Bold",
+  },
+  pricingCell: {
+    paddingTop: 6,
+    paddingRight: 7,
+    paddingBottom: 6,
+    paddingLeft: 7,
+    borderRightWidth: 1,
+    borderRightColor: "#d4d4d4",
+  },
+  pricingDescription: { flexGrow: 1, flexBasis: 0 },
+  pricingAmount: { width: 70, textAlign: "right" },
+  pricingPrice: { width: 94, textAlign: "right", borderRightWidth: 0 },
+  pricingTotalRow: {
+    borderTopColor: "#737373",
+    fontFamily: "Helvetica-Bold",
+  },
+  pricingTotalLabel: {
+    flexGrow: 1,
+    flexBasis: 0,
+    paddingTop: 6,
+    paddingRight: 7,
+    paddingBottom: 6,
+    paddingLeft: 7,
+    textAlign: "right",
+  },
+  pricingTotalValue: {
+    width: 94,
+    paddingTop: 6,
+    paddingRight: 7,
+    paddingBottom: 6,
+    paddingLeft: 7,
+    borderLeftWidth: 1,
+    borderLeftColor: "#d4d4d4",
+    textAlign: "right",
+  },
   list: { marginTop: 7 },
   listItem: {
     flexDirection: "row",
@@ -387,6 +483,11 @@ function defaultPaymentTerms(deposit: number) {
   }
 
   return "Deposit due upon acceptance.\nRemaining balance due upon completion.";
+}
+
+function formatAmount(value: number | null) {
+  if (value === null) return "—";
+  return Number.isInteger(value) ? String(value) : String(value);
 }
 
 function safeFilename(value: string) {
