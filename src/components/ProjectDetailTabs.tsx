@@ -10,6 +10,9 @@ import {
 } from "@/lib/date-time";
 import type { UserRole } from "@/lib/roles";
 import SiteVisitPanel from "@/components/SiteVisitPanel";
+import ProjectImagesPanel, {
+  type ProjectImage,
+} from "@/components/ProjectImagesPanel";
 import {
   formatCurrency,
   normalizeProposalPricingItems,
@@ -99,6 +102,7 @@ type Props = {
   addProjectActivity: (formData: FormData) => void;
   role: UserRole;
   siteVisitImages: { path: string; url: string }[];
+  projectImages: ProjectImage[];
 };
 
 export default function ProjectDetailTabs({
@@ -109,6 +113,7 @@ export default function ProjectDetailTabs({
   addProjectActivity,
   role,
   siteVisitImages,
+  projectImages,
 }: Props) {
   const searchParams = useSearchParams();
   const initialTab = searchParams.get("tab");
@@ -436,6 +441,8 @@ export default function ProjectDetailTabs({
               </p>
             </section>
           </aside>
+
+          <ProjectImagesPanel projectId={project.id} images={projectImages} />
         </div>
       )}
 

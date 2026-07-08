@@ -10,6 +10,7 @@ import {
   parseProposalPricingItemsFromForm,
   proposalPricingTotal,
 } from "@/lib/proposal-pricing";
+import type { ProjectImage } from "@/components/ProjectImagesPanel";
 
 export const dynamic = "force-dynamic";
 export const revalidate = 0;
@@ -250,6 +251,37 @@ export default async function ProjectDetailPage({
     url: signedImages?.[index]?.signedUrl || "",
   }));
 
+  const { data: projectImageRecords, error: projectImagesError } =
+    await supabase
+      .from("project_images")
+      .select("id, storage_path, file_name, created_at")
+      .eq("project_id", id)
+      .order("created_at", { ascending: false });
+
+  if (projectImagesError) {
+    console.error(
+      "Error loading project images:",
+      JSON.stringify(projectImagesError, null, 2)
+    );
+  }
+
+  const projectImagePaths =
+    projectImageRecords?.map((image) => image.storage_path).filter(Boolean) ||
+    [];
+  const { data: signedProjectImages } = projectImagePaths.length
+    ? await supabase.storage
+        .from("project-images")
+        .createSignedUrls(projectImagePaths, 60 * 60)
+    : { data: [] };
+  const projectImages: ProjectImage[] =
+    projectImageRecords?.map((image, index) => ({
+      id: String(image.id),
+      storagePath: image.storage_path,
+      url: signedProjectImages?.[index]?.signedUrl || "",
+      fileName: image.file_name,
+      createdAt: image.created_at,
+    })) || [];
+
   const isNewWebsiteLead =
     project.lead_source === "Website" && !project.website_lead_reviewed_at;
 
@@ -299,6 +331,7 @@ export default async function ProjectDetailPage({
         addProjectActivity={addProjectActivity}
         role={role}
         siteVisitImages={siteVisitImages}
+        projectImages={projectImages}
       />
     </div>
   );
