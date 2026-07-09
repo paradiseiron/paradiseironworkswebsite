@@ -20,7 +20,7 @@ export default function AdminPushNotifications({
   const [error, setError] = useState("");
 
   useEffect(() => {
-    if (userRole === "viewer" || userRole === "unassigned") return;
+    if (userRole === "unassigned") return;
 
     const timer = window.setTimeout(async () => {
       const canPush =
@@ -52,8 +52,10 @@ export default function AdminPushNotifications({
     return () => window.clearTimeout(timer);
   }, [publicKey, userRole]);
 
-  if (userRole === "viewer" || userRole === "unassigned") return null;
+  if (userRole === "unassigned") return null;
   if (!supported || subscribed) return null;
+
+  const notificationLabel = getNotificationLabel(userRole);
 
   if (dismissed) {
     return (
@@ -63,12 +65,8 @@ export default function AdminPushNotifications({
           window.localStorage.removeItem(DISMISSED_KEY);
           setDismissed(false);
         }}
-        aria-label={`Set up ${
-          userRole === "estimator" ? "site visit" : "lead"
-        } notifications`}
-        title={`Set up ${
-          userRole === "estimator" ? "site visit" : "lead"
-        } notifications`}
+        aria-label={`Set up ${notificationLabel} notifications`}
+        title={`Set up ${notificationLabel} notifications`}
         className="fixed bottom-24 right-4 z-[60] inline-flex h-11 w-11 items-center justify-center rounded-full border border-[#fb5411]/40 bg-neutral-900 text-[#fb5411] shadow-2xl md:bottom-6 md:right-6"
       >
         <Bell className="h-5 w-5" aria-hidden="true" />
@@ -142,12 +140,10 @@ export default function AdminPushNotifications({
         </div>
         <div className="min-w-0 flex-1">
           <p className="font-semibold">
-            Enable {userRole === "estimator" ? "site visit" : "lead"} notifications
+            Enable {notificationLabel} notifications
           </p>
           <p className="mt-1 text-sm leading-5 text-neutral-400">
-            {userRole === "estimator"
-              ? "Get an alert on this device when a project is ready for a site visit."
-              : "Get an alert on this device when a website lead arrives."}
+            {getNotificationDescription(userRole)}
           </p>
         </div>
         <button
@@ -195,4 +191,22 @@ function urlBase64ToUint8Array(value: string) {
   const rawData = window.atob(base64);
 
   return Uint8Array.from([...rawData].map((character) => character.charCodeAt(0)));
+}
+
+function getNotificationLabel(userRole: UserRole) {
+  if (userRole === "estimator") return "site visit";
+  if (userRole === "viewer") return "viewer";
+  return "lead";
+}
+
+function getNotificationDescription(userRole: UserRole) {
+  if (userRole === "estimator") {
+    return "Get an alert on this device when a project is ready for a site visit.";
+  }
+
+  if (userRole === "viewer") {
+    return "Allow this device to receive viewer notifications if they are targeted later.";
+  }
+
+  return "Get an alert on this device when a website lead arrives.";
 }

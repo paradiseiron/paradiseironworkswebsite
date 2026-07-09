@@ -1,7 +1,7 @@
 import { NextResponse } from "next/server";
 import { requireAuthenticatedUser } from "@/lib/auth";
 import { createAdminClient } from "@/lib/supabase/admin";
-import { requireOperationalRole } from "@/lib/roles";
+import { requireAssignedRole } from "@/lib/roles";
 
 type PushSubscriptionBody = {
   endpoint?: string;
@@ -14,7 +14,7 @@ type PushSubscriptionBody = {
 
 export async function POST(request: Request) {
   const user = await requireAuthenticatedUser();
-  await requireOperationalRole(user.id);
+  await requireAssignedRole(user.id);
   const subscription = (await request.json()) as PushSubscriptionBody;
 
   if (
@@ -53,7 +53,8 @@ export async function POST(request: Request) {
 }
 
 export async function DELETE(request: Request) {
-  await requireAuthenticatedUser();
+  const user = await requireAuthenticatedUser();
+  await requireAssignedRole(user.id);
   const body = (await request.json()) as { endpoint?: string };
 
   if (!body.endpoint) {
