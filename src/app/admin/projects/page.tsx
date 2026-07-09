@@ -176,8 +176,8 @@ export default async function ProjectsPage({
               <Link
                 key={project.id}
                 href={`/admin/projects/${project.id}`}
-                className={`rounded-2xl border p-4 transition active:scale-[0.99] ${
-                  isNewWebsiteLead || isReadySiteVisit
+                className={`block w-full touch-manipulation rounded-2xl border p-4 transition active:scale-[0.99] ${
+                  isNewWebsiteLead
                     ? "border-sky-400/25 bg-sky-400/[0.06]"
                     : "border-white/10 bg-white/[0.03]"
                 }`}
@@ -294,9 +294,7 @@ export default async function ProjectsPage({
                 <tr
                   key={project.id}
                   className={`rounded-xl border-t border-white/10 transition hover:bg-[#fb5411]/10 hover:shadow-[inset_0_0_0_1px_#fb5411] ${
-                    isNewWebsiteLead || isReadySiteVisit
-                      ? "bg-sky-400/[0.06]"
-                      : ""
+                    isNewWebsiteLead ? "bg-sky-400/[0.06]" : ""
                   }`}
                 >
                   <td className="px-4 py-3 text-neutral-300">
