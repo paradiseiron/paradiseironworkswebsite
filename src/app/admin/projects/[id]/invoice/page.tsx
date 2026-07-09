@@ -2,6 +2,7 @@ import { notFound, redirect } from "next/navigation";
 import Image from "next/image";
 import { createClient } from "@/lib/supabase/server";
 import { requireAuthenticatedUser } from "@/lib/auth";
+import { requireAssignedRole } from "@/lib/roles";
 import { formatWashingtonDate } from "@/lib/date-time";
 import {
   formatCurrency,
@@ -18,7 +19,8 @@ export default async function InvoicePreviewPage({
   const { id } = await params;
 
   const supabase = await createClient();
-  await requireAuthenticatedUser();
+  const user = await requireAuthenticatedUser();
+  await requireAssignedRole(user.id);
 
   const { data: project, error } = await supabase
     .from("projects")

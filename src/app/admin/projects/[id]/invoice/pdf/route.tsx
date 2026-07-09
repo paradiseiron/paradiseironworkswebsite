@@ -10,6 +10,7 @@ import {
 } from "@react-pdf/renderer";
 import { createClient } from "@/lib/supabase/server";
 import { requireAuthenticatedUser } from "@/lib/auth";
+import { requireAssignedRole } from "@/lib/roles";
 import { formatWashingtonDate } from "@/lib/date-time";
 import {
   formatCurrency,
@@ -25,7 +26,8 @@ export async function GET(
   request: Request,
   context: { params: Promise<{ id: string }> }
 ) {
-  await requireAuthenticatedUser();
+  const user = await requireAuthenticatedUser();
+  await requireAssignedRole(user.id);
   const { id } = await context.params;
   const supabase = await createClient();
 

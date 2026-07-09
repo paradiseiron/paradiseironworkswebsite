@@ -4,9 +4,11 @@ import { revalidatePath } from "next/cache";
 import { redirect } from "next/navigation";
 import { createClient } from "@/lib/supabase/server";
 import { requireAuthenticatedUser } from "@/lib/auth";
+import { requireOperationalRole } from "@/lib/roles";
 
 export async function resolveFollowUp(formData: FormData) {
-  await requireAuthenticatedUser();
+  const user = await requireAuthenticatedUser();
+  await requireOperationalRole(user.id);
   const supabase = await createClient();
 
   const project_id = String(formData.get("project_id") || "");

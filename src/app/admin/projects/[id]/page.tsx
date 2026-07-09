@@ -303,7 +303,7 @@ export default async function ProjectDetailPage({
         </div>
 
         <div className="flex flex-wrap items-center gap-3">
-          {project.has_open_follow_up === true && (
+          {project.has_open_follow_up === true && role !== "viewer" && (
             <FollowUpAlertModal
               projectId={project.id}
               note={project.latest_follow_up_note}
@@ -311,6 +311,12 @@ export default async function ProjectDetailPage({
               returnPath={`/admin/projects/${project.id}`}
               action={resolveFollowUp}
             />
+          )}
+          {project.has_open_follow_up === true && role === "viewer" && (
+            <span className="inline-flex items-center gap-2 rounded-full border border-red-500/20 bg-red-500/10 px-4 py-2 text-sm text-red-300">
+              <span className="h-2 w-2 rounded-full bg-red-400" />
+              Needs Follow-Up
+            </span>
           )}
 
           <span

@@ -160,6 +160,7 @@ export default function ProjectDetailTabs({
   const pricingTotal = proposalPricingTotal(
     pricingFormStateToLineItems(pricingItems)
   );
+  const canWrite = role === "admin" || role === "estimator";
 
   useEffect(() => {
     if (!toast) return;
@@ -347,7 +348,11 @@ export default function ProjectDetailTabs({
                 label="Contact Name"
                 value={project.contact_name || project.customer_name}
               />
-              <PhoneDetail projectId={project.id} value={project.phone} />
+              <PhoneDetail
+                projectId={project.id}
+                value={project.phone}
+                logActivity={canWrite}
+              />
               <Detail label="Email" value={project.email} />
               <Detail label="Source" value={project.lead_source} />
               <Detail label="Address" value={project.project_address} />
@@ -384,25 +389,47 @@ export default function ProjectDetailTabs({
             <section className="rounded-2xl border border-white/10 bg-white/[0.03] p-4 sm:p-6">
               <h2 className="text-xl font-semibold">Status</h2>
 
-              <form action={updateProjectStatus} className="mt-4">
-                <input type="hidden" name="project_id" value={project.id} />
+              {canWrite ? (
+                <form action={updateProjectStatus} className="mt-4">
+                  <input type="hidden" name="project_id" value={project.id} />
 
-                <div className="flex flex-col gap-3 sm:flex-row sm:items-center">
-                  <div className="relative flex-1">
-                    <select
-                      name="status"
-                      defaultValue={project.status || "lead"}
-                      className="w-full appearance-none rounded-xl border border-white/10 bg-neutral-900 px-4 py-3 pr-12 text-white outline-none focus:border-[#fb5411]"
+                  <div className="flex flex-col gap-3 sm:flex-row sm:items-center">
+                    <div className="relative flex-1">
+                      <select
+                        name="status"
+                        defaultValue={project.status || "lead"}
+                        className="w-full appearance-none rounded-xl border border-white/10 bg-neutral-900 px-4 py-3 pr-12 text-white outline-none focus:border-[#fb5411]"
+                      >
+                        <option value="lead">Lead</option>
+                        <option value="quoted">Quoted</option>
+                        <option value="pending">Pending</option>
+                        <option value="active">Active</option>
+                        <option value="completed">Completed</option>
+                        <option value="lost">Lost</option>
+                      </select>
+
+                      <div className="pointer-events-none absolute inset-y-0 right-4 flex items-center text-neutral-500">
+                        <svg
+                          xmlns="http://www.w3.org/2000/svg"
+                          className="h-4 w-4"
+                          fill="none"
+                          viewBox="0 0 24 24"
+                          stroke="currentColor"
+                          strokeWidth={2}
+                        >
+                          <path
+                            strokeLinecap="round"
+                            strokeLinejoin="round"
+                            d="M19 9l-7 7-7-7"
+                          />
+                        </svg>
+                      </div>
+                    </div>
+
+                    <button
+                      type="submit"
+                      className="inline-flex h-11 cursor-pointer items-center gap-2 rounded-xl border border-white/10 bg-white/[0.03] px-4 text-sm font-semibold text-neutral-200 transition hover:border-white/20 hover:bg-white/10 hover:text-white"
                     >
-                      <option value="lead">Lead</option>
-                      <option value="quoted">Quoted</option>
-                      <option value="pending">Pending</option>
-                      <option value="active">Active</option>
-                      <option value="completed">Completed</option>
-                      <option value="lost">Lost</option>
-                    </select>
-
-                    <div className="pointer-events-none absolute inset-y-0 right-4 flex items-center text-neutral-500">
                       <svg
                         xmlns="http://www.w3.org/2000/svg"
                         className="h-4 w-4"
@@ -414,40 +441,24 @@ export default function ProjectDetailTabs({
                         <path
                           strokeLinecap="round"
                           strokeLinejoin="round"
-                          d="M19 9l-7 7-7-7"
+                          d="M4 12h16"
+                        />
+                        <path
+                          strokeLinecap="round"
+                          strokeLinejoin="round"
+                          d="M12 4l8 8-8 8"
                         />
                       </svg>
-                    </div>
+
+                      <span>Update</span>
+                    </button>
                   </div>
-
-                  <button
-                    type="submit"
-                    className="inline-flex h-11 cursor-pointer items-center gap-2 rounded-xl border border-white/10 bg-white/[0.03] px-4 text-sm font-semibold text-neutral-200 transition hover:border-white/20 hover:bg-white/10 hover:text-white"
-                  >
-                    <svg
-                      xmlns="http://www.w3.org/2000/svg"
-                      className="h-4 w-4"
-                      fill="none"
-                      viewBox="0 0 24 24"
-                      stroke="currentColor"
-                      strokeWidth={2}
-                    >
-                      <path
-                        strokeLinecap="round"
-                        strokeLinejoin="round"
-                        d="M4 12h16"
-                      />
-                      <path
-                        strokeLinecap="round"
-                        strokeLinejoin="round"
-                        d="M12 4l8 8-8 8"
-                      />
-                    </svg>
-
-                    <span>Update</span>
-                  </button>
-                </div>
-              </form>
+                </form>
+              ) : (
+                <p className="mt-4 text-sm capitalize text-neutral-300">
+                  {project.status || "lead"}
+                </p>
+              )}
             </section>
 
             <section className="rounded-2xl border border-white/10 bg-white/[0.03] p-4 sm:p-6">
@@ -459,12 +470,17 @@ export default function ProjectDetailTabs({
             </section>
           </aside>
 
-          <ProjectImagesPanel projectId={project.id} images={projectImages} />
+          <ProjectImagesPanel
+            projectId={project.id}
+            images={projectImages}
+            readOnly={!canWrite}
+          />
         </div>
       )}
 
       {tab === "proposal" && (
-        <section className="rounded-2xl border border-white/10 bg-white/[0.03] p-4 sm:p-6">
+        canWrite ? (
+          <section className="rounded-2xl border border-white/10 bg-white/[0.03] p-4 sm:p-6">
           <div className="flex flex-wrap items-center justify-between gap-4">
             <div>
               <h2 className="text-xl font-semibold">Proposal Draft</h2>
@@ -635,7 +651,10 @@ export default function ProjectDetailTabs({
               />
             </div>
           </form>
-        </section>
+          </section>
+        ) : (
+          <ProposalReadOnlyPanel project={project} pricingTotal={pricingTotal} />
+        )
       )}
 
       {tab === "site-visit" && (
@@ -652,13 +671,15 @@ export default function ProjectDetailTabs({
           <div className="flex flex-wrap items-center justify-between gap-3">
             <h2 className="text-xl font-semibold">Project Timeline</h2>
 
-            <AddProjectActivityModal
-              projectId={project.id}
-              hasOpenFollowUp={Boolean(project.has_open_follow_up)}
-              currentFollowUpNote={project.latest_follow_up_note}
-              currentFollowUpDueAt={project.latest_follow_up_due_at}
-              action={addProjectActivity}
-            />
+            {canWrite && (
+              <AddProjectActivityModal
+                projectId={project.id}
+                hasOpenFollowUp={Boolean(project.has_open_follow_up)}
+                currentFollowUpNote={project.latest_follow_up_note}
+                currentFollowUpDueAt={project.latest_follow_up_due_at}
+                action={addProjectActivity}
+              />
+            )}
           </div>
 
           <div className="mt-6 space-y-4">
@@ -831,6 +852,78 @@ function InvoiceMetric({ label, value }: { label: string; value: string }) {
         {value}
       </p>
     </div>
+  );
+}
+
+function ProposalReadOnlyPanel({
+  project,
+  pricingTotal,
+}: {
+  project: ProjectRecord;
+  pricingTotal: number;
+}) {
+  return (
+    <section className="rounded-2xl border border-white/10 bg-white/[0.03] p-4 sm:p-6">
+      <div className="flex flex-wrap items-start justify-between gap-4">
+        <div>
+          <h2 className="text-xl font-semibold">Proposal</h2>
+          <p className="mt-1 text-sm text-neutral-400">
+            Read-only proposal details. Viewers can preview or download the
+            proposal.
+          </p>
+        </div>
+
+        <div className="flex flex-wrap gap-3">
+          <Link
+            href={`/admin/projects/${project.id}/proposal`}
+            className="inline-flex h-11 items-center justify-center gap-2 rounded-xl bg-[#fb5411] px-4 text-sm font-semibold text-white transition hover:bg-[#e64d0f]"
+          >
+            <FileText className="h-4 w-4" aria-hidden="true" />
+            <span>Preview Proposal</span>
+          </Link>
+          <Link
+            href={`/admin/projects/${project.id}/proposal/pdf`}
+            className="inline-flex h-11 items-center justify-center gap-2 rounded-xl border border-white/10 px-4 text-sm font-semibold text-neutral-200 transition hover:bg-white/5 hover:text-white"
+          >
+            <Download className="h-4 w-4" aria-hidden="true" />
+            <span>Download PDF</span>
+          </Link>
+        </div>
+      </div>
+
+      <div className="mt-6 grid gap-4 md:grid-cols-3">
+        <InvoiceMetric
+          label="Proposal #"
+          value={project.proposal_number || "Not assigned"}
+        />
+        <InvoiceMetric
+          label="Proposal Amount"
+          value={formatCurrency(pricingTotal || Number(project.proposal_amount || 0))}
+        />
+        <InvoiceMetric
+          label="Prepared By"
+          value={project.proposal_prepared_by || "—"}
+        />
+      </div>
+
+      <div className="mt-6 grid gap-5 md:grid-cols-2">
+        <Detail
+          label="Project Name"
+          value={project.proposal_project_name || project.customer_name}
+        />
+        <Detail
+          label="Attention"
+          value={project.proposal_attention || project.contact_name}
+        />
+        <Detail label="Scope of Work" value={project.proposal_scope} />
+        <Detail label="Payment Terms" value={project.proposal_payment_terms} />
+        <Detail label="Schedule" value={project.proposal_schedule} />
+        <Detail
+          label="Clarifications"
+          value={project.proposal_clarifications}
+        />
+      </div>
+    </section>
   );
 }
 
@@ -1036,9 +1129,11 @@ function Detail({
 function PhoneDetail({
   projectId,
   value,
+  logActivity = true,
 }: {
   projectId: string;
   value?: string | null;
+  logActivity?: boolean;
 }) {
   const dialableNumber = value?.replace(/[^\d+]/g, "");
 
@@ -1052,6 +1147,7 @@ function PhoneDetail({
         <a
           href={`tel:${dialableNumber}`}
           onClick={() => {
+            if (!logActivity) return;
             void fetch(
               `/api/projects/${encodeURIComponent(projectId)}/call-events`,
               {

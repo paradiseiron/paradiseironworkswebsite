@@ -2,7 +2,7 @@ import "server-only";
 
 import { createAdminClient } from "@/lib/supabase/admin";
 
-export type UserRole = "admin" | "estimator" | "unassigned";
+export type UserRole = "admin" | "estimator" | "viewer" | "unassigned";
 
 export async function getUserRole(userId: string): Promise<UserRole> {
   const supabase = createAdminClient();
@@ -17,7 +17,11 @@ export async function getUserRole(userId: string): Promise<UserRole> {
     return "unassigned";
   }
 
-  if (data?.role === "admin" || data?.role === "estimator") {
+  if (
+    data?.role === "admin" ||
+    data?.role === "estimator" ||
+    data?.role === "viewer"
+  ) {
     return data.role;
   }
   return "unassigned";
@@ -35,6 +39,17 @@ export async function requireRole(
 }
 
 export async function requireOperationalRole(userId: string) {
+  const role = await getUserRole(userId);
+  if (role === "unassigned") {
+    throw new Error("This account has not been assigned an application role.");
+  }
+  if (role === "viewer") {
+    throw new Error("This action requires a role with write access.");
+  }
+  return role;
+}
+
+export async function requireAssignedRole(userId: string) {
   const role = await getUserRole(userId);
   if (role === "unassigned") {
     throw new Error("This account has not been assigned an application role.");

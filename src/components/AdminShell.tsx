@@ -54,6 +54,7 @@ export default function AdminShell({
 
   const isProjectProposalTab =
     isProjectDetail && currentTab === "proposal";
+  const canWrite = userRole === "admin" || userRole === "estimator";
 
   const projectPath = isProposalPreview
     ? `${pathname.replace("/proposal", "")}?tab=proposal`
@@ -170,7 +171,7 @@ export default function AdminShell({
             </div>
 
             <div className="flex min-w-0 flex-1 items-center justify-end gap-2 overflow-x-auto sm:gap-3">
-              {(isDashboardPage || isProjectsPage) && (
+              {canWrite && (isDashboardPage || isProjectsPage) && (
                 <Link
                   href="/admin/projects/new"
                   className="inline-flex h-10 shrink-0 items-center justify-center gap-2 rounded-xl bg-[#fb5411] px-4 text-sm font-semibold text-white transition hover:bg-[#e64d0f] sm:px-5"
@@ -228,7 +229,7 @@ export default function AdminShell({
   </button>
 )}
 
-              {isProjectProposalTab && (
+              {canWrite && isProjectProposalTab && (
                 <button
                   type="submit"
                   form="proposal-form"

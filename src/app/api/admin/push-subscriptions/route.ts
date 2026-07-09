@@ -1,6 +1,7 @@
 import { NextResponse } from "next/server";
 import { requireAuthenticatedUser } from "@/lib/auth";
 import { createAdminClient } from "@/lib/supabase/admin";
+import { requireOperationalRole } from "@/lib/roles";
 
 type PushSubscriptionBody = {
   endpoint?: string;
@@ -13,6 +14,7 @@ type PushSubscriptionBody = {
 
 export async function POST(request: Request) {
   const user = await requireAuthenticatedUser();
+  await requireOperationalRole(user.id);
   const subscription = (await request.json()) as PushSubscriptionBody;
 
   if (

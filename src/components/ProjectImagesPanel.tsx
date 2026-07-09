@@ -16,9 +16,11 @@ export type ProjectImage = {
 export default function ProjectImagesPanel({
   projectId,
   images,
+  readOnly = false,
 }: {
   projectId: string;
   images: ProjectImage[];
+  readOnly?: boolean;
 }) {
   const router = useRouter();
   const [busy, setBusy] = useState(false);
@@ -107,28 +109,30 @@ export default function ProjectImagesPanel({
           </p>
         </div>
 
-        <form action={uploadPhotos} className="flex flex-wrap gap-3">
-          <PhotoInput
-            name="camera_photos"
-            label="Take photos"
-            icon={<Camera className="h-4 w-4" aria-hidden="true" />}
-            capture="environment"
-          />
-          <PhotoInput
-            name="photos"
-            label="Choose photos"
-            icon={<ImagePlus className="h-4 w-4" aria-hidden="true" />}
-            multiple
-          />
-          <button
-            type="submit"
-            disabled={busy}
-            className="inline-flex h-11 cursor-pointer items-center gap-2 rounded-xl bg-[#fb5411] px-4 text-sm font-semibold text-white disabled:cursor-not-allowed disabled:opacity-60"
-          >
-            <Upload className="h-4 w-4" aria-hidden="true" />
-            {busy ? "Uploading..." : "Upload"}
-          </button>
-        </form>
+        {!readOnly && (
+          <form action={uploadPhotos} className="flex flex-wrap gap-3">
+            <PhotoInput
+              name="camera_photos"
+              label="Take photos"
+              icon={<Camera className="h-4 w-4" aria-hidden="true" />}
+              capture="environment"
+            />
+            <PhotoInput
+              name="photos"
+              label="Choose photos"
+              icon={<ImagePlus className="h-4 w-4" aria-hidden="true" />}
+              multiple
+            />
+            <button
+              type="submit"
+              disabled={busy}
+              className="inline-flex h-11 cursor-pointer items-center gap-2 rounded-xl bg-[#fb5411] px-4 text-sm font-semibold text-white disabled:cursor-not-allowed disabled:opacity-60"
+            >
+              <Upload className="h-4 w-4" aria-hidden="true" />
+              {busy ? "Uploading..." : "Upload"}
+            </button>
+          </form>
+        )}
       </div>
 
       {message && <p className="mt-4 text-sm text-amber-200">{message}</p>}

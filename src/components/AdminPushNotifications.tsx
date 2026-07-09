@@ -20,6 +20,8 @@ export default function AdminPushNotifications({
   const [error, setError] = useState("");
 
   useEffect(() => {
+    if (userRole === "viewer" || userRole === "unassigned") return;
+
     const timer = window.setTimeout(async () => {
       const canPush =
         "serviceWorker" in navigator &&
@@ -48,8 +50,9 @@ export default function AdminPushNotifications({
     }, 0);
 
     return () => window.clearTimeout(timer);
-  }, [publicKey]);
+  }, [publicKey, userRole]);
 
+  if (userRole === "viewer" || userRole === "unassigned") return null;
   if (!supported || subscribed) return null;
 
   if (dismissed) {
