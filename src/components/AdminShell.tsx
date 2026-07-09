@@ -41,9 +41,14 @@ export default function AdminShell({
     pathname.startsWith("/admin/projects/") &&
     pathname.endsWith("/proposal");
 
+  const isInvoicePreview =
+    pathname.startsWith("/admin/projects/") &&
+    pathname.endsWith("/invoice");
+
   const isProjectDetail =
     pathname.startsWith("/admin/projects/") &&
     !pathname.endsWith("/proposal") &&
+    !pathname.endsWith("/invoice") &&
     pathname !== "/admin/projects" &&
     pathname !== "/admin/projects/new";
 
@@ -52,6 +57,8 @@ export default function AdminShell({
 
   const projectPath = isProposalPreview
     ? `${pathname.replace("/proposal", "")}?tab=proposal`
+    : isInvoicePreview
+      ? `${pathname.replace("/invoice", "")}?tab=invoice`
     : pathname;
 
   useEffect(() => {
@@ -149,7 +156,7 @@ export default function AdminShell({
                 </Link>
               )}
 
-              {isProposalPreview && (
+              {(isProposalPreview || isInvoicePreview) && (
                 <Link
                   href={projectPath}
                   aria-label="Back to Project"
@@ -233,7 +240,7 @@ export default function AdminShell({
                 </button>
               )}
 
-              {isProposalPreview && (
+              {(isProposalPreview || isInvoicePreview) && (
   <>
     <button
       type="button"

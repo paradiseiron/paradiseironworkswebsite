@@ -1,8 +1,17 @@
 "use client";
 
 import { useEffect, useRef, useState } from "react";
+import Link from "next/link";
 import { useSearchParams } from "next/navigation";
-import { CheckCircle2, Phone, Plus, Trash2, X } from "lucide-react";
+import {
+  CheckCircle2,
+  Download,
+  FileText,
+  Phone,
+  Plus,
+  Trash2,
+  X,
+} from "lucide-react";
 import AddProjectActivityModal from "@/components/AddProjectActivityModal";
 import {
   formatWashingtonDate,
@@ -20,6 +29,7 @@ import {
   proposalPricingTotal,
   type ProposalPricingLineItem,
 } from "@/lib/proposal-pricing";
+import { getInvoiceLineItems, getInvoiceSummary } from "@/lib/invoice";
 
 type ProjectTab =
   | "overview"
@@ -48,6 +58,7 @@ type ProjectRecord = {
   latest_follow_up_due_at?: string | null;
   proposal_number?: string | null;
   proposal_amount?: number | null;
+  balance_due?: number | null;
   proposal_project_name?: string | null;
   proposal_attention?: string | null;
   proposal_office_phone?: string | null;
@@ -696,31 +707,129 @@ export default function ProjectDetailTabs({
 
       {tab === "invoice" && (
         <section className="rounded-2xl border border-white/10 bg-white/[0.03] p-4 sm:p-6">
-          <h2 className="text-xl font-semibold">Invoice</h2>
-
           {["active", "completed"].includes(project.status || "") ? (
-            <div className="mt-4">
-              <p className="text-sm text-neutral-400">
-                Invoice creation will live here. This should unlock once the job
-                is active or completed.
-              </p>
-
-              <button
-                type="button"
-                disabled
-                className="mt-5 rounded-lg border border-white/10 px-4 py-2 text-sm text-neutral-500"
-              >
-                Generate Invoice later
-              </button>
-            </div>
+            <InvoicePanel project={project} />
           ) : (
-            <p className="mt-4 text-sm text-neutral-400">
-              Invoice tools become available once this project is active or
-              completed.
-            </p>
+            <>
+              <h2 className="text-xl font-semibold">Invoice</h2>
+              <p className="mt-4 text-sm text-neutral-400">
+                Invoice tools become available once this project is active or
+                completed.
+              </p>
+            </>
           )}
         </section>
       )}
+    </div>
+  );
+}
+
+function InvoicePanel({ project }: { project: ProjectRecord }) {
+  const summary = getInvoiceSummary(project);
+  const lineItems = getInvoiceLineItems(summary);
+  const projectLabel = project.proposal_project_name || project.customer_name;
+
+  return (
+    <div>
+      <div className="flex flex-wrap items-start justify-between gap-4">
+        <div>
+          <h2 className="text-xl font-semibold">Invoice</h2>
+          <p className="mt-1 text-sm text-neutral-400">
+            Standard invoice based on the current remaining balance.
+          </p>
+        </div>
+
+        <div className="rounded-xl border border-emerald-500/20 bg-emerald-500/10 px-4 py-3 text-right">
+          <p className="text-xs uppercase tracking-[0.18em] text-emerald-200/80">
+            Balance Due
+          </p>
+          <p className="mt-1 text-2xl font-semibold text-emerald-100">
+            {formatCurrency(summary.amountDue)}
+          </p>
+        </div>
+      </div>
+
+      <div className="mt-6 grid gap-4 md:grid-cols-3">
+        <InvoiceMetric label="Invoice #" value={summary.invoiceNumber} />
+        <InvoiceMetric
+          label="Contract Amount"
+          value={formatCurrency(summary.contractAmount)}
+        />
+        <InvoiceMetric
+          label="Paid / Credited"
+          value={formatCurrency(summary.paidToDate)}
+        />
+      </div>
+
+      <div className="mt-6 overflow-hidden rounded-xl border border-white/10">
+        <div className="grid grid-cols-[1fr_140px] bg-white/[0.04] text-sm font-semibold text-neutral-200">
+          <div className="border-r border-white/10 px-4 py-3">Description</div>
+          <div className="px-4 py-3 text-right">Amount</div>
+        </div>
+
+        {lineItems.map((item) => (
+          <div
+            key={item.description}
+            className="grid grid-cols-[1fr_140px] border-t border-white/10 text-sm"
+          >
+            <div className="border-r border-white/10 px-4 py-3 text-neutral-300">
+              {item.description}
+            </div>
+            <div className="px-4 py-3 text-right text-white">
+              {formatCurrency(item.amount)}
+            </div>
+          </div>
+        ))}
+
+        <div className="grid grid-cols-[1fr_140px] border-t border-white/20 bg-white/[0.04] text-sm font-bold">
+          <div className="px-4 py-3 text-right text-white">Total Due</div>
+          <div className="border-l border-white/10 px-4 py-3 text-right text-white">
+            {formatCurrency(summary.amountDue)}
+          </div>
+        </div>
+      </div>
+
+      <div className="mt-5 rounded-xl border border-white/10 bg-white/[0.02] p-4 text-sm text-neutral-300">
+        <p>
+          <span className="font-semibold text-white">Bill to:</span>{" "}
+          {project.contact_name || project.customer_name || "—"}
+        </p>
+        <p className="mt-1">
+          <span className="font-semibold text-white">Project:</span>{" "}
+          {projectLabel || "—"}
+        </p>
+      </div>
+
+      <div className="mt-6 flex flex-wrap gap-3">
+        <Link
+          href={`/admin/projects/${project.id}/invoice`}
+          className="inline-flex h-11 items-center justify-center gap-2 rounded-xl bg-[#fb5411] px-4 text-sm font-semibold text-white transition hover:bg-[#e64d0f]"
+        >
+          <FileText className="h-4 w-4" aria-hidden="true" />
+          <span>Preview Invoice</span>
+        </Link>
+
+        <Link
+          href={`/admin/projects/${project.id}/invoice/pdf`}
+          className="inline-flex h-11 items-center justify-center gap-2 rounded-xl border border-white/10 px-4 text-sm font-semibold text-neutral-200 transition hover:bg-white/5 hover:text-white"
+        >
+          <Download className="h-4 w-4" aria-hidden="true" />
+          <span>Download PDF</span>
+        </Link>
+      </div>
+    </div>
+  );
+}
+
+function InvoiceMetric({ label, value }: { label: string; value: string }) {
+  return (
+    <div className="rounded-xl border border-white/10 bg-white/[0.02] p-4">
+      <p className="text-xs uppercase tracking-[0.18em] text-neutral-500">
+        {label}
+      </p>
+      <p className="mt-2 break-words text-lg font-semibold text-white">
+        {value}
+      </p>
     </div>
   );
 }
