@@ -36,7 +36,15 @@ export default function AdminPushNotifications({
       if (!("pushManager" in registration)) return;
       const existingSubscription =
         await registration.pushManager.getSubscription();
-      setSubscribed(Boolean(existingSubscription));
+      if (existingSubscription) {
+        await saveSubscription(existingSubscription);
+        window.localStorage.removeItem(DISMISSED_KEY);
+        setDismissed(true);
+        setSubscribed(true);
+        return;
+      }
+
+      setSubscribed(false);
     }, 0);
 
     return () => window.clearTimeout(timer);
@@ -97,19 +105,7 @@ export default function AdminPushNotifications({
           applicationServerKey: urlBase64ToUint8Array(publicKey),
         }));
 
-      const response = await fetch("/api/admin/push-subscriptions", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify(subscription.toJSON()),
-      });
-
-      if (!response.ok) {
-        const body = (await response.json().catch(() => null)) as
-          | { error?: string }
-          | null;
-        throw new Error(body?.error || "Unable to enable notifications.");
-      }
-
+      await saveSubscription(subscription);
       window.localStorage.removeItem(DISMISSED_KEY);
       setSubscribed(true);
     } catch (notificationError) {
@@ -173,6 +169,21 @@ export default function AdminPushNotifications({
       </button>
     </aside>
   );
+}
+
+async function saveSubscription(subscription: PushSubscription) {
+  const response = await fetch("/api/admin/push-subscriptions", {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify(subscription.toJSON()),
+  });
+
+  if (!response.ok) {
+    const body = (await response.json().catch(() => null)) as
+      | { error?: string }
+      | null;
+    throw new Error(body?.error || "Unable to enable notifications.");
+  }
 }
 
 function urlBase64ToUint8Array(value: string) {
