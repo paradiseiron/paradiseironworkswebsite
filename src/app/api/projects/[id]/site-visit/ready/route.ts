@@ -80,6 +80,7 @@ export async function POST(
 
   await sendWorkflowNotification({
     recipientRole: "estimator",
+    recipientUserIds: [estimatorId],
     title: "Site visit ready",
     body: `${project.customer_name}: ${body.scheduledDate}, ${body.windowStart}–${body.windowEnd} at ${body.location.trim()}.`,
     emailSubject: `Site visit ready: ${project.customer_name}`,

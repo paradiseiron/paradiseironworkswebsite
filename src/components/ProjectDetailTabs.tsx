@@ -266,6 +266,12 @@ export default function ProjectDetailTabs({
     }
   }
 
+  function showToast(message: string) {
+    setToastVisible(false);
+    setToast("");
+    window.setTimeout(() => setToast(message), 20);
+  }
+
   return (
     <div>
       {toast && (
@@ -626,6 +632,7 @@ export default function ProjectDetailTabs({
           project={project}
           role={role}
           images={siteVisitImages}
+          onToast={showToast}
         />
       )}
 

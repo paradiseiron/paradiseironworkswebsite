@@ -37,6 +37,7 @@ export default async function AdminLayout({
       <AdminPwa />
       <AdminPushNotifications
         publicKey={process.env.NEXT_PUBLIC_VAPID_PUBLIC_KEY}
+        userRole={role}
       />
     </AdminShell>
   );

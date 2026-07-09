@@ -2,7 +2,7 @@
 
 import { useState } from "react";
 import { useRouter } from "next/navigation";
-import { Camera, ImagePlus, Mic, Save } from "lucide-react";
+import { Camera, ImagePlus, Mic, Pencil, Save } from "lucide-react";
 import { createClient } from "@/lib/supabase/client";
 import type { UserRole } from "@/lib/roles";
 
@@ -28,18 +28,33 @@ type SiteVisitProject = {
 
 type SiteVisitImage = { path: string; url: string };
 
+type ScheduledVisitDraft = {
+  date: string;
+  windowStart: string;
+  windowEnd: string;
+  location: string;
+  adminNotes: string;
+};
+
 export default function SiteVisitPanel({
   project,
   role,
   images,
+  onToast,
 }: {
   project: SiteVisitProject;
   role: UserRole;
   images: SiteVisitImage[];
+  onToast?: (message: string) => void;
 }) {
   const router = useRouter();
   const [busy, setBusy] = useState(false);
   const [message, setMessage] = useState("");
+  const [editingSchedule, setEditingSchedule] = useState(
+    (project.site_visit_status || "not_ready") !== "ready"
+  );
+  const [scheduledVisit, setScheduledVisit] =
+    useState<ScheduledVisitDraft | null>(null);
   const defaultLocation = [
     project.project_address,
     project.city,
@@ -49,34 +64,71 @@ export default function SiteVisitPanel({
     .filter(Boolean)
     .join(", ");
   const status = project.site_visit_status || "not_ready";
+  const effectiveStatus = scheduledVisit ? "ready" : status;
+  const scheduledDate =
+    scheduledVisit?.date || project.site_visit_scheduled_date || "";
+  const scheduledWindowStart =
+    scheduledVisit?.windowStart || shortTime(project.site_visit_window_start);
+  const scheduledWindowEnd =
+    scheduledVisit?.windowEnd || shortTime(project.site_visit_window_end);
+  const scheduledLocation =
+    scheduledVisit?.location || project.site_visit_location || defaultLocation;
+  const scheduledAdminNotes =
+    scheduledVisit?.adminNotes || project.site_visit_admin_notes || "";
 
   async function markReady(formData: FormData) {
     setBusy(true);
     setMessage("");
-    const response = await fetch(
-      `/api/projects/${encodeURIComponent(project.id)}/site-visit/ready`,
-      {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({
-          scheduledDate: formData.get("scheduled_date"),
-          windowStart: formData.get("window_start"),
-          windowEnd: formData.get("window_end"),
-          location: formData.get("location"),
-          adminNotes: formData.get("admin_notes"),
-        }),
+
+    try {
+      const wasAlreadyReady = effectiveStatus === "ready";
+      const nextVisit = {
+        date: String(formData.get("scheduled_date") || ""),
+        windowStart: String(formData.get("window_start") || ""),
+        windowEnd: String(formData.get("window_end") || ""),
+        location: String(formData.get("location") || ""),
+        adminNotes: String(formData.get("admin_notes") || ""),
+      };
+      const response = await fetch(
+        `/api/projects/${encodeURIComponent(project.id)}/site-visit/ready`,
+        {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({
+            scheduledDate: nextVisit.date,
+            windowStart: nextVisit.windowStart,
+            windowEnd: nextVisit.windowEnd,
+            location: nextVisit.location,
+            adminNotes: nextVisit.adminNotes,
+          }),
+        }
+      );
+      const body = (await response.json().catch(() => null)) as
+        | { error?: string }
+        | null;
+
+      if (!response.ok) {
+        setMessage(body?.error || "Unable to schedule site visit.");
+        return;
       }
-    );
-    const body = (await response.json().catch(() => null)) as
-      | { error?: string }
-      | null;
-    setBusy(false);
-    if (!response.ok) {
-      setMessage(body?.error || "Unable to schedule site visit.");
-      return;
+
+      setScheduledVisit(nextVisit);
+      setEditingSchedule(false);
+      onToast?.(
+        wasAlreadyReady
+          ? "Site visit updated and estimator notified."
+          : "Site visit scheduled and estimator notified."
+      );
+      router.refresh();
+    } catch (scheduleError) {
+      setMessage(
+        scheduleError instanceof Error
+          ? scheduleError.message
+          : "Unable to schedule site visit."
+      );
+    } finally {
+      setBusy(false);
     }
-    setMessage("Estimator notified.");
-    router.refresh();
   }
 
   async function completeVisit(formData: FormData) {
@@ -142,9 +194,63 @@ export default function SiteVisitPanel({
   }
 
   if (role === "admin" && status !== "completed") {
+    if (effectiveStatus === "ready" && !editingSchedule) {
+      return (
+        <section className="rounded-2xl border border-white/10 bg-white/[0.03] p-4 sm:p-6">
+          <div className="flex flex-wrap items-start justify-between gap-4">
+            <div>
+              <h2 className="text-xl font-semibold">Site Visit Scheduled</h2>
+              <p className="mt-1 text-sm text-neutral-400">
+                The estimator has been notified. Review the visit details below.
+              </p>
+            </div>
+
+            <button
+              type="button"
+              onClick={() => {
+                setMessage("");
+                setEditingSchedule(true);
+              }}
+              className="inline-flex h-10 cursor-pointer items-center gap-2 rounded-xl border border-white/10 px-4 text-sm font-semibold text-neutral-200 transition hover:border-white/20 hover:bg-white/10 hover:text-white"
+            >
+              <Pencil className="h-4 w-4" aria-hidden="true" />
+              Edit visit
+            </button>
+          </div>
+
+          <div className="mt-6 rounded-xl border border-[#fb5411]/20 bg-[#fb5411]/10 p-4">
+            <p className="text-sm font-semibold text-orange-100">
+              Site visit is ready for the estimator.
+            </p>
+            <div className="mt-4 grid gap-4 sm:grid-cols-2">
+              <ReadOnlyDetail
+                label="Date and time"
+                value={
+                  scheduledDate
+                    ? `${scheduledDate} · ${scheduledWindowStart}-${scheduledWindowEnd}`
+                    : null
+                }
+              />
+              <ReadOnlyDetail
+                label="Location"
+                value={scheduledLocation}
+              />
+              <ReadOnlyDetail
+                label="Instructions for estimator"
+                value={scheduledAdminNotes}
+              />
+              <ReadOnlyDetail label="Status" value="ready" />
+            </div>
+          </div>
+        </section>
+      );
+    }
+
     return (
       <section className="rounded-2xl border border-white/10 bg-white/[0.03] p-4 sm:p-6">
-        <h2 className="text-xl font-semibold">Schedule Site Visit</h2>
+        <h2 className="text-xl font-semibold">
+          {effectiveStatus === "ready" ? "Update Site Visit" : "Schedule Site Visit"}
+        </h2>
         <p className="mt-1 text-sm text-neutral-400">
           Set the visit window and notify the estimator when the project is
           ready.
@@ -156,33 +262,33 @@ export default function SiteVisitPanel({
               name="scheduled_date"
               type="date"
               required
-              defaultValue={project.site_visit_scheduled_date || ""}
+              defaultValue={scheduledDate}
             />
             <SiteField
               label="Window start"
               name="window_start"
               type="time"
               required
-              defaultValue={shortTime(project.site_visit_window_start)}
+              defaultValue={scheduledWindowStart}
             />
             <SiteField
               label="Window end"
               name="window_end"
               type="time"
               required
-              defaultValue={shortTime(project.site_visit_window_end)}
+              defaultValue={scheduledWindowEnd}
             />
           </div>
           <SiteField
             label="Location"
             name="location"
             required
-            defaultValue={project.site_visit_location || defaultLocation}
+            defaultValue={scheduledLocation}
           />
           <SiteTextArea
             label="Instructions for estimator"
             name="admin_notes"
-            defaultValue={project.site_visit_admin_notes || ""}
+            defaultValue={scheduledAdminNotes}
           />
           {message && <p className="text-sm text-amber-200">{message}</p>}
           <button
@@ -192,7 +298,7 @@ export default function SiteVisitPanel({
           >
             {busy
               ? "Notifying…"
-              : status === "ready"
+              : effectiveStatus === "ready"
                 ? "Update visit and notify estimator"
                 : "Mark ready and notify estimator"}
           </button>

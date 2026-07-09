@@ -2,13 +2,16 @@
 
 import { useEffect, useState } from "react";
 import { Bell, CheckCircle2, X } from "lucide-react";
+import type { UserRole } from "@/lib/roles";
 
 const DISMISSED_KEY = "paradise-admin-push-prompt-dismissed";
 
 export default function AdminPushNotifications({
   publicKey,
+  userRole,
 }: {
   publicKey?: string;
+  userRole: UserRole;
 }) {
   const [supported, setSupported] = useState(false);
   const [subscribed, setSubscribed] = useState(false);
@@ -49,8 +52,12 @@ export default function AdminPushNotifications({
           window.localStorage.removeItem(DISMISSED_KEY);
           setDismissed(false);
         }}
-        aria-label="Set up lead notifications"
-        title="Set up lead notifications"
+        aria-label={`Set up ${
+          userRole === "estimator" ? "site visit" : "lead"
+        } notifications`}
+        title={`Set up ${
+          userRole === "estimator" ? "site visit" : "lead"
+        } notifications`}
         className="fixed bottom-24 right-4 z-[60] inline-flex h-11 w-11 items-center justify-center rounded-full border border-[#fb5411]/40 bg-neutral-900 text-[#fb5411] shadow-2xl md:bottom-6 md:right-6"
       >
         <Bell className="h-5 w-5" aria-hidden="true" />
@@ -135,9 +142,13 @@ export default function AdminPushNotifications({
           )}
         </div>
         <div className="min-w-0 flex-1">
-          <p className="font-semibold">Enable lead notifications</p>
+          <p className="font-semibold">
+            Enable {userRole === "estimator" ? "site visit" : "lead"} notifications
+          </p>
           <p className="mt-1 text-sm leading-5 text-neutral-400">
-            Get an alert on this device when a website lead arrives.
+            {userRole === "estimator"
+              ? "Get an alert on this device when a project is ready for a site visit."
+              : "Get an alert on this device when a website lead arrives."}
           </p>
         </div>
         <button

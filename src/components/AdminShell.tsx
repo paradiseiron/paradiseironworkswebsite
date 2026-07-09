@@ -258,7 +258,7 @@ export default function AdminShell({
           </div>
         </header>
 
-        <main className="overflow-x-hidden px-4 pb-28 pt-4 sm:px-6 md:px-8 md:pb-8 print:p-0 print:overflow-visible">
+        <main className="overflow-x-hidden px-4 pb-[calc(10rem+env(safe-area-inset-bottom))] pt-4 sm:px-6 md:px-8 md:pb-8 print:p-0 print:overflow-visible">
           {children}
         </main>
       </div>

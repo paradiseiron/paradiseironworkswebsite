@@ -160,6 +160,10 @@
     @apply border-border outline-ring/50;
   }
 
+  html {
+    scroll-padding-bottom: calc(10rem + env(safe-area-inset-bottom));
+  }
+
   body {
     @apply bg-background text-foreground;
     -webkit-font-smoothing: antialiased;

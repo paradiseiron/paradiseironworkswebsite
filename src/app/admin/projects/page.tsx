@@ -169,13 +169,15 @@ export default async function ProjectsPage({
               role === "admin" &&
               project.lead_source === "Website" &&
               !project.website_lead_reviewed_at;
+            const isReadySiteVisit =
+              project.site_visit_status === "ready";
 
             return (
               <Link
                 key={project.id}
                 href={`/admin/projects/${project.id}`}
                 className={`rounded-2xl border p-4 transition active:scale-[0.99] ${
-                  isNewWebsiteLead
+                  isNewWebsiteLead || isReadySiteVisit
                     ? "border-sky-400/25 bg-sky-400/[0.06]"
                     : "border-white/10 bg-white/[0.03]"
                 }`}
@@ -243,7 +245,7 @@ export default async function ProjectsPage({
                     )}
                   </div>
                 )}
-                {project.site_visit_status === "ready" && (
+                {isReadySiteVisit && (
                   <div className="mt-4">
                     <span className="rounded-full bg-[#fb5411]/10 px-2.5 py-1 text-xs font-medium text-[#ff7a45]">
                       Site visit ready
@@ -285,12 +287,16 @@ export default async function ProjectsPage({
                   role === "admin" &&
                   project.lead_source === "Website" &&
                   !project.website_lead_reviewed_at;
+                const isReadySiteVisit =
+                  project.site_visit_status === "ready";
 
                 return (
                 <tr
                   key={project.id}
                   className={`rounded-xl border-t border-white/10 transition hover:bg-[#fb5411]/10 hover:shadow-[inset_0_0_0_1px_#fb5411] ${
-                    isNewWebsiteLead ? "bg-sky-400/[0.06]" : ""
+                    isNewWebsiteLead || isReadySiteVisit
+                      ? "bg-sky-400/[0.06]"
+                      : ""
                   }`}
                 >
                   <td className="px-4 py-3 text-neutral-300">
@@ -312,7 +318,7 @@ export default async function ProjectsPage({
                         New
                       </span>
                     )}
-                    {project.site_visit_status === "ready" && (
+                    {isReadySiteVisit && (
                       <span className="ml-2 inline-flex items-center gap-1.5 rounded-full border border-[#fb5411]/25 bg-[#fb5411]/10 px-2 py-0.5 text-[11px] font-semibold uppercase tracking-wide text-[#ff7a45]">
                         Site visit
                       </span>

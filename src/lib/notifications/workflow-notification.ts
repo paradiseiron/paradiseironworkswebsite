@@ -6,6 +6,7 @@ import type { UserRole } from "@/lib/roles";
 
 type WorkflowNotification = {
   recipientRole: Exclude<UserRole, "unassigned">;
+  recipientUserIds?: string[];
   title: string;
   body: string;
   emailSubject: string;
@@ -17,10 +18,19 @@ export async function sendWorkflowNotification(
   notification: WorkflowNotification
 ) {
   const supabase = createAdminClient();
-  const { data: roleUsers, error } = await supabase
+  let recipientsQuery = supabase
     .from("user_roles")
     .select("user_id, notification_email")
     .eq("role", notification.recipientRole);
+
+  if (notification.recipientUserIds?.length) {
+    recipientsQuery = recipientsQuery.in(
+      "user_id",
+      notification.recipientUserIds
+    );
+  }
+
+  const { data: roleUsers, error } = await recipientsQuery;
 
   if (error) {
     console.error("Unable to load notification recipients:", error);
