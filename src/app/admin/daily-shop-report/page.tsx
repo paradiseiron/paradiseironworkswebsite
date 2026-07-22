@@ -10,6 +10,7 @@ import {
   firstReportRelation,
 } from "@/lib/daily-shop-reports";
 import SuccessToast from "@/components/SuccessToast";
+import ReliableMobileLink from "@/components/ReliableMobileLink";
 
 export const dynamic = "force-dynamic";
 export const revalidate = 0;
@@ -137,10 +138,10 @@ export default async function DailyShopReportPage({
         <section className="mt-8 overflow-hidden rounded-2xl border border-white/10 bg-white/[0.03]">
           <div className="divide-y divide-white/10 md:hidden">
             {rows.map((report) => (
-              <Link
+              <ReliableMobileLink
                 key={report.id}
                 href={`/admin/daily-shop-report/${report.id}`}
-                className="block p-4 transition hover:bg-white/[0.04]"
+                className="block w-full p-4 text-left transition hover:bg-white/[0.04]"
               >
                 <div className="flex items-start justify-between gap-3">
                   <div>
@@ -171,7 +172,7 @@ export default async function DailyShopReportPage({
                     value={formatReportDateTime(report.submitted_at)}
                   />
                 </div>
-              </Link>
+              </ReliableMobileLink>
             ))}
           </div>
 
