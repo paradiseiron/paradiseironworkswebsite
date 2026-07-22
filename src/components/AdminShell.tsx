@@ -1,7 +1,5 @@
 "use client";
 
-/* eslint-disable @next/next/no-html-link-for-pages -- Back controls intentionally use full document navigation to avoid unreliable mobile client-router taps. */
-
 import { useEffect, useState } from "react";
 import Image from "next/image";
 import Link from "next/link";
@@ -16,6 +14,7 @@ import {
 } from "lucide-react";
 import DeleteProjectButton from "@/components/DeleteProjectButton";
 import AdminProfileMenu from "@/components/AdminProfileMenu";
+import ReliableMobileLink from "@/components/ReliableMobileLink";
 import type { UserRole } from "@/lib/roles";
 
 export default function AdminShell({
@@ -153,7 +152,7 @@ export default function AdminShell({
           <div className="flex min-h-16 flex-wrap items-center justify-between gap-3 px-4 py-3 sm:px-6 md:px-8 md:py-4">
             <div className="shrink-0">
               {isNewProjectPage && (
-                <a
+                <ReliableMobileLink
                   href="/admin/projects"
                   aria-label="Back to Projects"
                   title="Back to Projects"
@@ -161,11 +160,11 @@ export default function AdminShell({
                 >
                   <ArrowLeft className="h-4 w-4" aria-hidden="true" />
                   <span className="hidden sm:inline">Back to Projects</span>
-                </a>
+                </ReliableMobileLink>
               )}
 
               {isDailyShopReportSubpage && (
-                <a
+                <ReliableMobileLink
                   href="/admin/daily-shop-report"
                   aria-label="Back to Daily Shop Reports"
                   title="Back to Daily Shop Reports"
@@ -175,11 +174,11 @@ export default function AdminShell({
                   <span className="hidden sm:inline">
                     Back to Daily Shop Reports
                   </span>
-                </a>
+                </ReliableMobileLink>
               )}
 
               {isProjectDetail && (
-                <a
+                <ReliableMobileLink
                   href="/admin/projects"
                   aria-label="Back to Projects"
                   title="Back to Projects"
@@ -187,11 +186,11 @@ export default function AdminShell({
                 >
                   <ArrowLeft className="h-4 w-4" aria-hidden="true" />
                   <span className="hidden sm:inline">Back to Projects</span>
-                </a>
+                </ReliableMobileLink>
               )}
 
               {(isProposalPreview || isInvoicePreview) && (
-                <a
+                <ReliableMobileLink
                   href={projectPath}
                   aria-label="Back to Project"
                   title="Back to Project"
@@ -199,7 +198,7 @@ export default function AdminShell({
                 >
                   <ArrowLeft className="h-4 w-4" aria-hidden="true" />
                   <span className="hidden sm:inline">Back to Project</span>
-                </a>
+                </ReliableMobileLink>
               )}
             </div>
 

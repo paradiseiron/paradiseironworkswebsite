@@ -2,6 +2,7 @@ import Link from "next/link";
 import { createAdminClient } from "@/lib/supabase/admin";
 import { requireAuthenticatedUser } from "@/lib/auth";
 import ProjectsTableFilter from "@/components/ProjectsTableFilter";
+import ReliableMobileLink from "@/components/ReliableMobileLink";
 import SuccessToast from "@/components/SuccessToast";
 import {
   formatWashingtonDate,
@@ -186,7 +187,7 @@ export default async function ProjectsPage({
               project.site_visit_status === "ready";
 
             return (
-              <a
+              <ReliableMobileLink
                 key={project.id}
                 href={`/admin/projects/${project.id}`}
                 className={`block w-full touch-manipulation rounded-2xl border p-4 transition-colors ${
@@ -265,7 +266,7 @@ export default async function ProjectsPage({
                     </span>
                   </div>
                 )}
-              </a>
+              </ReliableMobileLink>
             );
           })
         ) : (
