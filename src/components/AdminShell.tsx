@@ -149,7 +149,7 @@ export default function AdminShell({
       </aside>
 
       <div className="md:ml-20 print:ml-0">
-        <header className="admin-header sticky top-0 z-40 border-b border-white/10 bg-neutral-950/80 backdrop-blur-xl print:hidden">
+        <header className="admin-header sticky top-0 z-40 border-b border-white/10 bg-neutral-950 print:hidden md:bg-neutral-950/80 md:backdrop-blur-xl">
           <div className="flex min-h-16 flex-wrap items-center justify-between gap-3 px-4 py-3 sm:px-6 md:px-8 md:py-4">
             <div className="shrink-0">
               {isNewProjectPage && (

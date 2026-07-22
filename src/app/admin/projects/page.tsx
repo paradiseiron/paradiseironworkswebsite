@@ -189,7 +189,7 @@ export default async function ProjectsPage({
               <a
                 key={project.id}
                 href={`/admin/projects/${project.id}`}
-                className={`block w-full touch-manipulation rounded-2xl border p-4 transition active:scale-[0.99] ${
+                className={`block w-full touch-manipulation rounded-2xl border p-4 transition-colors ${
                   isNewWebsiteLead
                     ? "border-sky-400/25 bg-sky-400/[0.06]"
                     : "border-white/10 bg-white/[0.03]"
