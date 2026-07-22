@@ -36,6 +36,13 @@ type ScheduledVisitDraft = {
   adminNotes: string;
 };
 
+type CompletedVisitDraft = {
+  scopeObservations: string;
+  visitNotes: string;
+  exclusionNotes: string;
+  accessSafetyConcerns: string;
+};
+
 export default function SiteVisitPanel({
   project,
   role,
@@ -50,6 +57,11 @@ export default function SiteVisitPanel({
   const router = useRouter();
   const [busy, setBusy] = useState(false);
   const [message, setMessage] = useState("");
+  const [completedVisit, setCompletedVisit] =
+    useState<CompletedVisitDraft | null>(null);
+  const [editingVisit, setEditingVisit] = useState(
+    (project.site_visit_status || "not_ready") === "ready"
+  );
   const [editingSchedule, setEditingSchedule] = useState(
     (project.site_visit_status || "not_ready") !== "ready"
   );
@@ -133,9 +145,17 @@ export default function SiteVisitPanel({
 
   async function completeVisit(formData: FormData) {
     setBusy(true);
-    setMessage("Uploading site photos…");
+    setMessage("");
 
     try {
+      const nextVisit = {
+        scopeObservations: String(formData.get("scope_observations") || ""),
+        visitNotes: String(formData.get("visit_notes") || ""),
+        exclusionNotes: String(formData.get("exclusion_notes") || ""),
+        accessSafetyConcerns: String(
+          formData.get("access_safety_concerns") || ""
+        ),
+      };
       const supabase = createClient();
       const {
         data: { user },
@@ -158,17 +178,13 @@ export default function SiteVisitPanel({
         imagePaths.push(path);
       }
 
-      setMessage("Saving site visit…");
       const response = await fetch(
         `/api/projects/${encodeURIComponent(project.id)}/site-visit/complete`,
         {
           method: "POST",
           headers: { "Content-Type": "application/json" },
           body: JSON.stringify({
-            scopeObservations: formData.get("scope_observations"),
-            visitNotes: formData.get("visit_notes"),
-            exclusionNotes: formData.get("exclusion_notes"),
-            accessSafetyConcerns: formData.get("access_safety_concerns"),
+            ...nextVisit,
             imagePaths,
           }),
         }
@@ -180,7 +196,14 @@ export default function SiteVisitPanel({
         throw new Error(body?.error || "Unable to complete site visit.");
       }
 
-      setMessage("Site visit completed. Admin notified.");
+      setMessage("");
+      setCompletedVisit(nextVisit);
+      setEditingVisit(false);
+      onToast?.(
+        project.site_visit_status === "completed"
+          ? "Site visit details updated successfully."
+          : "Site visit completed and admin notified."
+      );
       router.refresh();
     } catch (submitError) {
       setMessage(
@@ -191,6 +214,94 @@ export default function SiteVisitPanel({
     } finally {
       setBusy(false);
     }
+  }
+
+  if (
+    role === "estimator" &&
+    (completedVisit || status === "completed") &&
+    !editingVisit
+  ) {
+    const submittedVisit = completedVisit || {
+      scopeObservations: project.site_visit_scope_observations || "",
+      visitNotes: project.site_visit_notes || "",
+      exclusionNotes: project.site_visit_exclusion_notes || "",
+      accessSafetyConcerns:
+        project.site_visit_access_safety_concerns || "",
+    };
+
+    return (
+      <section className="rounded-2xl border border-white/10 bg-white/[0.03] p-4 sm:p-6">
+        <div className="flex flex-wrap items-start justify-between gap-4">
+          <div>
+            <h2 className="text-xl font-semibold">Site Visit Completed</h2>
+            <p className="mt-1 text-sm text-neutral-400">
+              Review the submitted visit details below.
+            </p>
+          </div>
+          <button
+            type="button"
+            onClick={() => {
+              setMessage("");
+              setEditingVisit(true);
+            }}
+            className="inline-flex h-10 cursor-pointer items-center gap-2 rounded-xl border border-white/10 px-4 text-sm font-semibold text-neutral-200 transition hover:border-white/20 hover:bg-white/10 hover:text-white"
+          >
+            <Pencil className="h-4 w-4" aria-hidden="true" />
+            Edit visit
+          </button>
+        </div>
+
+        <div className="mt-6 rounded-xl border border-emerald-500/20 bg-emerald-500/10 p-4">
+          <p className="text-sm font-semibold text-emerald-100">
+            Site visit is complete and ready for proposal drafting.
+          </p>
+          <div className="mt-4 grid gap-4 sm:grid-cols-2">
+            <ReadOnlyDetail
+              label="Date and time"
+              value={
+                project.site_visit_scheduled_date
+                  ? `${project.site_visit_scheduled_date} · ${shortTime(project.site_visit_window_start)}–${shortTime(project.site_visit_window_end)}`
+                  : null
+              }
+            />
+            <ReadOnlyDetail
+              label="Location"
+              value={project.site_visit_location}
+            />
+            <ReadOnlyDetail label="Status" value="completed" />
+          </div>
+        </div>
+
+        <div className="mt-6 grid gap-5">
+          <ReadOnlyDetail
+            label="Site scope observations"
+            value={submittedVisit.scopeObservations}
+          />
+          <ReadOnlyDetail label="Visit notes" value={submittedVisit.visitNotes} />
+          <ReadOnlyDetail
+            label="Exclusion notes"
+            value={submittedVisit.exclusionNotes}
+          />
+          <ReadOnlyDetail
+            label="Access / safety concerns"
+            value={submittedVisit.accessSafetyConcerns}
+          />
+          {images.length > 0 && (
+            <div className="grid grid-cols-2 gap-3 sm:grid-cols-3">
+              {images.map((image) => (
+                // eslint-disable-next-line @next/next/no-img-element
+                <img
+                  key={image.path}
+                  src={image.url}
+                  alt="Site visit"
+                  className="aspect-square rounded-xl object-cover"
+                />
+              ))}
+            </div>
+          )}
+        </div>
+      </section>
+    );
   }
 
   if (role === "admin" && status !== "completed") {
@@ -307,7 +418,11 @@ export default function SiteVisitPanel({
     );
   }
 
-  if (role === "estimator" && status === "ready") {
+  if (
+    role === "estimator" &&
+    (status === "ready" || status === "completed") &&
+    editingVisit
+  ) {
     return (
       <section className="rounded-2xl border border-[#fb5411]/20 bg-white/[0.03] p-4 sm:p-6">
         <VisitSchedule project={project} />
@@ -316,23 +431,37 @@ export default function SiteVisitPanel({
             label="Site scope observations"
             name="scope_observations"
             required
-            defaultValue={project.site_visit_scope_observations || ""}
+            defaultValue={
+              completedVisit?.scopeObservations ||
+              project.site_visit_scope_observations ||
+              ""
+            }
           />
           <DictationTextArea
             label="Visit notes"
             name="visit_notes"
             required
-            defaultValue={project.site_visit_notes || ""}
+            defaultValue={
+              completedVisit?.visitNotes || project.site_visit_notes || ""
+            }
           />
           <DictationTextArea
             label="Exclusion notes"
             name="exclusion_notes"
-            defaultValue={project.site_visit_exclusion_notes || ""}
+            defaultValue={
+              completedVisit?.exclusionNotes ||
+              project.site_visit_exclusion_notes ||
+              ""
+            }
           />
           <DictationTextArea
             label="Access / safety concerns"
             name="access_safety_concerns"
-            defaultValue={project.site_visit_access_safety_concerns || ""}
+            defaultValue={
+              completedVisit?.accessSafetyConcerns ||
+              project.site_visit_access_safety_concerns ||
+              ""
+            }
           />
           <div className="grid gap-3 sm:grid-cols-2">
             <FileInput
@@ -352,14 +481,20 @@ export default function SiteVisitPanel({
             You can annotate measurements in the iPhone Photos app, then choose
             those edited images here.
           </p>
-          {message && <p className="text-sm text-amber-200">{message}</p>}
+          {message && !busy && (
+            <p className="text-sm text-red-300">{message}</p>
+          )}
           <button
             type="submit"
             disabled={busy}
             className="inline-flex items-center gap-2 rounded-xl bg-[#fb5411] px-5 py-3 text-sm font-semibold text-white disabled:opacity-60"
           >
             <Save className="h-4 w-4" aria-hidden="true" />
-            {busy ? "Submitting…" : "Complete site visit"}
+            {busy
+              ? "Submitting…"
+              : status === "completed"
+                ? "Save site visit changes"
+                : "Complete site visit"}
           </button>
         </form>
       </section>

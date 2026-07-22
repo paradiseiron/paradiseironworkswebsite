@@ -5,6 +5,8 @@ import { Bell, CheckCircle2, X } from "lucide-react";
 import type { UserRole } from "@/lib/roles";
 
 const DISMISSED_KEY = "paradise-admin-push-prompt-dismissed";
+export const OPEN_NOTIFICATION_SETTINGS_EVENT =
+  "paradise-admin-open-notification-settings";
 
 export default function AdminPushNotifications({
   publicKey,
@@ -16,6 +18,7 @@ export default function AdminPushNotifications({
   const [supported, setSupported] = useState(false);
   const [subscribed, setSubscribed] = useState(false);
   const [dismissed, setDismissed] = useState(true);
+  const [settingsOpen, setSettingsOpen] = useState(false);
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState("");
 
@@ -52,27 +55,19 @@ export default function AdminPushNotifications({
     return () => window.clearTimeout(timer);
   }, [publicKey, userRole]);
 
+  useEffect(() => {
+    const openSettings = () => setSettingsOpen(true);
+    window.addEventListener(OPEN_NOTIFICATION_SETTINGS_EVENT, openSettings);
+    return () =>
+      window.removeEventListener(OPEN_NOTIFICATION_SETTINGS_EVENT, openSettings);
+  }, []);
+
   if (userRole === "unassigned") return null;
-  if (!supported || subscribed) return null;
+  if (!supported) return null;
 
   const notificationLabel = getNotificationLabel(userRole);
 
-  if (dismissed) {
-    return (
-      <button
-        type="button"
-        onClick={() => {
-          window.localStorage.removeItem(DISMISSED_KEY);
-          setDismissed(false);
-        }}
-        aria-label={`Set up ${notificationLabel} notifications`}
-        title={`Set up ${notificationLabel} notifications`}
-        className="fixed bottom-24 right-4 z-[60] inline-flex h-11 w-11 items-center justify-center rounded-full border border-[#fb5411]/40 bg-neutral-900 text-[#fb5411] shadow-2xl md:bottom-6 md:right-6"
-      >
-        <Bell className="h-5 w-5" aria-hidden="true" />
-      </button>
-    );
-  }
+  if ((dismissed || subscribed) && !settingsOpen) return null;
 
   async function enableNotifications() {
     setBusy(true);
@@ -123,6 +118,44 @@ export default function AdminPushNotifications({
   function dismiss() {
     window.localStorage.setItem(DISMISSED_KEY, "true");
     setDismissed(true);
+    setSettingsOpen(false);
+  }
+
+  async function disableNotifications() {
+    setBusy(true);
+    setError("");
+
+    try {
+      const registration = await navigator.serviceWorker.ready;
+      const subscription = await registration.pushManager.getSubscription();
+
+      if (subscription) {
+        const response = await fetch("/api/admin/push-subscriptions", {
+          method: "DELETE",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ endpoint: subscription.endpoint }),
+        });
+
+        if (!response.ok) {
+          throw new Error("Unable to disable notifications.");
+        }
+
+        await subscription.unsubscribe();
+      }
+
+      window.localStorage.setItem(DISMISSED_KEY, "true");
+      setSubscribed(false);
+      setDismissed(true);
+      setSettingsOpen(false);
+    } catch (notificationError) {
+      setError(
+        notificationError instanceof Error
+          ? notificationError.message
+          : "Unable to disable notifications."
+      );
+    } finally {
+      setBusy(false);
+    }
   }
 
   return (
@@ -140,10 +173,14 @@ export default function AdminPushNotifications({
         </div>
         <div className="min-w-0 flex-1">
           <p className="font-semibold">
-            Enable {notificationLabel} notifications
+            {subscribed
+              ? `${capitalize(notificationLabel)} notifications enabled`
+              : `Enable ${notificationLabel} notifications`}
           </p>
           <p className="mt-1 text-sm leading-5 text-neutral-400">
-            {getNotificationDescription(userRole)}
+            {subscribed
+              ? "This device is registered to receive notifications."
+              : getNotificationDescription(userRole)}
           </p>
         </div>
         <button
@@ -158,16 +195,31 @@ export default function AdminPushNotifications({
 
       {error && <p className="mt-3 text-sm text-red-300">{error}</p>}
 
-      <button
-        type="button"
-        onClick={enableNotifications}
-        disabled={busy}
-        className="mt-4 w-full rounded-xl bg-[#fb5411] px-4 py-2.5 text-sm font-semibold text-white transition hover:bg-[#e64d0f] disabled:cursor-wait disabled:opacity-60"
-      >
-        {busy ? "Enabling..." : "Enable notifications"}
-      </button>
+      {subscribed ? (
+        <button
+          type="button"
+          onClick={disableNotifications}
+          disabled={busy}
+          className="mt-4 w-full rounded-xl border border-white/10 px-4 py-2.5 text-sm font-semibold text-neutral-200 transition hover:bg-white/5 disabled:cursor-wait disabled:opacity-60"
+        >
+          {busy ? "Disabling..." : "Disable notifications on this device"}
+        </button>
+      ) : (
+        <button
+          type="button"
+          onClick={enableNotifications}
+          disabled={busy}
+          className="mt-4 w-full rounded-xl bg-[#fb5411] px-4 py-2.5 text-sm font-semibold text-white transition hover:bg-[#e64d0f] disabled:cursor-wait disabled:opacity-60"
+        >
+          {busy ? "Enabling..." : "Enable notifications"}
+        </button>
+      )}
     </aside>
   );
+}
+
+function capitalize(value: string) {
+  return value.charAt(0).toUpperCase() + value.slice(1);
 }
 
 async function saveSubscription(subscription: PushSubscription) {

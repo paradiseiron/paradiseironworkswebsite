@@ -2,6 +2,7 @@ import Link from "next/link";
 import { createAdminClient } from "@/lib/supabase/admin";
 import { requireAuthenticatedUser } from "@/lib/auth";
 import ProjectsTableFilter from "@/components/ProjectsTableFilter";
+import SuccessToast from "@/components/SuccessToast";
 import {
   formatWashingtonDate,
   getWashingtonDateKey,
@@ -25,6 +26,7 @@ export default async function ProjectsPage({
     to?: string;
     category?: string;
     status?: string;
+    toast?: string;
   }>;
 }) {
   const user = await requireAuthenticatedUser();
@@ -111,6 +113,13 @@ export default async function ProjectsPage({
 
   return (
     <div>
+      {filters.toast === "project-created" && (
+        <SuccessToast
+          message="Project successfully added."
+          queryParam="toast"
+        />
+      )}
+
       <div className="mb-6 sm:mb-8">
         <div>
           <h1 className="text-2xl font-semibold sm:text-3xl">Projects</h1>

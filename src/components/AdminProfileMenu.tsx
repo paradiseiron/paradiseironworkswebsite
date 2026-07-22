@@ -1,9 +1,10 @@
 "use client";
 
 import { useEffect, useRef, useState } from "react";
-import { LogOut, Moon, Sun, UserRound } from "lucide-react";
+import { Bell, LogOut, Moon, Sun, UserRound } from "lucide-react";
 import { useRouter } from "next/navigation";
 import { createClient } from "@/lib/supabase/client";
+import { OPEN_NOTIFICATION_SETTINGS_EVENT } from "@/components/AdminPushNotifications";
 
 export default function AdminProfileMenu({
   email,
@@ -92,6 +93,19 @@ export default function AdminProfileMenu({
                 }`}
               />
             </span>
+          </button>
+          <button
+            type="button"
+            onClick={() => {
+              window.dispatchEvent(
+                new Event(OPEN_NOTIFICATION_SETTINGS_EVENT)
+              );
+              setOpen(false);
+            }}
+            className="mt-1 flex w-full cursor-pointer items-center gap-3 rounded-xl px-3 py-2.5 text-left text-sm text-neutral-200 transition hover:bg-white/10"
+          >
+            <Bell className="h-4 w-4" aria-hidden="true" />
+            Notification settings
           </button>
           <button
             type="button"

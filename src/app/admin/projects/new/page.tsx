@@ -75,7 +75,7 @@ async function createProject(formData: FormData) {
     throw new Error(activityError.message);
   }
 
-  redirect("/admin/projects");
+  redirect("/admin/projects?toast=project-created");
 }
 
 export default async function NewProjectPage() {
