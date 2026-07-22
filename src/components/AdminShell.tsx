@@ -1,5 +1,7 @@
 "use client";
 
+/* eslint-disable @next/next/no-html-link-for-pages -- Back controls intentionally use full document navigation to avoid unreliable mobile client-router taps. */
+
 import { useEffect, useState } from "react";
 import Image from "next/image";
 import Link from "next/link";
@@ -151,53 +153,53 @@ export default function AdminShell({
           <div className="flex min-h-16 flex-wrap items-center justify-between gap-3 px-4 py-3 sm:px-6 md:px-8 md:py-4">
             <div className="shrink-0">
               {isNewProjectPage && (
-                <Link
+                <a
                   href="/admin/projects"
                   aria-label="Back to Projects"
                   title="Back to Projects"
-                  className="inline-flex h-10 items-center justify-center gap-2 rounded-xl border border-white/10 px-3 text-sm text-neutral-300 transition hover:bg-white/5 hover:text-white sm:px-4"
+                  className="inline-flex h-10 touch-manipulation items-center justify-center gap-2 rounded-xl border border-white/10 px-3 text-sm text-neutral-300 transition hover:bg-white/5 hover:text-white sm:px-4"
                 >
                   <ArrowLeft className="h-4 w-4" aria-hidden="true" />
                   <span className="hidden sm:inline">Back to Projects</span>
-                </Link>
+                </a>
               )}
 
               {isDailyShopReportSubpage && (
-                <Link
+                <a
                   href="/admin/daily-shop-report"
                   aria-label="Back to Daily Shop Reports"
                   title="Back to Daily Shop Reports"
-                  className="inline-flex h-10 items-center justify-center gap-2 rounded-xl border border-white/10 px-3 text-sm text-neutral-300 transition hover:bg-white/5 hover:text-white sm:px-4"
+                  className="inline-flex h-10 touch-manipulation items-center justify-center gap-2 rounded-xl border border-white/10 px-3 text-sm text-neutral-300 transition hover:bg-white/5 hover:text-white sm:px-4"
                 >
                   <ArrowLeft className="h-4 w-4" aria-hidden="true" />
                   <span className="hidden sm:inline">
                     Back to Daily Shop Reports
                   </span>
-                </Link>
+                </a>
               )}
 
               {isProjectDetail && (
-                <Link
+                <a
                   href="/admin/projects"
                   aria-label="Back to Projects"
                   title="Back to Projects"
-                  className="inline-flex h-10 items-center justify-center gap-2 rounded-xl border border-white/10 px-3 text-sm text-neutral-300 transition hover:bg-white/5 hover:text-white sm:px-4"
+                  className="inline-flex h-10 touch-manipulation items-center justify-center gap-2 rounded-xl border border-white/10 px-3 text-sm text-neutral-300 transition hover:bg-white/5 hover:text-white sm:px-4"
                 >
                   <ArrowLeft className="h-4 w-4" aria-hidden="true" />
                   <span className="hidden sm:inline">Back to Projects</span>
-                </Link>
+                </a>
               )}
 
               {(isProposalPreview || isInvoicePreview) && (
-                <Link
+                <a
                   href={projectPath}
                   aria-label="Back to Project"
                   title="Back to Project"
-                  className="inline-flex h-10 items-center justify-center gap-2 rounded-xl border border-white/10 px-3 text-sm text-neutral-300 transition hover:bg-white/5 hover:text-white sm:px-4"
+                  className="inline-flex h-10 touch-manipulation items-center justify-center gap-2 rounded-xl border border-white/10 px-3 text-sm text-neutral-300 transition hover:bg-white/5 hover:text-white sm:px-4"
                 >
                   <ArrowLeft className="h-4 w-4" aria-hidden="true" />
                   <span className="hidden sm:inline">Back to Project</span>
-                </Link>
+                </a>
               )}
             </div>
 

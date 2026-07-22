@@ -186,7 +186,7 @@ export default async function ProjectsPage({
               project.site_visit_status === "ready";
 
             return (
-              <Link
+              <a
                 key={project.id}
                 href={`/admin/projects/${project.id}`}
                 className={`block w-full touch-manipulation rounded-2xl border p-4 transition active:scale-[0.99] ${
@@ -265,7 +265,7 @@ export default async function ProjectsPage({
                     </span>
                   </div>
                 )}
-              </Link>
+              </a>
             );
           })
         ) : (

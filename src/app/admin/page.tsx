@@ -341,10 +341,10 @@ export default async function AdminPage({
           <>
           <div className="divide-y divide-white/10 md:hidden">
             {records.slice(0, 6).map((project) => (
-              <Link
+              <a
                 key={project.id}
                 href={`/admin/projects/${project.id}`}
-                className="block px-4 py-4 transition hover:bg-white/[0.025]"
+                className="block touch-manipulation px-4 py-4 transition hover:bg-white/[0.025]"
               >
                 <div className="flex items-start justify-between gap-3">
                   <div className="min-w-0">
@@ -367,7 +367,7 @@ export default async function AdminPage({
                     <span className="text-red-300">Needs follow-up</span>
                   )}
                 </div>
-              </Link>
+              </a>
             ))}
           </div>
           <div className="hidden overflow-x-auto md:block">
