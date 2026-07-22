@@ -1,7 +1,7 @@
 import { NextResponse } from "next/server";
 import { requireAuthenticatedUser } from "@/lib/auth";
 import { createAdminClient } from "@/lib/supabase/admin";
-import { requireRole } from "@/lib/roles";
+import { requireEstimatorAccess } from "@/lib/roles";
 import { sendWorkflowNotification } from "@/lib/notifications/workflow-notification";
 
 export async function POST(
@@ -9,7 +9,7 @@ export async function POST(
   context: { params: Promise<{ id: string }> }
 ) {
   const user = await requireAuthenticatedUser();
-  await requireRole(user.id, "estimator");
+  await requireEstimatorAccess(user.id);
   const { id } = await context.params;
   const body = (await request.json()) as {
     scopeObservations?: string;

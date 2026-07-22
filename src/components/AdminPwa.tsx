@@ -31,6 +31,34 @@ export default function AdminPwa() {
   useEffect(() => {
     if (!("serviceWorker" in navigator)) return;
 
+    if (process.env.NODE_ENV !== "production") {
+      void Promise.all([
+        navigator.serviceWorker
+          .getRegistrations()
+          .then((registrations) =>
+            Promise.all(
+              registrations
+                .filter((registration) =>
+                  registration.scope.includes("/admin")
+                )
+                .map((registration) => registration.unregister())
+            )
+          ),
+        "caches" in window
+          ? window.caches
+              .keys()
+              .then((keys) =>
+                Promise.all(
+                  keys
+                    .filter((key) => key.startsWith("paradise-admin-"))
+                    .map((key) => window.caches.delete(key))
+                )
+              )
+          : Promise.resolve([]),
+      ]);
+      return;
+    }
+
     const isIos = /iphone|ipad|ipod/i.test(navigator.userAgent);
     const isStandalone =
       window.matchMedia("(display-mode: standalone)").matches ||

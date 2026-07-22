@@ -9,6 +9,7 @@ import {
   Download,
   Hammer,
   LayoutDashboard,
+  ClipboardList,
   Pencil,
 } from "lucide-react";
 import DeleteProjectButton from "@/components/DeleteProjectButton";
@@ -32,6 +33,12 @@ export default function AdminShell({
 
   const isDashboardPage = pathname === "/admin";
   const isProjectsPage = pathname === "/admin/projects";
+  const isDailyShopReportPage = pathname.startsWith(
+    "/admin/daily-shop-report"
+  );
+  const isDailyShopReportIndex = pathname === "/admin/daily-shop-report";
+  const isDailyShopReportSubpage =
+    isDailyShopReportPage && !isDailyShopReportIndex;
   const isNewProjectPage = pathname === "/admin/projects/new";
   const isEditProjectPage =
   pathname.startsWith("/admin/projects/") &&
@@ -54,7 +61,10 @@ export default function AdminShell({
 
   const isProjectProposalTab =
     isProjectDetail && currentTab === "proposal";
-  const canWrite = userRole === "admin" || userRole === "estimator";
+  const canWrite =
+    userRole === "admin" ||
+    userRole === "estimator" ||
+    userRole === "operations_foreman";
 
   const projectPath = isProposalPreview
     ? `${pathname.replace("/proposal", "")}?tab=proposal`
@@ -115,6 +125,13 @@ export default function AdminShell({
             <LayoutDashboard className="h-6 w-6" aria-hidden="true" />
           </NavIcon>
           <NavIcon
+            href="/admin/daily-shop-report"
+            active={isDailyShopReportPage}
+            label="Daily Shop Report"
+          >
+            <ClipboardList className="h-6 w-6" aria-hidden="true" />
+          </NavIcon>
+          <NavIcon
             href="/admin/projects"
             active={pathname.startsWith("/admin/projects")}
             label="Projects"
@@ -142,6 +159,20 @@ export default function AdminShell({
                 >
                   <ArrowLeft className="h-4 w-4" aria-hidden="true" />
                   <span className="hidden sm:inline">Back to Projects</span>
+                </Link>
+              )}
+
+              {isDailyShopReportSubpage && (
+                <Link
+                  href="/admin/daily-shop-report"
+                  aria-label="Back to Daily Shop Reports"
+                  title="Back to Daily Shop Reports"
+                  className="inline-flex h-10 items-center justify-center gap-2 rounded-xl border border-white/10 px-3 text-sm text-neutral-300 transition hover:bg-white/5 hover:text-white sm:px-4"
+                >
+                  <ArrowLeft className="h-4 w-4" aria-hidden="true" />
+                  <span className="hidden sm:inline">
+                    Back to Daily Shop Reports
+                  </span>
                 </Link>
               )}
 
@@ -194,6 +225,16 @@ export default function AdminShell({
                   <span>New Project</span>
                 </Link>
               )}
+              {userRole === "operations_foreman" &&
+                isDailyShopReportIndex && (
+                  <Link
+                    href="/admin/daily-shop-report/new"
+                    className="inline-flex h-10 shrink-0 items-center justify-center gap-2 rounded-xl bg-[#fb5411] px-4 text-sm font-semibold text-white transition hover:bg-[#e64d0f] sm:px-5"
+                  >
+                    <ClipboardList className="h-4 w-4" aria-hidden="true" />
+                    <span>Daily Shop Report</span>
+                  </Link>
+                )}
               
 
               {isNewProjectPage && (
@@ -281,6 +322,13 @@ export default function AdminShell({
           label="Dashboard"
         >
           <LayoutDashboard className="h-5 w-5" aria-hidden="true" />
+        </MobileNavLink>
+        <MobileNavLink
+          href="/admin/daily-shop-report"
+          active={isDailyShopReportPage}
+          label="Shop Report"
+        >
+          <ClipboardList className="h-5 w-5" aria-hidden="true" />
         </MobileNavLink>
         <MobileNavLink
           href="/admin/projects"

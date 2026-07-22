@@ -108,8 +108,12 @@ export default async function ProjectsPage({
         !project.website_lead_reviewed_at
     ).length || 0;
   const readySiteVisitCount =
-    allProjects?.filter((project) => project.site_visit_status === "ready")
-      .length || 0;
+    allProjects?.filter(
+      (project) =>
+        project.site_visit_status === "ready" &&
+        ((role !== "estimator" && role !== "operations_foreman") ||
+          project.site_visit_assigned_to === user.id)
+    ).length || 0;
 
   return (
     <div>

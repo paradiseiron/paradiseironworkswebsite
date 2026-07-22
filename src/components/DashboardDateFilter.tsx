@@ -8,11 +8,13 @@ type Period = "all" | "month" | "range";
 export default function DashboardDateFilter({
   period,
   month,
+  availableMonths,
   from,
   to,
 }: {
   period: Period;
   month: string;
+  availableMonths: string[];
   from: string;
   to: string;
 }) {
@@ -24,7 +26,7 @@ export default function DashboardDateFilter({
       method="get"
       className="mt-6 grid items-end gap-3 rounded-2xl border border-white/10 bg-white/[0.03] p-4 sm:grid-cols-2 lg:flex lg:flex-wrap"
     >
-      <div className="min-w-0">
+      <div className="min-w-0 lg:w-48">
         <label
           htmlFor="dashboard-period"
           className="mb-2 block text-xs font-medium uppercase tracking-wide text-neutral-500"
@@ -53,21 +55,32 @@ export default function DashboardDateFilter({
       </div>
 
       {selectedPeriod === "month" && (
-        <div className="min-w-0">
+        <div className="min-w-0 lg:w-48">
           <label
             htmlFor="dashboard-month"
             className="mb-2 block text-xs font-medium uppercase tracking-wide text-neutral-500"
           >
             Month
           </label>
-          <input
-            id="dashboard-month"
-            name="month"
-            type="month"
-            required
-            defaultValue={month}
-            className="h-10 w-full rounded-xl border border-white/10 bg-neutral-900 px-3 text-sm text-white outline-none focus:border-[#fb5411]"
-          />
+          <div className="relative">
+            <select
+              id="dashboard-month"
+              name="month"
+              required
+              defaultValue={month}
+              className="h-10 w-full appearance-none rounded-xl border border-white/10 bg-neutral-900 py-0 pl-3 pr-10 text-sm text-white outline-none focus:border-[#fb5411]"
+            >
+              {availableMonths.map((availableMonth) => (
+                <option key={availableMonth} value={availableMonth}>
+                  {formatMonth(availableMonth)}
+                </option>
+              ))}
+            </select>
+            <ChevronDown
+              className="pointer-events-none absolute right-3 top-1/2 h-4 w-4 -translate-y-1/2 text-neutral-500"
+              aria-hidden="true"
+            />
+          </div>
         </div>
       )}
 
@@ -118,4 +131,13 @@ export default function DashboardDateFilter({
       </button>
     </form>
   );
+}
+
+function formatMonth(value: string) {
+  const [year, month] = value.split("-").map(Number);
+  return new Intl.DateTimeFormat("en-US", {
+    month: "long",
+    year: "numeric",
+    timeZone: "UTC",
+  }).format(new Date(Date.UTC(year, month - 1, 1)));
 }

@@ -1,4 +1,4 @@
-const CACHE_VERSION = "paradise-admin-v2";
+const CACHE_VERSION = "paradise-admin-v3";
 const STATIC_CACHE = `${CACHE_VERSION}-static`;
 const OFFLINE_URL = "/admin/offline.html";
 const PRECACHE_URLS = [
@@ -11,7 +11,10 @@ const PRECACHE_URLS = [
 
 self.addEventListener("install", (event) => {
   event.waitUntil(
-    caches.open(STATIC_CACHE).then((cache) => cache.addAll(PRECACHE_URLS))
+    Promise.all([
+      caches.open(STATIC_CACHE).then((cache) => cache.addAll(PRECACHE_URLS)),
+      self.skipWaiting()
+    ])
   );
 });
 
@@ -95,9 +98,7 @@ self.addEventListener("fetch", (event) => {
   }
 
   const isPrecachedAsset = PRECACHE_URLS.includes(url.pathname);
-  const isNextStaticAsset = url.pathname.startsWith("/_next/static/");
-
-  if (isPrecachedAsset || isNextStaticAsset) {
+  if (isPrecachedAsset) {
     event.respondWith(
       caches.match(request).then((cached) => {
         if (cached) return cached;

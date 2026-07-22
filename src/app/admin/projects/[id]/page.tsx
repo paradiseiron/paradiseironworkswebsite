@@ -236,6 +236,31 @@ export default async function ProjectDetailPage({
     );
   }
 
+  const { data: estimatorUsers, error: estimatorUsersError } = await supabase
+    .from("user_roles")
+    .select("user_id, role, display_name, notification_email")
+    .in("role", ["estimator", "operations_foreman"])
+    .order("role", { ascending: true });
+
+  if (estimatorUsersError) {
+    console.error("Unable to load estimators:", estimatorUsersError);
+  }
+
+  const estimators = (estimatorUsers || [])
+    .map((estimator) => ({
+      id: estimator.user_id,
+      name:
+        estimator.display_name?.trim() ||
+        estimator.notification_email?.split("@")[0] ||
+        "Estimator",
+      role: estimator.role,
+    }))
+    .sort((a, b) => {
+      if (a.role === "estimator" && b.role !== "estimator") return -1;
+      if (b.role === "estimator" && a.role !== "estimator") return 1;
+      return a.name.localeCompare(b.name);
+    });
+
   const imagePaths: string[] = Array.isArray(project.site_visit_image_paths)
     ? project.site_visit_image_paths.filter(
         (path: unknown): path is string => typeof path === "string"
@@ -338,6 +363,7 @@ export default async function ProjectDetailPage({
         role={role}
         siteVisitImages={siteVisitImages}
         projectImages={projectImages}
+        estimators={estimators}
       />
     </div>
   );

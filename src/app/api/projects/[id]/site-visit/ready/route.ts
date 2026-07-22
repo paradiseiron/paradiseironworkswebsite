@@ -17,35 +17,38 @@ export async function POST(
     windowEnd?: string;
     location?: string;
     adminNotes?: string;
+    estimatorId?: string;
   };
 
   if (
     !body.scheduledDate ||
     !body.windowStart ||
     !body.windowEnd ||
-    !body.location?.trim()
+    !body.location?.trim() ||
+    !body.estimatorId
   ) {
     return NextResponse.json(
-      { error: "Date, time window, and location are required." },
+      { error: "Date, time window, location, and estimator are required." },
       { status: 400 }
     );
   }
 
   const supabase = createAdminClient();
-  const { data: estimators, error: estimatorError } = await supabase
+  const { data: estimator, error: estimatorError } = await supabase
     .from("user_roles")
     .select("user_id")
-    .eq("role", "estimator")
-    .limit(2);
+    .eq("user_id", body.estimatorId)
+    .in("role", ["estimator", "operations_foreman"])
+    .maybeSingle();
 
-  if (estimatorError || !estimators?.length) {
+  if (estimatorError || !estimator) {
     return NextResponse.json(
-      { error: "Create and assign an estimator user before scheduling." },
+      { error: "Select a valid estimator before scheduling." },
       { status: 400 }
     );
   }
 
-  const estimatorId = estimators[0].user_id;
+  const estimatorId = estimator.user_id;
   const readyAt = new Date().toISOString();
   const { data: project, error } = await supabase
     .from("projects")

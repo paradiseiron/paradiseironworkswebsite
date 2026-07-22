@@ -2,7 +2,12 @@ import "server-only";
 
 import { createAdminClient } from "@/lib/supabase/admin";
 
-export type UserRole = "admin" | "estimator" | "viewer" | "unassigned";
+export type UserRole =
+  | "admin"
+  | "estimator"
+  | "operations_foreman"
+  | "viewer"
+  | "unassigned";
 
 export async function getUserRole(userId: string): Promise<UserRole> {
   const supabase = createAdminClient();
@@ -20,6 +25,7 @@ export async function getUserRole(userId: string): Promise<UserRole> {
   if (
     data?.role === "admin" ||
     data?.role === "estimator" ||
+    data?.role === "operations_foreman" ||
     data?.role === "viewer"
   ) {
     return data.role;
@@ -47,6 +53,18 @@ export async function requireOperationalRole(userId: string) {
     throw new Error("This action requires a role with write access.");
   }
   return role;
+}
+
+export async function requireEstimatorAccess(userId: string) {
+  const role = await getUserRole(userId);
+  if (role !== "estimator" && role !== "operations_foreman") {
+    throw new Error("This action requires estimator access.");
+  }
+  return role;
+}
+
+export function hasEstimatorAccess(role: UserRole) {
+  return role === "estimator" || role === "operations_foreman";
 }
 
 export async function requireAssignedRole(userId: string) {

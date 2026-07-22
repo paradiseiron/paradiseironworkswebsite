@@ -20,14 +20,15 @@ export async function sendWorkflowNotification(
   const supabase = createAdminClient();
   let recipientsQuery = supabase
     .from("user_roles")
-    .select("user_id, notification_email")
-    .eq("role", notification.recipientRole);
+    .select("user_id, notification_email");
 
   if (notification.recipientUserIds?.length) {
     recipientsQuery = recipientsQuery.in(
       "user_id",
       notification.recipientUserIds
     );
+  } else {
+    recipientsQuery = recipientsQuery.eq("role", notification.recipientRole);
   }
 
   const { data: roleUsers, error } = await recipientsQuery;

@@ -1,10 +1,13 @@
 import Link from "next/link";
 import {
   ArrowRight,
+  BellRing,
   BriefcaseBusiness,
   CircleDollarSign,
   Clock3,
   DollarSign,
+  MapPin,
+  TrendingUp,
 } from "lucide-react";
 import { requireAuthenticatedUser } from "@/lib/auth";
 import { createAdminClient } from "@/lib/supabase/admin";
@@ -13,6 +16,7 @@ import {
   formatWashingtonDate,
   getWashingtonDateKey,
 } from "@/lib/date-time";
+import { getUserRole } from "@/lib/roles";
 
 export const dynamic = "force-dynamic";
 export const revalidate = 0;
@@ -56,12 +60,13 @@ export default async function AdminPage({
     to?: string;
   }>;
 }) {
-  await requireAuthenticatedUser();
+  const user = await requireAuthenticatedUser();
+  const role = await getUserRole(user.id);
   const filters = await searchParams;
   const period: DashboardPeriod =
-    filters.period === "month" || filters.period === "range"
+    filters.period === "all" || filters.period === "range"
       ? filters.period
-      : "all";
+      : "month";
   const currentMonth = getWashingtonDateKey(new Date()).slice(0, 7);
   const month = isMonth(filters.month) ? filters.month : currentMonth;
   const from = isDate(filters.from) ? filters.from : "";
@@ -71,7 +76,7 @@ export default async function AdminPage({
   const { data: projects, error } = await supabase
     .from("projects")
     .select(
-      "id, customer_name, status, project_category, project_type, lead_source, received_at, has_open_follow_up, proposal_amount, balance_due"
+      "id, customer_name, status, project_category, project_type, lead_source, received_at, has_open_follow_up, proposal_amount, balance_due, website_lead_reviewed_at, site_visit_status, site_visit_assigned_to"
     )
     .order("received_at", { ascending: false });
 
@@ -82,6 +87,29 @@ export default async function AdminPage({
   const records = (projects || []).filter((project) =>
     isWithinPeriod(project.received_at, period, month, from, to)
   );
+  const newLeadCount = (projects || []).filter(
+    (project) =>
+      project.lead_source === "Website" && !project.website_lead_reviewed_at
+  ).length;
+  const assignedSiteVisitCount = (projects || []).filter(
+    (project) =>
+      project.site_visit_status === "ready" &&
+      project.site_visit_assigned_to === user.id
+  ).length;
+  const availableMonths = Array.from(
+    new Set([
+      currentMonth,
+      ...(projects || [])
+        .map((project) => {
+          if (!project.received_at) return "";
+          const receivedDate = new Date(project.received_at);
+          return Number.isNaN(receivedDate.getTime())
+            ? ""
+            : getWashingtonDateKey(receivedDate).slice(0, 7);
+        })
+        .filter(Boolean),
+    ])
+  ).sort((a, b) => b.localeCompare(a));
   const totalProjects = records.length;
   const openFollowUps = records.filter(
     (project) => project.has_open_follow_up
@@ -94,6 +122,16 @@ export default async function AdminPage({
     (total, project) => total + Number(project.balance_due || 0),
     0
   );
+  const pipelineRevenue = records
+    .filter((project) =>
+      ["active", "completed"].includes(
+        (project.status || "lead").toLowerCase()
+      )
+    )
+    .reduce(
+      (total, project) => total + Number(project.proposal_amount || 0),
+      0
+    );
 
   const statusCounts = STATUS_ORDER.map((status) => ({
     label: status,
@@ -133,13 +171,44 @@ export default async function AdminPage({
       <DashboardDateFilter
         period={period}
         month={month}
+        availableMonths={availableMonths}
         from={from}
         to={to}
       />
 
+      {role === "admin" && (
+        <NotificationSummary
+          href="/admin/projects"
+          label="New lead notifications"
+          count={newLeadCount}
+          detail={
+            newLeadCount
+              ? `${newLeadCount === 1 ? "lead is" : "leads are"} waiting to be reviewed`
+              : "All new website leads have been reviewed"
+          }
+          icon={<BellRing className="h-5 w-5" aria-hidden="true" />}
+          tone="sky"
+        />
+      )}
+
+      {(role === "estimator" || role === "operations_foreman") && (
+        <NotificationSummary
+          href="/admin/projects"
+          label="Site visit notifications"
+          count={assignedSiteVisitCount}
+          detail={
+            assignedSiteVisitCount
+              ? `${assignedSiteVisitCount === 1 ? "visit is" : "visits are"} ready for you`
+              : "No site visits are currently waiting"
+          }
+          icon={<MapPin className="h-5 w-5" aria-hidden="true" />}
+          tone="orange"
+        />
+      )}
+
       <section
         aria-label="Key metrics"
-        className="mt-8 grid gap-4 sm:grid-cols-2 xl:grid-cols-4"
+        className="mt-8 grid gap-4 sm:grid-cols-2 xl:grid-cols-5"
       >
         <MetricCard
           label="Total projects"
@@ -161,6 +230,12 @@ export default async function AdminPage({
           value={formatCurrency(proposalValue)}
           detail="Across all saved proposals"
           icon={<CircleDollarSign className="h-5 w-5" />}
+        />
+        <MetricCard
+          label="Pipeline revenue"
+          value={formatCurrency(pipelineRevenue)}
+          detail="Active and completed jobs"
+          icon={<TrendingUp className="h-5 w-5" />}
         />
         <MetricCard
           label="Balance due"
@@ -361,6 +436,46 @@ export default async function AdminPage({
         )}
       </section>
     </div>
+  );
+}
+
+function NotificationSummary({
+  href,
+  label,
+  count,
+  detail,
+  icon,
+  tone,
+}: {
+  href: string;
+  label: string;
+  count: number;
+  detail: string;
+  icon: React.ReactNode;
+  tone: "sky" | "orange";
+}) {
+  const styles =
+    tone === "sky"
+      ? "border-sky-400/25 bg-sky-400/10 text-sky-100"
+      : "border-[#fb5411]/25 bg-[#fb5411]/10 text-orange-100";
+  const iconStyles =
+    tone === "sky"
+      ? "bg-sky-400/15 text-sky-300"
+      : "bg-[#fb5411]/15 text-[#ff7a45]";
+
+  return (
+    <Link
+      href={href}
+      className={`mt-4 flex items-center gap-4 rounded-2xl border px-5 py-4 transition hover:brightness-110 ${styles}`}
+    >
+      <span className={`rounded-xl p-2.5 ${iconStyles}`}>{icon}</span>
+      <div className="min-w-0 flex-1">
+        <p className="text-sm font-semibold">{label}</p>
+        <p className="mt-0.5 text-sm opacity-75">{detail}</p>
+      </div>
+      <span className="text-3xl font-semibold tabular-nums">{count}</span>
+      <ArrowRight className="h-4 w-4 shrink-0 opacity-70" aria-hidden="true" />
+    </Link>
   );
 }
 

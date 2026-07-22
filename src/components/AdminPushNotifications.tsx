@@ -246,13 +246,15 @@ function urlBase64ToUint8Array(value: string) {
 }
 
 function getNotificationLabel(userRole: UserRole) {
-  if (userRole === "estimator") return "site visit";
+  if (userRole === "estimator" || userRole === "operations_foreman") {
+    return "site visit";
+  }
   if (userRole === "viewer") return "viewer";
   return "lead";
 }
 
 function getNotificationDescription(userRole: UserRole) {
-  if (userRole === "estimator") {
+  if (userRole === "estimator" || userRole === "operations_foreman") {
     return "Get an alert on this device when a project is ready for a site visit.";
   }
 

@@ -24,6 +24,7 @@ type SiteVisitProject = {
   site_visit_exclusion_notes?: string | null;
   site_visit_access_safety_concerns?: string | null;
   site_visit_completed_at?: string | null;
+  site_visit_assigned_to?: string | null;
 };
 
 type SiteVisitImage = { path: string; url: string };
@@ -34,6 +35,7 @@ type ScheduledVisitDraft = {
   windowEnd: string;
   location: string;
   adminNotes: string;
+  estimatorId: string;
 };
 
 type CompletedVisitDraft = {
@@ -47,11 +49,13 @@ export default function SiteVisitPanel({
   project,
   role,
   images,
+  estimators,
   onToast,
 }: {
   project: SiteVisitProject;
   role: UserRole;
   images: SiteVisitImage[];
+  estimators: { id: string; name: string }[];
   onToast?: (message: string) => void;
 }) {
   const router = useRouter();
@@ -76,6 +80,8 @@ export default function SiteVisitPanel({
     .filter(Boolean)
     .join(", ");
   const status = project.site_visit_status || "not_ready";
+  const hasEstimatorAccess =
+    role === "estimator" || role === "operations_foreman";
   const effectiveStatus = scheduledVisit ? "ready" : status;
   const scheduledDate =
     scheduledVisit?.date || project.site_visit_scheduled_date || "";
@@ -87,6 +93,14 @@ export default function SiteVisitPanel({
     scheduledVisit?.location || project.site_visit_location || defaultLocation;
   const scheduledAdminNotes =
     scheduledVisit?.adminNotes || project.site_visit_admin_notes || "";
+  const assignedEstimatorId =
+    scheduledVisit?.estimatorId ||
+    project.site_visit_assigned_to ||
+    estimators[0]?.id ||
+    "";
+  const assignedEstimatorName =
+    estimators.find((estimator) => estimator.id === assignedEstimatorId)?.name ||
+    "Estimator";
 
   async function markReady(formData: FormData) {
     setBusy(true);
@@ -100,6 +114,7 @@ export default function SiteVisitPanel({
         windowEnd: String(formData.get("window_end") || ""),
         location: String(formData.get("location") || ""),
         adminNotes: String(formData.get("admin_notes") || ""),
+        estimatorId: String(formData.get("estimator_id") || ""),
       };
       const response = await fetch(
         `/api/projects/${encodeURIComponent(project.id)}/site-visit/ready`,
@@ -112,6 +127,7 @@ export default function SiteVisitPanel({
             windowEnd: nextVisit.windowEnd,
             location: nextVisit.location,
             adminNotes: nextVisit.adminNotes,
+            estimatorId: nextVisit.estimatorId,
           }),
         }
       );
@@ -217,7 +233,7 @@ export default function SiteVisitPanel({
   }
 
   if (
-    role === "estimator" &&
+    hasEstimatorAccess &&
     (completedVisit || status === "completed") &&
     !editingVisit
   ) {
@@ -350,6 +366,10 @@ export default function SiteVisitPanel({
                 label="Instructions for estimator"
                 value={scheduledAdminNotes}
               />
+              <ReadOnlyDetail
+                label="Assigned estimator"
+                value={assignedEstimatorName}
+              />
               <ReadOnlyDetail label="Status" value="ready" />
             </div>
           </div>
@@ -396,6 +416,21 @@ export default function SiteVisitPanel({
             required
             defaultValue={scheduledLocation}
           />
+          <label className="block text-sm text-neutral-300">
+            <span className="mb-2 block">Assign estimator</span>
+            <select
+              name="estimator_id"
+              required
+              defaultValue={assignedEstimatorId}
+              className="h-11 w-full rounded-xl border border-white/10 bg-neutral-900 px-4 text-white outline-none focus:border-[#fb5411]"
+            >
+              {estimators.map((estimator) => (
+                <option key={estimator.id} value={estimator.id}>
+                  {estimator.name}
+                </option>
+              ))}
+            </select>
+          </label>
           <SiteTextArea
             label="Instructions for estimator"
             name="admin_notes"
@@ -419,7 +454,7 @@ export default function SiteVisitPanel({
   }
 
   if (
-    role === "estimator" &&
+    hasEstimatorAccess &&
     (status === "ready" || status === "completed") &&
     editingVisit
   ) {

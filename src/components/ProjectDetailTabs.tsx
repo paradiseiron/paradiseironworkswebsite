@@ -87,6 +87,7 @@ type ProjectRecord = {
   site_visit_exclusion_notes?: string | null;
   site_visit_access_safety_concerns?: string | null;
   site_visit_completed_at?: string | null;
+  site_visit_assigned_to?: string | null;
 };
 
 type ProjectActivity = {
@@ -114,6 +115,7 @@ type Props = {
   role: UserRole;
   siteVisitImages: { path: string; url: string }[];
   projectImages: ProjectImage[];
+  estimators: { id: string; name: string }[];
 };
 
 export default function ProjectDetailTabs({
@@ -125,6 +127,7 @@ export default function ProjectDetailTabs({
   role,
   siteVisitImages,
   projectImages,
+  estimators,
 }: Props) {
   const searchParams = useSearchParams();
   const initialTab = searchParams.get("tab");
@@ -160,7 +163,10 @@ export default function ProjectDetailTabs({
   const pricingTotal = proposalPricingTotal(
     pricingFormStateToLineItems(pricingItems)
   );
-  const canWrite = role === "admin" || role === "estimator";
+  const canWrite =
+    role === "admin" ||
+    role === "estimator" ||
+    role === "operations_foreman";
 
   useEffect(() => {
     if (!toast) return;
@@ -662,6 +668,7 @@ export default function ProjectDetailTabs({
           project={project}
           role={role}
           images={siteVisitImages}
+          estimators={estimators}
           onToast={showToast}
         />
       )}
