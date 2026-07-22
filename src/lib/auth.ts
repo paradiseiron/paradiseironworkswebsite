@@ -1,9 +1,10 @@
 import "server-only";
 
+import { cache } from "react";
 import { redirect } from "next/navigation";
 import { createClient } from "@/lib/supabase/server";
 
-export async function requireAuthenticatedUser() {
+export const requireAuthenticatedUser = cache(async function requireAuthenticatedUser() {
   const supabase = await createClient();
   const {
     data: { user },
@@ -15,4 +16,4 @@ export async function requireAuthenticatedUser() {
   }
 
   return user;
-}
+});

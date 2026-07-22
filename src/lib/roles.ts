@@ -1,5 +1,6 @@
 import "server-only";
 
+import { cache } from "react";
 import { createAdminClient } from "@/lib/supabase/admin";
 
 export type UserRole =
@@ -9,7 +10,9 @@ export type UserRole =
   | "viewer"
   | "unassigned";
 
-export async function getUserRole(userId: string): Promise<UserRole> {
+export const getUserRole = cache(async function getUserRole(
+  userId: string
+): Promise<UserRole> {
   const supabase = createAdminClient();
   const { data, error } = await supabase
     .from("user_roles")
@@ -31,7 +34,7 @@ export async function getUserRole(userId: string): Promise<UserRole> {
     return data.role;
   }
   return "unassigned";
-}
+});
 
 export async function requireRole(
   userId: string,

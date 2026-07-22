@@ -223,11 +223,39 @@ export default async function ProjectDetailPage({
 
   if (error || !project) notFound();
 
-  const { data: activities, error: activitiesError } = await supabase
-    .from("project_activities")
-    .select("*")
-    .eq("project_id", id)
-    .order("activity_date", { ascending: false });
+  const imagePaths: string[] = Array.isArray(project.site_visit_image_paths)
+    ? project.site_visit_image_paths.filter(
+        (path: unknown): path is string => typeof path === "string"
+      )
+    : [];
+
+  const [
+    { data: activities, error: activitiesError },
+    { data: estimatorUsers, error: estimatorUsersError },
+    { data: projectImageRecords, error: projectImagesError },
+    { data: signedImages },
+  ] = await Promise.all([
+    supabase
+      .from("project_activities")
+      .select("*")
+      .eq("project_id", id)
+      .order("activity_date", { ascending: false }),
+    supabase
+      .from("user_roles")
+      .select("user_id, role, display_name, notification_email")
+      .in("role", ["estimator", "operations_foreman"])
+      .order("role", { ascending: true }),
+    supabase
+      .from("project_images")
+      .select("id, storage_path, file_name, created_at")
+      .eq("project_id", id)
+      .order("created_at", { ascending: false }),
+    imagePaths.length
+      ? supabase.storage
+          .from("site-visit-images")
+          .createSignedUrls(imagePaths, 60 * 60)
+      : Promise.resolve({ data: [], error: null }),
+  ]);
 
   if (activitiesError) {
     console.error(
@@ -235,12 +263,6 @@ export default async function ProjectDetailPage({
       JSON.stringify(activitiesError, null, 2)
     );
   }
-
-  const { data: estimatorUsers, error: estimatorUsersError } = await supabase
-    .from("user_roles")
-    .select("user_id, role, display_name, notification_email")
-    .in("role", ["estimator", "operations_foreman"])
-    .order("role", { ascending: true });
 
   if (estimatorUsersError) {
     console.error("Unable to load estimators:", estimatorUsersError);
@@ -261,27 +283,10 @@ export default async function ProjectDetailPage({
       return a.name.localeCompare(b.name);
     });
 
-  const imagePaths: string[] = Array.isArray(project.site_visit_image_paths)
-    ? project.site_visit_image_paths.filter(
-        (path: unknown): path is string => typeof path === "string"
-      )
-    : [];
-  const { data: signedImages } = imagePaths.length
-    ? await supabase.storage
-        .from("site-visit-images")
-        .createSignedUrls(imagePaths, 60 * 60)
-    : { data: [] };
   const siteVisitImages = imagePaths.map((path, index) => ({
     path,
     url: signedImages?.[index]?.signedUrl || "",
   }));
-
-  const { data: projectImageRecords, error: projectImagesError } =
-    await supabase
-      .from("project_images")
-      .select("id, storage_path, file_name, created_at")
-      .eq("project_id", id)
-      .order("created_at", { ascending: false });
 
   if (projectImagesError) {
     console.error(
