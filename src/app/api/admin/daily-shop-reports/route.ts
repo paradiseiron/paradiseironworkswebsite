@@ -2,31 +2,18 @@ import { NextResponse } from "next/server";
 import { requireAuthenticatedUser } from "@/lib/auth";
 import { requireRole } from "@/lib/roles";
 import { createAdminClient } from "@/lib/supabase/admin";
-
-type ReportPayload = {
-  reportDate?: string;
-  generalShopNotes?: string;
-  progressBlockers?: string;
-  employees?: Array<{
-    employeeId?: string;
-    noTimeToReport?: boolean;
-    sortOrder?: number;
-    entries?: Array<{
-      projectId?: string | null;
-      manualProjectName?: string;
-      timeIn?: string;
-      timeOut?: string;
-      sortOrder?: number;
-    }>;
-  }>;
-};
+import {
+  parseReportPayload,
+  reportMinutesBetween,
+  validateReportPayload,
+} from "@/lib/daily-shop-report-payload";
 
 export async function POST(request: Request) {
   const user = await requireAuthenticatedUser();
   await requireRole(user.id, "operations_foreman");
   const formData = await request.formData();
-  const payload = parsePayload(formData.get("payload"));
-  const validationError = validatePayload(payload);
+  const payload = parseReportPayload(formData.get("payload"));
+  const validationError = validateReportPayload(payload);
   if (validationError) {
     return NextResponse.json({ error: validationError }, { status: 400 });
   }
@@ -103,7 +90,8 @@ export async function POST(request: Request) {
     for (const [employeeIndex, employee] of employees.entries()) {
       const entries = employee.noTimeToReport ? [] : employee.entries || [];
       const totalMinutes = entries.reduce(
-        (total, entry) => total + minutesBetween(entry.timeIn!, entry.timeOut!),
+        (total, entry) =>
+          total + reportMinutesBetween(entry.timeIn!, entry.timeOut!),
         0
       );
       const { data: reportEmployee, error: employeeError } = await supabase
@@ -132,7 +120,7 @@ export async function POST(request: Request) {
               : entry.manualProjectName?.trim(),
             time_in: entry.timeIn,
             time_out: entry.timeOut,
-            minutes_worked: minutesBetween(entry.timeIn!, entry.timeOut!),
+            minutes_worked: reportMinutesBetween(entry.timeIn!, entry.timeOut!),
             sort_order: entry.sortOrder ?? entryIndex,
           }))
         );
@@ -200,61 +188,4 @@ export async function POST(request: Request) {
       { status: 500 }
     );
   }
-}
-
-function parsePayload(value: FormDataEntryValue | null): ReportPayload {
-  if (typeof value !== "string") return {};
-  try {
-    return JSON.parse(value) as ReportPayload;
-  } catch {
-    return {};
-  }
-}
-
-function validatePayload(payload: ReportPayload) {
-  if (!payload.reportDate || !/^\d{4}-\d{2}-\d{2}$/.test(payload.reportDate)) {
-    return "Select a valid report date.";
-  }
-  if (!payload.employees?.length) return "Add at least one employee.";
-  const employeeIds = payload.employees.map((employee) => employee.employeeId);
-  if (employeeIds.some((id) => !id) || new Set(employeeIds).size !== employeeIds.length) {
-    return "Each employee can only appear once in a report.";
-  }
-
-  for (const employee of payload.employees) {
-    if (employee.noTimeToReport) continue;
-    if (!employee.entries?.length) return "Add at least one project per employee.";
-    const ranges: Array<[number, number]> = [];
-    for (const entry of employee.entries) {
-      const hasProject = Boolean(entry.projectId);
-      const hasManualProject = Boolean(entry.manualProjectName?.trim());
-      if (hasProject === hasManualProject) {
-        return "Select a project or enter a manual project name for every row.";
-      }
-      if (!isTime(entry.timeIn) || !isTime(entry.timeOut)) {
-        return "Select valid time-in and time-out values.";
-      }
-      const start = timeToMinutes(entry.timeIn!);
-      const end = timeToMinutes(entry.timeOut!);
-      if (end <= start) return "Time out must be later than time in.";
-      if (ranges.some(([rangeStart, rangeEnd]) => start < rangeEnd && end > rangeStart)) {
-        return "Project time entries for an employee cannot overlap.";
-      }
-      ranges.push([start, end]);
-    }
-  }
-  return "";
-}
-
-function isTime(value?: string) {
-  return Boolean(value && /^([01]\d|2[0-3]):[0-5]\d$/.test(value));
-}
-
-function timeToMinutes(value: string) {
-  const [hours, minutes] = value.split(":").map(Number);
-  return hours * 60 + minutes;
-}
-
-function minutesBetween(start: string, end: string) {
-  return timeToMinutes(end) - timeToMinutes(start);
 }

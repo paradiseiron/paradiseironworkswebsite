@@ -14,13 +14,28 @@ import { formatReportHours } from "@/lib/daily-shop-reports";
 import SelectedImagePreview from "@/components/SelectedImagePreview";
 import { prepareImageInput } from "@/lib/image-compression";
 
-type EmployeeOption = { id: string; name: string };
-type ProjectOption = {
+export type EmployeeOption = { id: string; name: string };
+export type ProjectOption = {
   id: string;
   customer_name: string | null;
   project_category: string | null;
   project_type: string | null;
   proposal_number: string | null;
+};
+export type DailyShopReportInitialValue = {
+  id: string;
+  generalShopNotes: string;
+  progressBlockers: string;
+  employees: Array<{
+    employeeId: string;
+    noTimeToReport: boolean;
+    entries: Array<{
+      projectId: string;
+      manualProjectName: string;
+      timeIn: string;
+      timeOut: string;
+    }>;
+  }>;
 };
 type WorkEntry = {
   key: string;
@@ -51,30 +66,48 @@ export default function DailyShopReportForm({
   defaultDate,
   employees,
   projects,
+  initialReport,
 }: {
   defaultDate: string;
   employees: EmployeeOption[];
   projects: ProjectOption[];
+  initialReport?: DailyShopReportInitialValue;
 }) {
   const router = useRouter();
+  const isEditing = Boolean(initialReport);
   const [cards, setCards] = useState<EmployeeCard[]>(() =>
-    employees.map((employee, index) => ({
-      key: `initial-employee-${index}`,
-      employeeId: employee.id,
-      noTimeToReport: false,
-      entries: [
-        {
-          key: `initial-project-${index}`,
-          projectId: "",
-          manualProjectName: "",
-          timeIn: "07:00",
-          timeOut: "15:30",
-        },
-      ],
-    }))
+    employees.map((employee, employeeIndex) => {
+      const savedEmployee = initialReport?.employees.find(
+        (item) => item.employeeId === employee.id
+      );
+      const savedEntries = savedEmployee?.entries || [];
+      return {
+        key: `employee-${employee.id}`,
+        employeeId: employee.id,
+        noTimeToReport: Boolean(savedEmployee?.noTimeToReport),
+        entries: savedEntries.length
+          ? savedEntries.map((entry, entryIndex) => ({
+              key: `employee-${employee.id}-entry-${entryIndex}`,
+              ...entry,
+            }))
+          : [
+              {
+                key: `initial-project-${employeeIndex}`,
+                projectId: "",
+                manualProjectName: "",
+                timeIn: "07:00",
+                timeOut: "15:30",
+              },
+            ],
+      };
+    })
   );
-  const [generalNotes, setGeneralNotes] = useState("");
-  const [blockers, setBlockers] = useState("");
+  const [generalNotes, setGeneralNotes] = useState(
+    initialReport?.generalShopNotes || ""
+  );
+  const [blockers, setBlockers] = useState(
+    initialReport?.progressBlockers || ""
+  );
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState("");
   const [photos, setPhotos] = useState<File[]>([]);
@@ -115,24 +148,38 @@ export default function DailyShopReportForm({
         body.append("photos", file);
       }
 
-      const response = await fetch("/api/admin/daily-shop-reports", {
-        method: "POST",
+      const endpoint = initialReport
+        ? `/api/admin/daily-shop-reports/${initialReport.id}`
+        : "/api/admin/daily-shop-reports";
+      const response = await fetch(endpoint, {
+        method: initialReport ? "PUT" : "POST",
         body,
       });
       const result = (await response.json().catch(() => null)) as
         | { id?: string; error?: string }
         | null;
       if (!response.ok) {
-        throw new Error(result?.error || "Unable to submit the report.");
+        throw new Error(
+          result?.error ||
+            (isEditing
+              ? "Unable to save the report changes."
+              : "Unable to submit the report.")
+        );
       }
 
-      router.push("/admin/daily-shop-report?toast=report-submitted");
+      router.push(
+        initialReport
+          ? `/admin/daily-shop-report/${initialReport.id}?toast=report-updated`
+          : "/admin/daily-shop-report?toast=report-submitted"
+      );
       router.refresh();
     } catch (submitError) {
       setError(
         submitError instanceof Error
           ? submitError.message
-          : "Unable to submit the report."
+          : isEditing
+            ? "Unable to save the report changes."
+            : "Unable to submit the report."
       );
     } finally {
       setBusy(false);
@@ -313,7 +360,11 @@ export default function DailyShopReportForm({
         <div className="mt-4">
           <SelectedImagePreview
             files={photos}
-            actionLabel="Will upload when report is submitted"
+            actionLabel={
+              isEditing
+                ? "Will upload when changes are saved"
+                : "Will upload when report is submitted"
+            }
           />
         </div>
       </section>
@@ -325,7 +376,13 @@ export default function DailyShopReportForm({
         disabled={busy}
         className="w-full rounded-xl bg-[#fb5411] px-5 py-3.5 text-sm font-semibold text-white transition hover:bg-[#e64d0f] disabled:cursor-wait disabled:opacity-60 sm:w-auto"
       >
-        {busy ? "Submitting report…" : "Submit Daily Shop Report"}
+        {busy
+          ? isEditing
+            ? "Saving changes…"
+            : "Submitting report…"
+          : isEditing
+            ? "Save Report Changes"
+            : "Submit Daily Shop Report"}
       </button>
     </form>
   );

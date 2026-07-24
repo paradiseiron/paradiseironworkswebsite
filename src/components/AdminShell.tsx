@@ -42,6 +42,14 @@ export default function AdminShell({
   const isDailyShopReportIndex = pathname === "/admin/daily-shop-report";
   const isDailyShopReportSubpage =
     isDailyShopReportPage && !isDailyShopReportIndex;
+  const isDailyShopReportEditPage =
+    isDailyShopReportPage && pathname.endsWith("/edit");
+  const dailyShopReportBackPath = isDailyShopReportEditPage
+    ? pathname.replace(/\/edit$/, "")
+    : "/admin/daily-shop-report";
+  const dailyShopReportBackLabel = isDailyShopReportEditPage
+    ? "Back to Daily Shop Report"
+    : "Back to Daily Shop Reports";
   const isNewProjectPage = pathname === "/admin/projects/new";
   const isEditProjectPage =
   pathname.startsWith("/admin/projects/") &&
@@ -231,14 +239,14 @@ export default function AdminShell({
 
               {isDailyShopReportSubpage && (
                 <ReliableMobileLink
-                  href="/admin/daily-shop-report"
-                  aria-label="Back to Daily Shop Reports"
-                  title="Back to Daily Shop Reports"
+                  href={dailyShopReportBackPath}
+                  aria-label={dailyShopReportBackLabel}
+                  title={dailyShopReportBackLabel}
                   className="inline-flex h-10 touch-manipulation items-center justify-center gap-2 rounded-xl border border-white/10 px-3 text-sm text-neutral-300 transition hover:bg-white/5 hover:text-white sm:px-4"
                 >
                   <ArrowLeft className="h-4 w-4" aria-hidden="true" />
                   <span className="hidden sm:inline">
-                    Back to Daily Shop Reports
+                    {dailyShopReportBackLabel}
                   </span>
                 </ReliableMobileLink>
               )}

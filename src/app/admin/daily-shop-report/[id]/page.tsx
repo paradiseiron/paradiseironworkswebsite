@@ -1,5 +1,6 @@
+import Link from "next/link";
 import { notFound } from "next/navigation";
-import { Clock3, ImageIcon } from "lucide-react";
+import { Clock3, ImageIcon, Pencil } from "lucide-react";
 import { requireAuthenticatedUser } from "@/lib/auth";
 import { createAdminClient } from "@/lib/supabase/admin";
 import { requireAssignedRole } from "@/lib/roles";
@@ -11,18 +12,22 @@ import {
 } from "@/lib/daily-shop-reports";
 import { createSignedImageUrls } from "@/lib/signed-images";
 import DailyShopReportImageGallery from "@/components/DailyShopReportImageGallery";
+import SuccessToast from "@/components/SuccessToast";
 
 export const dynamic = "force-dynamic";
 export const revalidate = 0;
 
 export default async function DailyShopReportDetailPage({
   params,
+  searchParams,
 }: {
   params: Promise<{ id: string }>;
+  searchParams: Promise<{ toast?: string }>;
 }) {
   const user = await requireAuthenticatedUser();
   const role = await requireAssignedRole(user.id);
   const { id } = await params;
+  const filters = await searchParams;
   const supabase = createAdminClient();
 
   const { data: report, error } = await supabase
@@ -102,6 +107,10 @@ export default async function DailyShopReportDetailPage({
   }));
   const canRemoveImages =
     role === "operations_foreman" && report.created_by === user.id;
+  const canEdit =
+    role === "operations_foreman" &&
+    report.created_by === user.id &&
+    report.status === "submitted";
 
   const employees = [...(report.daily_shop_report_employees || [])].sort(
     (a, b) => a.sort_order - b.sort_order
@@ -113,6 +122,12 @@ export default async function DailyShopReportDetailPage({
 
   return (
     <div className="mx-auto max-w-6xl">
+      {filters.toast === "report-updated" && (
+        <SuccessToast
+          message="Daily Shop Report updated successfully."
+          queryParam="toast"
+        />
+      )}
       <div className="flex flex-wrap items-start justify-between gap-4">
         <div>
           <h1 className="text-2xl font-semibold sm:text-3xl">
@@ -122,9 +137,20 @@ export default async function DailyShopReportDetailPage({
             Submitted by {submittedBy} · {formatReportDateTime(report.submitted_at)}
           </p>
         </div>
-        <span className="rounded-full border border-emerald-500/20 bg-emerald-500/10 px-3 py-1.5 text-xs font-semibold capitalize text-emerald-300">
-          {report.status}
-        </span>
+        <div className="flex items-center gap-3">
+          {canEdit && (
+            <Link
+              href={`/admin/daily-shop-report/${report.id}/edit`}
+              className="inline-flex h-10 items-center justify-center gap-2 rounded-xl border border-white/10 px-4 text-sm font-semibold text-neutral-200 transition hover:bg-white/5 hover:text-white"
+            >
+              <Pencil className="h-4 w-4" aria-hidden="true" />
+              Edit Report
+            </Link>
+          )}
+          <span className="rounded-full border border-emerald-500/20 bg-emerald-500/10 px-3 py-1.5 text-xs font-semibold capitalize text-emerald-300">
+            {report.status}
+          </span>
+        </div>
       </div>
 
       <section className="mt-8 grid gap-4 sm:grid-cols-3">
