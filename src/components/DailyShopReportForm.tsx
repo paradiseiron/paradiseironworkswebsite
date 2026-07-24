@@ -11,6 +11,8 @@ import {
   Trash2,
 } from "lucide-react";
 import { formatReportHours } from "@/lib/daily-shop-reports";
+import SelectedImagePreview from "@/components/SelectedImagePreview";
+import { prepareImageInput } from "@/lib/image-compression";
 
 type EmployeeOption = { id: string; name: string };
 type ProjectOption = {
@@ -75,6 +77,7 @@ export default function DailyShopReportForm({
   const [blockers, setBlockers] = useState("");
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState("");
+  const [photos, setPhotos] = useState<File[]>([]);
 
   function updateCard(cardKey: string, update: (card: EmployeeCard) => EmployeeCard) {
     setCards((current) =>
@@ -108,8 +111,7 @@ export default function DailyShopReportForm({
       };
       const body = new FormData();
       body.set("payload", JSON.stringify(payload));
-      const photoInput = form.elements.namedItem("photos") as HTMLInputElement | null;
-      for (const file of Array.from(photoInput?.files || [])) {
+      for (const file of photos) {
         body.append("photos", file);
       }
 
@@ -303,8 +305,17 @@ export default function DailyShopReportForm({
             accept="image/*"
             multiple
             className="sr-only"
+            onChange={async (event) =>
+              setPhotos(await prepareImageInput(event.currentTarget))
+            }
           />
         </label>
+        <div className="mt-4">
+          <SelectedImagePreview
+            files={photos}
+            actionLabel="Will upload when report is submitted"
+          />
+        </div>
       </section>
 
       {error && <p className="text-sm text-red-300">{error}</p>}

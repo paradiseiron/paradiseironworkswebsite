@@ -2,9 +2,11 @@
 
 import { useState } from "react";
 import { useRouter } from "next/navigation";
-import { Camera, ImagePlus, Mic, Pencil, Save } from "lucide-react";
+import { Camera, ImagePlus, Mic, Pencil, Save, Trash2 } from "lucide-react";
 import { createClient } from "@/lib/supabase/client";
 import type { UserRole } from "@/lib/roles";
+import SelectedImagePreview from "@/components/SelectedImagePreview";
+import { prepareImageInput } from "@/lib/image-compression";
 
 type SiteVisitProject = {
   id: string;
@@ -27,7 +29,7 @@ type SiteVisitProject = {
   site_visit_assigned_to?: string | null;
 };
 
-type SiteVisitImage = { path: string; url: string };
+type SiteVisitImage = { path: string; url: string; thumbnailUrl?: string };
 
 type ScheduledVisitDraft = {
   date: string;
@@ -61,6 +63,10 @@ export default function SiteVisitPanel({
   const router = useRouter();
   const [busy, setBusy] = useState(false);
   const [message, setMessage] = useState("");
+  const [cameraPhotos, setCameraPhotos] = useState<File[]>([]);
+  const [chosenPhotos, setChosenPhotos] = useState<File[]>([]);
+  const selectedPhotos = [...cameraPhotos, ...chosenPhotos];
+  const [removingImagePath, setRemovingImagePath] = useState("");
   const [completedVisit, setCompletedVisit] =
     useState<CompletedVisitDraft | null>(null);
   const [editingVisit, setEditingVisit] = useState(
@@ -189,7 +195,11 @@ export default function SiteVisitPanel({
         const path = `${user.id}/${project.id}/${crypto.randomUUID()}-${safeName}`;
         const { error } = await supabase.storage
           .from("site-visit-images")
-          .upload(path, file, { contentType: file.type, upsert: false });
+          .upload(path, file, {
+            contentType: file.type,
+            cacheControl: "31536000",
+            upsert: false,
+          });
         if (error) throw error;
         imagePaths.push(path);
       }
@@ -213,6 +223,8 @@ export default function SiteVisitPanel({
       }
 
       setMessage("");
+      setCameraPhotos([]);
+      setChosenPhotos([]);
       setCompletedVisit(nextVisit);
       setEditingVisit(false);
       onToast?.(
@@ -229,6 +241,38 @@ export default function SiteVisitPanel({
       );
     } finally {
       setBusy(false);
+    }
+  }
+
+  async function removeSiteVisitPhoto(path: string) {
+    if (!window.confirm("Remove this site visit photo permanently?")) return;
+    setRemovingImagePath(path);
+    setMessage("");
+
+    try {
+      const response = await fetch(
+        `/api/projects/${encodeURIComponent(project.id)}/site-visit/images`,
+        {
+          method: "DELETE",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ path }),
+        }
+      );
+      const body = (await response.json().catch(() => null)) as
+        | { error?: string }
+        | null;
+      if (!response.ok) {
+        throw new Error(body?.error || "Unable to remove site visit photo.");
+      }
+      router.refresh();
+    } catch (removeError) {
+      setMessage(
+        removeError instanceof Error
+          ? removeError.message
+          : "Unable to remove site visit photo."
+      );
+    } finally {
+      setRemovingImagePath("");
     }
   }
 
@@ -303,17 +347,12 @@ export default function SiteVisitPanel({
             value={submittedVisit.accessSafetyConcerns}
           />
           {images.length > 0 && (
-            <div className="grid grid-cols-2 gap-3 sm:grid-cols-3">
-              {images.map((image) => (
-                // eslint-disable-next-line @next/next/no-img-element
-                <img
-                  key={image.path}
-                  src={image.url}
-                  alt="Site visit"
-                  className="aspect-square rounded-xl object-cover"
-                />
-              ))}
-            </div>
+            <SiteVisitImageGallery
+              images={images}
+              canRemove
+              removingPath={removingImagePath}
+              onRemove={removeSiteVisitPhoto}
+            />
           )}
         </div>
       </section>
@@ -504,14 +543,28 @@ export default function SiteVisitPanel({
               label="Take photos"
               icon={<Camera className="h-5 w-5" aria-hidden="true" />}
               capture="environment"
+              onFilesSelected={setCameraPhotos}
             />
             <FileInput
               name="photos"
               label="Choose annotated photos"
               icon={<ImagePlus className="h-5 w-5" aria-hidden="true" />}
               multiple
+              onFilesSelected={setChosenPhotos}
             />
           </div>
+          {images.length > 0 && (
+            <SiteVisitImageGallery
+              images={images}
+              canRemove
+              removingPath={removingImagePath}
+              onRemove={removeSiteVisitPhoto}
+            />
+          )}
+          <SelectedImagePreview
+            files={selectedPhotos}
+            actionLabel="Will upload when site visit is saved"
+          />
           <p className="text-xs leading-5 text-neutral-500">
             You can annotate measurements in the iPhone Photos app, then choose
             those edited images here.
@@ -559,17 +612,12 @@ export default function SiteVisitPanel({
             value={project.site_visit_access_safety_concerns}
           />
           {images.length > 0 && (
-            <div className="grid grid-cols-2 gap-3 sm:grid-cols-3">
-              {images.map((image) => (
-                // eslint-disable-next-line @next/next/no-img-element
-                <img
-                  key={image.path}
-                  src={image.url}
-                  alt="Site visit"
-                  className="aspect-square rounded-xl object-cover"
-                />
-              ))}
-            </div>
+            <SiteVisitImageGallery
+              images={images}
+              canRemove={false}
+              removingPath=""
+              onRemove={() => undefined}
+            />
           )}
         </div>
       )}
@@ -734,12 +782,14 @@ function FileInput({
   icon,
   capture,
   multiple,
+  onFilesSelected,
 }: {
   name: string;
   label: string;
   icon: React.ReactNode;
   capture?: "user" | "environment";
   multiple?: boolean;
+  onFilesSelected: (files: File[]) => void;
 }) {
   return (
     <label className="flex cursor-pointer items-center justify-center gap-2 rounded-xl border border-white/10 bg-white/[0.03] px-4 py-4 text-sm font-semibold text-neutral-200">
@@ -752,8 +802,55 @@ function FileInput({
         accept="image/*"
         capture={capture}
         multiple={multiple}
+        onChange={async (event) =>
+          onFilesSelected(await prepareImageInput(event.currentTarget))
+        }
       />
     </label>
+  );
+}
+
+function SiteVisitImageGallery({
+  images,
+  canRemove,
+  removingPath,
+  onRemove,
+}: {
+  images: SiteVisitImage[];
+  canRemove: boolean;
+  removingPath: string;
+  onRemove: (path: string) => void;
+}) {
+  return (
+    <div className="grid grid-cols-2 gap-3 sm:grid-cols-3">
+      {images.map((image) => (
+        <div
+          key={image.path}
+          className="relative overflow-hidden rounded-xl border border-white/10 bg-neutral-900"
+        >
+          <a href={image.url} target="_blank" rel="noreferrer" className="block">
+            {/* eslint-disable-next-line @next/next/no-img-element */}
+            <img
+              src={image.thumbnailUrl || image.url}
+              alt="Site visit"
+              className="aspect-square w-full object-cover"
+            />
+          </a>
+          {canRemove && (
+            <button
+              type="button"
+              onClick={() => onRemove(image.path)}
+              disabled={Boolean(removingPath)}
+              aria-label="Remove site visit photo"
+              title="Remove photo"
+              className="absolute right-2 top-2 inline-flex h-9 w-9 items-center justify-center rounded-lg border border-red-400/30 bg-neutral-950/90 text-red-300 shadow-lg disabled:cursor-wait disabled:opacity-60"
+            >
+              <Trash2 className="h-4 w-4" aria-hidden="true" />
+            </button>
+          )}
+        </div>
+      ))}
+    </div>
   );
 }
 

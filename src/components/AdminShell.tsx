@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import Image from "next/image";
 import Link from "next/link";
 import { usePathname, useSearchParams } from "next/navigation";
@@ -27,6 +27,8 @@ export default function AdminShell({
   userRole: UserRole;
 }) {
   const [theme, setTheme] = useState<"dark" | "light">("dark");
+  const [keyboardOpen, setKeyboardOpen] = useState(false);
+  const viewportBaseline = useRef(0);
   const pathname = usePathname();
   const searchParams = useSearchParams();
 
@@ -91,6 +93,69 @@ export default function AdminShell({
     };
   }, [theme]);
 
+  useEffect(() => {
+    const viewport = window.visualViewport;
+    if (!viewport) return;
+
+    viewportBaseline.current = Math.max(window.innerHeight, viewport.height);
+
+    const isEditableElement = (element: Element | null) => {
+      if (element instanceof HTMLTextAreaElement) return true;
+      if (element instanceof HTMLSelectElement) return true;
+      if (!(element instanceof HTMLInputElement)) return false;
+      return ![
+        "button",
+        "checkbox",
+        "file",
+        "hidden",
+        "radio",
+        "range",
+        "reset",
+        "submit",
+      ].includes(element.type);
+    };
+
+    const updateKeyboardState = () => {
+      const hasEditableFocus = isEditableElement(document.activeElement);
+      if (!hasEditableFocus) {
+        viewportBaseline.current = Math.max(
+          viewportBaseline.current,
+          window.innerHeight,
+          viewport.height
+        );
+        setKeyboardOpen(false);
+        return;
+      }
+
+      const coveredHeight = viewportBaseline.current - viewport.height;
+      setKeyboardOpen(coveredHeight > 140);
+    };
+
+    const handleFocusChange = () => {
+      window.setTimeout(updateKeyboardState, 50);
+    };
+    const handleWindowResize = () => {
+      if (!isEditableElement(document.activeElement)) {
+        viewportBaseline.current = Math.max(window.innerHeight, viewport.height);
+      }
+      updateKeyboardState();
+    };
+
+    viewport.addEventListener("resize", updateKeyboardState);
+    viewport.addEventListener("scroll", updateKeyboardState);
+    window.addEventListener("resize", handleWindowResize);
+    document.addEventListener("focusin", handleFocusChange);
+    document.addEventListener("focusout", handleFocusChange);
+
+    return () => {
+      viewport.removeEventListener("resize", updateKeyboardState);
+      viewport.removeEventListener("scroll", updateKeyboardState);
+      window.removeEventListener("resize", handleWindowResize);
+      document.removeEventListener("focusin", handleFocusChange);
+      document.removeEventListener("focusout", handleFocusChange);
+    };
+  }, []);
+
   function toggleTheme() {
     setTheme((currentTheme) => {
       const nextTheme = currentTheme === "dark" ? "light" : "dark";
@@ -101,8 +166,9 @@ export default function AdminShell({
 
   return (
     <div
-      className="admin-shell min-h-screen bg-neutral-950 text-white transition-colors"
+      className="admin-shell min-h-dvh bg-neutral-950 text-white transition-colors"
       data-theme={theme}
+      data-keyboard-open={keyboardOpen ? "true" : "false"}
     >
       <aside className="admin-sidebar fixed left-0 top-0 z-50 hidden h-screen w-20 border-r border-white/10 bg-black/50 backdrop-blur-xl md:block print:hidden">
         <div className="flex h-20 items-center justify-center border-b border-white/10">
@@ -308,14 +374,22 @@ export default function AdminShell({
           </div>
         </header>
 
-        <main className="overflow-x-hidden px-4 pb-[calc(10rem+env(safe-area-inset-bottom))] pt-4 sm:px-6 md:px-8 md:pb-8 print:p-0 print:overflow-visible">
+        <main
+          className={`overflow-x-hidden px-4 pt-4 sm:px-6 md:px-8 md:pb-8 print:p-0 print:overflow-visible ${
+            keyboardOpen
+              ? "pb-6"
+              : "pb-[calc(10rem+env(safe-area-inset-bottom))]"
+          }`}
+        >
           {children}
         </main>
       </div>
 
       <nav
         aria-label="Admin navigation"
-        className="fixed inset-x-0 bottom-0 z-50 flex items-center justify-around border-t border-white/10 bg-neutral-950/95 px-4 pb-[max(0.75rem,env(safe-area-inset-bottom))] pt-3 backdrop-blur-xl md:hidden print:hidden"
+        className={`fixed inset-x-0 bottom-0 z-50 items-center justify-around border-t border-white/10 bg-neutral-950/95 px-4 pb-[max(0.75rem,env(safe-area-inset-bottom))] pt-3 backdrop-blur-xl md:hidden print:hidden ${
+          keyboardOpen ? "hidden" : "flex"
+        }`}
       >
         <MobileNavLink
           href="/admin"

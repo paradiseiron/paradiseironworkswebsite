@@ -96,11 +96,51 @@ export async function DELETE(
   const { id } = await context.params;
   const supabase = createAdminClient();
 
-  const { data: deletedProjects, error } = await supabase
+  const [{ data: project }, { data: projectImages }] = await Promise.all([
+    supabase
+      .from("projects")
+      .select("id, site_visit_image_paths")
+      .eq("id", id)
+      .maybeSingle(),
+    supabase
+      .from("project_images")
+      .select("storage_path")
+      .eq("project_id", id),
+  ]);
+
+  if (!project) {
+    return NextResponse.json({ error: "Project not found." }, { status: 404 });
+  }
+
+  const projectImagePaths =
+    projectImages?.map((image) => image.storage_path).filter(Boolean) || [];
+  const siteVisitImagePaths = Array.isArray(project.site_visit_image_paths)
+    ? project.site_visit_image_paths.filter(
+        (path: unknown): path is string => typeof path === "string"
+      )
+    : [];
+
+  const cleanupResults = await Promise.all([
+    projectImagePaths.length
+      ? supabase.storage.from("project-images").remove(projectImagePaths)
+      : Promise.resolve({ error: null }),
+    siteVisitImagePaths.length
+      ? supabase.storage.from("site-visit-images").remove(siteVisitImagePaths)
+      : Promise.resolve({ error: null }),
+  ]);
+  const cleanupError = cleanupResults.find((result) => result.error)?.error;
+  if (cleanupError) {
+    console.error("Project image cleanup failed:", cleanupError);
+    return NextResponse.json(
+      { error: "Unable to remove the project's stored photos." },
+      { status: 500 }
+    );
+  }
+
+  const { error } = await supabase
     .from("projects")
     .delete()
-    .eq("id", id)
-    .select("id");
+    .eq("id", id);
 
   if (error) {
     console.error("Project deletion failed:", error);
@@ -108,10 +148,6 @@ export async function DELETE(
       { error: "Unable to delete project." },
       { status: 500 }
     );
-  }
-
-  if (!deletedProjects?.length) {
-    return NextResponse.json({ error: "Project not found." }, { status: 404 });
   }
 
   revalidatePath("/admin/projects");

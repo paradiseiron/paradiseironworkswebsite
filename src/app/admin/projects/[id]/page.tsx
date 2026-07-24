@@ -11,6 +11,7 @@ import {
   proposalPricingTotal,
 } from "@/lib/proposal-pricing";
 import type { ProjectImage } from "@/components/ProjectImagesPanel";
+import { createSignedImageUrls } from "@/lib/signed-images";
 
 export const dynamic = "force-dynamic";
 export const revalidate = 0;
@@ -233,7 +234,7 @@ export default async function ProjectDetailPage({
     { data: activities, error: activitiesError },
     { data: estimatorUsers, error: estimatorUsersError },
     { data: projectImageRecords, error: projectImagesError },
-    { data: signedImages },
+    signedSiteImages,
   ] = await Promise.all([
     supabase
       .from("project_activities")
@@ -250,11 +251,7 @@ export default async function ProjectDetailPage({
       .select("id, storage_path, file_name, created_at")
       .eq("project_id", id)
       .order("created_at", { ascending: false }),
-    imagePaths.length
-      ? supabase.storage
-          .from("site-visit-images")
-          .createSignedUrls(imagePaths, 60 * 60)
-      : Promise.resolve({ data: [], error: null }),
+    createSignedImageUrls(supabase, "site-visit-images", imagePaths),
   ]);
 
   if (activitiesError) {
@@ -283,10 +280,7 @@ export default async function ProjectDetailPage({
       return a.name.localeCompare(b.name);
     });
 
-  const siteVisitImages = imagePaths.map((path, index) => ({
-    path,
-    url: signedImages?.[index]?.signedUrl || "",
-  }));
+  const siteVisitImages = signedSiteImages;
 
   if (projectImagesError) {
     console.error(
@@ -298,16 +292,17 @@ export default async function ProjectDetailPage({
   const projectImagePaths =
     projectImageRecords?.map((image) => image.storage_path).filter(Boolean) ||
     [];
-  const { data: signedProjectImages } = projectImagePaths.length
-    ? await supabase.storage
-        .from("project-images")
-        .createSignedUrls(projectImagePaths, 60 * 60)
-    : { data: [] };
+  const signedProjectImages = await createSignedImageUrls(
+    supabase,
+    "project-images",
+    projectImagePaths
+  );
   const projectImages: ProjectImage[] =
     projectImageRecords?.map((image, index) => ({
       id: String(image.id),
       storagePath: image.storage_path,
-      url: signedProjectImages?.[index]?.signedUrl || "",
+      url: signedProjectImages[index]?.url || "",
+      thumbnailUrl: signedProjectImages[index]?.thumbnailUrl || "",
       fileName: image.file_name,
       createdAt: image.created_at,
     })) || [];

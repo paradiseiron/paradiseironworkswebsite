@@ -193,6 +193,17 @@
   }
 }
 
+html[data-admin-theme],
+html[data-admin-theme] body {
+  min-height: 100%;
+  background-color: #0a0a0a;
+}
+
+html[data-admin-theme="light"],
+html[data-admin-theme="light"] body {
+  background-color: #f5f5f4;
+}
+
 /**
  * Base typography. This is not applied to elements which have an ancestor with a Tailwind text class.
  */

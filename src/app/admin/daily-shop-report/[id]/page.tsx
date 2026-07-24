@@ -9,6 +9,8 @@ import {
   formatReportHours,
   firstReportRelation,
 } from "@/lib/daily-shop-reports";
+import { createSignedImageUrls } from "@/lib/signed-images";
+import DailyShopReportImageGallery from "@/components/DailyShopReportImageGallery";
 
 export const dynamic = "force-dynamic";
 export const revalidate = 0;
@@ -87,15 +89,19 @@ export default async function DailyShopReportDetailPage({
 
   const imageRecords = report.daily_shop_report_images || [];
   const imagePaths = imageRecords.map((image) => image.storage_path);
-  const { data: signedImages } = imagePaths.length
-    ? await supabase.storage
-        .from("daily-shop-report-images")
-        .createSignedUrls(imagePaths, 60 * 60)
-    : { data: [] };
+  const signedImages = await createSignedImageUrls(
+    supabase,
+    "daily-shop-report-images",
+    imagePaths
+  );
   const images = imageRecords.map((image, index) => ({
-    ...image,
-    url: signedImages?.[index]?.signedUrl || "",
+    id: image.id,
+    fileName: image.file_name,
+    url: signedImages[index]?.url || "",
+    thumbnailUrl: signedImages[index]?.thumbnailUrl || "",
   }));
+  const canRemoveImages =
+    role === "operations_foreman" && report.created_by === user.id;
 
   const employees = [...(report.daily_shop_report_employees || [])].sort(
     (a, b) => a.sort_order - b.sort_order
@@ -219,17 +225,11 @@ export default async function DailyShopReportDetailPage({
           <h2 className="text-lg font-semibold">Pictures</h2>
         </div>
         {images.length ? (
-          <div className="mt-5 grid grid-cols-2 gap-3 sm:grid-cols-3 lg:grid-cols-4">
-            {images.map((image) => (
-              // eslint-disable-next-line @next/next/no-img-element
-              <img
-                key={image.id}
-                src={image.url}
-                alt={image.file_name || "Daily shop report"}
-                className="aspect-square rounded-xl object-cover"
-              />
-            ))}
-          </div>
+          <DailyShopReportImageGallery
+            reportId={report.id}
+            images={images}
+            canRemove={canRemoveImages}
+          />
         ) : (
           <p className="mt-4 text-sm text-neutral-500">
             No pictures were submitted with this report.

@@ -1,5 +1,6 @@
 import { redirect } from "next/navigation";
-import { createClient } from "@/lib/supabase/server";
+import NewProjectPhotoFields from "@/components/NewProjectPhotoFields";
+import { createAdminClient } from "@/lib/supabase/admin";
 import { requireAuthenticatedUser } from "@/lib/auth";
 import { requireOperationalRole } from "@/lib/roles";
 
@@ -11,7 +12,7 @@ async function createProject(formData: FormData) {
 
   const user = await requireAuthenticatedUser();
   await requireOperationalRole(user.id);
-  const supabase = await createClient();
+  const supabase = createAdminClient();
 
   const customer_name = String(formData.get("customer_name") || "");
   const contact_name = String(formData.get("contact_name") || "");
@@ -28,6 +29,23 @@ async function createProject(formData: FormData) {
   const lead_source = String(formData.get("lead_source") || "");
   const priority = String(formData.get("priority") || "normal");
   const notes = String(formData.get("notes") || "");
+  const photos = [
+    ...formData.getAll("camera_photos"),
+    ...formData.getAll("photos"),
+  ].filter((value): value is File => value instanceof File && value.size > 0);
+
+  if (photos.length > 10) {
+    throw new Error("You can attach up to 10 project photos at a time.");
+  }
+
+  if (photos.some((photo) => !photo.type.startsWith("image/"))) {
+    throw new Error("Only image files can be attached to a project.");
+  }
+
+  const totalPhotoBytes = photos.reduce((total, photo) => total + photo.size, 0);
+  if (totalPhotoBytes > 45 * 1024 * 1024) {
+    throw new Error("Project photos must total 45 MB or less.");
+  }
 
   if (!customer_name.trim()) {
     throw new Error("Customer name is required.");
@@ -63,16 +81,74 @@ async function createProject(formData: FormData) {
     throw new Error(error.message);
   }
 
-  const { error: activityError } = await supabase
-    .from("project_activities")
-    .insert({
-      project_id: newProject.id,
-      activity_type: "status_change",
-      summary: "Lead received and project record created.",
-    });
+  const uploadedPaths: string[] = [];
 
-  if (activityError) {
-    throw new Error(activityError.message);
+  try {
+    const imageRecords = [];
+
+    for (const photo of photos) {
+      const safeName = photo.name.replace(/[^a-zA-Z0-9._-]/g, "-");
+      const storagePath = `${newProject.id}/${user.id}/${crypto.randomUUID()}-${safeName}`;
+      const { error: uploadError } = await supabase.storage
+        .from("project-images")
+        .upload(storagePath, photo, {
+          contentType: photo.type,
+          cacheControl: "31536000",
+          upsert: false,
+        });
+
+      if (uploadError) throw uploadError;
+      uploadedPaths.push(storagePath);
+      imageRecords.push({
+        project_id: newProject.id,
+        storage_path: storagePath,
+        file_name: photo.name,
+        content_type: photo.type,
+        size_bytes: photo.size,
+        uploaded_by: user.id,
+      });
+    }
+
+    if (imageRecords.length) {
+      const { error: imageError } = await supabase
+        .from("project_images")
+        .insert(imageRecords);
+      if (imageError) throw imageError;
+    }
+
+    const activities = [
+      {
+        project_id: newProject.id,
+        activity_type: "status_change",
+        summary: "Lead received and project record created.",
+      },
+      ...(photos.length
+        ? [
+            {
+              project_id: newProject.id,
+              activity_type: "note",
+              summary:
+                photos.length === 1
+                  ? "1 project photo uploaded."
+                  : `${photos.length} project photos uploaded.`,
+            },
+          ]
+        : []),
+    ];
+    const { error: activityError } = await supabase
+      .from("project_activities")
+      .insert(activities);
+    if (activityError) throw activityError;
+  } catch (creationError) {
+    if (uploadedPaths.length) {
+      await supabase.storage.from("project-images").remove(uploadedPaths);
+    }
+    await supabase.from("projects").delete().eq("id", newProject.id);
+    throw new Error(
+      creationError instanceof Error
+        ? creationError.message
+        : "Unable to save the new project and its photos."
+    );
   }
 
   redirect("/admin/projects?toast=project-created");
@@ -283,7 +359,8 @@ export default async function NewProjectPage() {
           </div>
         </section>
 
-    
+        <NewProjectPhotoFields />
+
       </form>
     </div>
   );

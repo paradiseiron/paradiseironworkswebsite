@@ -150,7 +150,11 @@ export async function POST(request: Request) {
       const path = `${report.id}/${crypto.randomUUID()}-${safeName}`;
       const { error: uploadError } = await supabase.storage
         .from("daily-shop-report-images")
-        .upload(path, photo, { contentType: photo.type, upsert: false });
+        .upload(path, photo, {
+          contentType: photo.type,
+          cacheControl: "31536000",
+          upsert: false,
+        });
       if (uploadError) throw new Error(uploadError.message);
       uploadedPaths.push(path);
 

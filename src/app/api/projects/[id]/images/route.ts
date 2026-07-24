@@ -55,6 +55,9 @@ export async function POST(
 
   if (error) {
     console.error("Project image insert failed:", error);
+    await supabase.storage
+      .from("project-images")
+      .remove(images.map((image) => image.storage_path));
     return NextResponse.json(
       { error: "Unable to save project photos." },
       { status: 500 }
