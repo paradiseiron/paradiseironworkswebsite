@@ -114,6 +114,7 @@ export default function CalendarMonthView({
   projects,
   employees,
   canWrite,
+  initialEditEventId,
 }: {
   month: string;
   currentMonth: string;
@@ -124,10 +125,14 @@ export default function CalendarMonthView({
   projects: ProjectOption[];
   employees: EmployeeOption[];
   canWrite: boolean;
+  initialEditEventId: string;
 }) {
   const router = useRouter();
   const [selected, setSelected] = useState<SelectedItem | null>(null);
-  const [draft, setDraft] = useState<EventDraft | null>(null);
+  const [draft, setDraft] = useState<EventDraft | null>(() => {
+    const event = events.find((item) => item.id === initialEditEventId);
+    return event ? draftFromEvent(event) : null;
+  });
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState("");
   const [eventAddedToast, setEventAddedToast] = useState(0);
@@ -159,19 +164,7 @@ export default function CalendarMonthView({
   function startEditing(event: CalendarEventRecord) {
     setSelected(null);
     setError("");
-    setDraft({
-      id: event.id,
-      eventType: event.event_type,
-      eventDate: event.event_date,
-      windowStart: shortTime(event.window_start),
-      windowEnd: shortTime(event.window_end),
-      projectId: event.project_id || "",
-      manualProjectName: event.manual_project_name || "",
-      notes: event.notes || "",
-      employeeIds: event.calendar_event_employees.map(
-        (assignment) => assignment.employee_id
-      ),
-    });
+    setDraft(draftFromEvent(event));
   }
 
   async function saveEvent(formEvent: React.FormEvent) {
@@ -290,13 +283,13 @@ export default function CalendarMonthView({
           <h2 className="text-lg font-semibold sm:text-xl">{monthTitle}</h2>
           <MonthLink month={shiftMonth(year, monthNumber, 1)} />
         </header>
-        <div className="overflow-x-auto">
-          <div className="min-w-[900px]">
+        <div className="overflow-x-hidden sm:overflow-x-auto">
+          <div className="w-full sm:min-w-[900px]">
             <div className="grid grid-cols-7 border-b border-white/10 bg-black/20">
               {WEEKDAYS.map((weekday) => (
                 <div
                   key={weekday}
-                  className="px-3 py-2 text-center text-xs font-semibold uppercase tracking-wide text-neutral-500"
+                  className="px-0.5 py-2 text-center text-[9px] font-semibold uppercase tracking-wide text-neutral-500 sm:px-3 sm:text-xs"
                 >
                   {weekday}
                 </div>
@@ -311,13 +304,13 @@ export default function CalendarMonthView({
                 return (
                   <div
                     key={date}
-                    className={`min-h-36 border-b border-r border-white/10 p-2 ${
+                    className={`min-h-20 min-w-0 overflow-hidden border-b border-r border-white/10 p-0.5 sm:min-h-36 sm:p-2 ${
                       isCurrentMonth ? "" : "bg-black/20"
                     }`}
                   >
-                    <div className="mb-2 flex items-center justify-between gap-2">
+                    <div className="mb-1 flex items-center justify-between gap-0.5 sm:mb-2 sm:gap-2">
                       <span
-                        className={`flex h-7 w-7 items-center justify-center rounded-full text-sm ${
+                        className={`flex h-5 w-5 items-center justify-center rounded-full text-[10px] sm:h-7 sm:w-7 sm:text-sm ${
                           date === today
                             ? "bg-[#fb5411] font-semibold text-white"
                             : isCurrentMonth
@@ -332,7 +325,7 @@ export default function CalendarMonthView({
                           type="button"
                           onClick={() => startCreating(date)}
                           aria-label={`Add event on ${date}`}
-                          className="rounded p-1 text-neutral-600 transition hover:bg-white/5 hover:text-white"
+                          className="hidden rounded p-1 text-neutral-600 transition hover:bg-white/5 hover:text-white sm:block"
                         >
                           <Plus className="h-3.5 w-3.5" />
                         </button>
@@ -344,6 +337,7 @@ export default function CalendarMonthView({
                           title={SALES_MEETING.title}
                           subtitle={SALES_MEETING.time}
                           color="violet"
+                          mobileHref="/admin/calendar/details/meeting/sales-meeting"
                           onClick={() => setSelected(SALES_MEETING)}
                         />
                       )}
@@ -352,6 +346,7 @@ export default function CalendarMonthView({
                           title={ALL_HANDS.title}
                           subtitle={ALL_HANDS.time}
                           color="violet"
+                          mobileHref="/admin/calendar/details/meeting/all-hands"
                           onClick={() => setSelected(ALL_HANDS)}
                         />
                       )}
@@ -364,6 +359,7 @@ export default function CalendarMonthView({
                             visit.site_visit_window_end
                           )}
                           color="orange"
+                          mobileHref={`/admin/calendar/details/visit/${visit.id}`}
                           onClick={() => setSelected({ kind: "visit", visit })}
                         />
                       ))}
@@ -380,6 +376,7 @@ export default function CalendarMonthView({
                               ? "emerald"
                               : "blue"
                           }
+                          mobileHref={`/admin/calendar/details/event/${event.id}`}
                           onClick={() => setSelected({ kind: "event", event })}
                         />
                       ))}
@@ -432,11 +429,13 @@ function CalendarItem({
   subtitle,
   color,
   onClick,
+  mobileHref,
 }: {
   title: string;
   subtitle?: string;
   color: "violet" | "orange" | "emerald" | "blue";
   onClick: () => void;
+  mobileHref: string;
 }) {
   const colors = {
     violet: "border-violet-400/25 bg-violet-400/10 hover:bg-violet-400/15",
@@ -444,21 +443,34 @@ function CalendarItem({
     emerald: "border-emerald-400/25 bg-emerald-400/10 hover:bg-emerald-400/15",
     blue: "border-blue-400/25 bg-blue-400/10 hover:bg-blue-400/15",
   };
-  return (
-    <button
-      type="button"
-      onClick={onClick}
-      className={`block w-full cursor-pointer rounded-lg border p-2 text-left transition ${colors[color]}`}
-    >
-      <span className="block truncate text-xs font-semibold text-white">
+  const content = (
+    <>
+      <span className="block truncate text-[8px] font-semibold leading-tight text-white sm:text-xs">
         {title}
       </span>
       {subtitle && (
-        <span className="mt-0.5 block truncate text-[10px] text-neutral-300">
+        <span className="mt-0.5 hidden truncate text-[10px] text-neutral-300 sm:block">
           {subtitle}
         </span>
       )}
+    </>
+  );
+  return (
+    <>
+      <Link
+        href={mobileHref}
+        className={`block w-full cursor-pointer overflow-hidden rounded border p-0.5 text-left transition sm:hidden ${colors[color]}`}
+      >
+        {content}
+      </Link>
+      <button
+      type="button"
+      onClick={onClick}
+      className={`hidden w-full cursor-pointer rounded-lg border p-2 text-left transition sm:block ${colors[color]}`}
+    >
+      {content}
     </button>
+    </>
   );
 }
 
@@ -872,6 +884,22 @@ function shiftMonth(year: number, month: number, offset: number) {
 
 function shortTime(value?: string | null) {
   return value?.match(/^\d{2}:\d{2}/)?.[0] || "";
+}
+
+function draftFromEvent(event: CalendarEventRecord): EventDraft {
+  return {
+    id: event.id,
+    eventType: event.event_type,
+    eventDate: event.event_date,
+    windowStart: shortTime(event.window_start),
+    windowEnd: shortTime(event.window_end),
+    projectId: event.project_id || "",
+    manualProjectName: event.manual_project_name || "",
+    notes: event.notes || "",
+    employeeIds: event.calendar_event_employees.map(
+      (assignment) => assignment.employee_id
+    ),
+  };
 }
 
 function formatTimeWindow(start?: string | null, end?: string | null) {

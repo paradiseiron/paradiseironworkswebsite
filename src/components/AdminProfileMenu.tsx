@@ -11,11 +11,13 @@ export default function AdminProfileMenu({
   theme,
   onToggleTheme,
   mobile = false,
+  header = false,
 }: {
   email?: string;
   theme: "dark" | "light";
   onToggleTheme: () => void;
   mobile?: boolean;
+  header?: boolean;
 }) {
   const router = useRouter();
   const menuRef = useRef<HTMLDivElement>(null);
@@ -56,7 +58,9 @@ export default function AdminProfileMenu({
         <div
           className={`admin-profile-popover w-64 rounded-2xl border border-white/10 bg-neutral-900 p-2 shadow-2xl ${
             mobile
-              ? "fixed bottom-20 right-3"
+              ? header
+                ? "fixed right-3 top-16"
+                : "fixed bottom-20 right-3"
               : "absolute bottom-0 left-16"
           }`}
         >
@@ -126,7 +130,9 @@ export default function AdminProfileMenu({
         aria-expanded={open}
         className={`flex items-center justify-center transition ${
           mobile
-            ? "min-w-20 flex-col gap-1 rounded-xl px-3 py-1.5 text-xs"
+            ? header
+              ? "h-11 w-11 rounded-xl border border-white/10 bg-white/[0.03]"
+              : "min-w-20 flex-col gap-1 rounded-xl px-3 py-1.5 text-xs"
             : "h-12 w-12 rounded-2xl border"
         } ${
           open
@@ -139,7 +145,7 @@ export default function AdminProfileMenu({
         }`}
       >
         <UserRound className={mobile ? "h-5 w-5" : "h-6 w-6"} aria-hidden="true" />
-        {mobile && <span>Account</span>}
+        {mobile && !header && <span>Account</span>}
       </button>
     </div>
   );

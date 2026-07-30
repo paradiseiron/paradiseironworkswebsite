@@ -236,7 +236,16 @@ export default function AdminShell({
       <div className="md:ml-20 print:ml-0">
         <header className="admin-header sticky top-0 z-40 border-b border-white/10 bg-neutral-950 print:hidden md:bg-neutral-950/80 md:backdrop-blur-xl">
           <div className="flex min-h-16 flex-wrap items-center justify-between gap-3 px-4 py-3 sm:px-6 md:px-8 md:py-4">
-            <div className="shrink-0">
+            <div className="flex shrink-0 items-center gap-2">
+              <div className="md:hidden">
+                <AdminProfileMenu
+                  email={userEmail}
+                  theme={theme}
+                  onToggleTheme={toggleTheme}
+                  mobile
+                  header
+                />
+              </div>
               {isNewProjectPage && (
                 <ReliableMobileLink
                   href="/admin/projects"
@@ -437,12 +446,6 @@ export default function AdminShell({
         >
           <Hammer className="h-5 w-5" aria-hidden="true" />
         </MobileNavLink>
-        <AdminProfileMenu
-          email={userEmail}
-          theme={theme}
-          onToggleTheme={toggleTheme}
-          mobile
-        />
       </nav>
     </div>
   );
@@ -464,7 +467,7 @@ function MobileNavLink({
   return (
     <Link
       href={href}
-      className={`relative flex min-w-20 flex-col items-center gap-1 rounded-xl px-3 py-1.5 text-xs transition ${
+      className={`relative flex min-h-12 min-w-16 flex-col items-center justify-center gap-1 rounded-xl px-2 py-1.5 text-[11px] transition sm:min-w-20 sm:px-3 sm:text-xs ${
         active ? "text-[#fb5411]" : "text-neutral-400 hover:text-white"
       }`}
     >

@@ -17,7 +17,7 @@ export const revalidate = 0;
 export default async function CalendarPage({
   searchParams,
 }: {
-  searchParams: Promise<{ month?: string }>;
+  searchParams: Promise<{ month?: string; edit?: string }>;
 }) {
   const user = await requireAuthenticatedUser();
   const role = await requireAssignedRole(user.id);
@@ -133,6 +133,7 @@ export default async function CalendarPage({
         role === "estimator" ||
         role === "operations_foreman"
       }
+      initialEditEventId={params.edit || ""}
     />
   );
 }
