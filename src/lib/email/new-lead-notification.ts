@@ -8,6 +8,7 @@ type NewLeadNotification = {
   zip: string;
   projectCategory: string;
   projectType: string;
+  engineeringServices: string | null;
   comments: string | null;
 };
 
@@ -81,6 +82,7 @@ export async function sendNewLeadNotification(lead: NewLeadNotification) {
               <tr><th style="padding:8px;text-align:left;border-bottom:1px solid #ddd">ZIP code</th><td style="padding:8px;border-bottom:1px solid #ddd">${escapeHtml(lead.zip)}</td></tr>
               <tr><th style="padding:8px;text-align:left;border-bottom:1px solid #ddd">Category</th><td style="padding:8px;border-bottom:1px solid #ddd">${escapeHtml(lead.projectCategory)}</td></tr>
               <tr><th style="padding:8px;text-align:left;border-bottom:1px solid #ddd">Project type</th><td style="padding:8px;border-bottom:1px solid #ddd">${escapeHtml(lead.projectType)}</td></tr>
+              <tr><th style="padding:8px;text-align:left;border-bottom:1px solid #ddd">Engineering services</th><td style="padding:8px;border-bottom:1px solid #ddd">${escapeHtml(lead.engineeringServices || "Not required")}</td></tr>
               <tr><th style="padding:8px;text-align:left;vertical-align:top">Comments</th><td style="padding:8px;white-space:pre-wrap">${escapeHtml(comments)}</td></tr>
             </tbody>
           </table>
@@ -100,6 +102,7 @@ export async function sendNewLeadNotification(lead: NewLeadNotification) {
         `ZIP code: ${lead.zip}`,
         `Category: ${lead.projectCategory}`,
         `Project type: ${lead.projectType}`,
+        `Engineering services: ${lead.engineeringServices || "Not required"}`,
         `Comments: ${comments}`,
         "",
         `Log in and review this lead: ${loginUrl}`,

@@ -6,7 +6,7 @@ import Link from "next/link";
 import { usePathname, useSearchParams } from "next/navigation";
 import {
   ArrowLeft,
-  Download,
+  CalendarDays,
   Hammer,
   LayoutDashboard,
   ClipboardList,
@@ -16,15 +16,18 @@ import DeleteProjectButton from "@/components/DeleteProjectButton";
 import AdminProfileMenu from "@/components/AdminProfileMenu";
 import ReliableMobileLink from "@/components/ReliableMobileLink";
 import type { UserRole } from "@/lib/roles";
+import PdfFileAction from "@/components/PdfFileAction";
 
 export default function AdminShell({
   children,
   userEmail,
   userRole,
+  projectNotificationCount = 0,
 }: {
   children: React.ReactNode;
   userEmail?: string;
   userRole: UserRole;
+  projectNotificationCount?: number;
 }) {
   const [theme, setTheme] = useState<"dark" | "light">("dark");
   const [keyboardOpen, setKeyboardOpen] = useState(false);
@@ -36,6 +39,7 @@ export default function AdminShell({
 
   const isDashboardPage = pathname === "/admin";
   const isProjectsPage = pathname === "/admin/projects";
+  const isCalendarPage = pathname === "/admin/calendar";
   const isDailyShopReportPage = pathname.startsWith(
     "/admin/daily-shop-report"
   );
@@ -207,9 +211,17 @@ export default function AdminShell({
             <ClipboardList className="h-6 w-6" aria-hidden="true" />
           </NavIcon>
           <NavIcon
+            href="/admin/calendar"
+            active={isCalendarPage}
+            label="Calendar"
+          >
+            <CalendarDays className="h-6 w-6" aria-hidden="true" />
+          </NavIcon>
+          <NavIcon
             href="/admin/projects"
             active={pathname.startsWith("/admin/projects")}
             label="Projects"
+            badgeCount={projectNotificationCount}
           >
             <Hammer className="h-6 w-6" aria-hidden="true" />
           </NavIcon>
@@ -367,15 +379,12 @@ export default function AdminShell({
       Print
     </button>
 
-    <Link
-  href={`${pathname}/pdf`}
-  aria-label="Download PDF"
-  title="Download PDF"
-  className="inline-flex h-10 items-center justify-center gap-2 rounded-xl bg-[#fb5411] px-3 text-sm font-semibold text-white hover:bg-[#e64d0f] sm:px-5"
->
-  <Download className="h-4 w-4" aria-hidden="true" />
-  <span className="hidden sm:inline">Download PDF</span>
-</Link>
+    <PdfFileAction
+      href={`${pathname}/pdf`}
+      label="Download PDF"
+      compactLabel="PDF"
+      className="rounded-xl bg-[#fb5411] px-3 text-sm font-semibold text-white hover:bg-[#e64d0f] sm:px-5"
+    />
   </>
 )}
             </div>
@@ -414,9 +423,17 @@ export default function AdminShell({
           <ClipboardList className="h-5 w-5" aria-hidden="true" />
         </MobileNavLink>
         <MobileNavLink
+          href="/admin/calendar"
+          active={isCalendarPage}
+          label="Calendar"
+        >
+          <CalendarDays className="h-5 w-5" aria-hidden="true" />
+        </MobileNavLink>
+        <MobileNavLink
           href="/admin/projects"
           active={pathname.startsWith("/admin/projects")}
           label="Projects"
+          badgeCount={projectNotificationCount}
         >
           <Hammer className="h-5 w-5" aria-hidden="true" />
         </MobileNavLink>
@@ -436,20 +453,23 @@ function MobileNavLink({
   active,
   label,
   children,
+  badgeCount = 0,
 }: {
   href: string;
   active?: boolean;
   label: string;
   children: React.ReactNode;
+  badgeCount?: number;
 }) {
   return (
     <Link
       href={href}
-      className={`flex min-w-20 flex-col items-center gap-1 rounded-xl px-3 py-1.5 text-xs transition ${
+      className={`relative flex min-w-20 flex-col items-center gap-1 rounded-xl px-3 py-1.5 text-xs transition ${
         active ? "text-[#fb5411]" : "text-neutral-400 hover:text-white"
       }`}
     >
       {children}
+      {badgeCount > 0 && <NotificationBadge count={badgeCount} mobile />}
       <span>{label}</span>
     </Link>
   );
@@ -460,23 +480,45 @@ function NavIcon({
   active,
   label,
   children,
+  badgeCount = 0,
 }: {
   href: string;
   active?: boolean;
   label: string;
   children: React.ReactNode;
+  badgeCount?: number;
 }) {
   return (
     <Link
       href={href}
       title={label}
-      className={`group flex h-12 w-12 items-center justify-center rounded-2xl border transition ${
+      className={`group relative flex h-12 w-12 items-center justify-center rounded-2xl border transition ${
         active
           ? "border-[#fb5411]/40 bg-[#fb5411]/15"
           : "border-white/10 bg-white/[0.03] hover:bg-white/10"
       }`}
     >
       {children}
+      {badgeCount > 0 && <NotificationBadge count={badgeCount} />}
     </Link>
+  );
+}
+
+function NotificationBadge({
+  count,
+  mobile = false,
+}: {
+  count: number;
+  mobile?: boolean;
+}) {
+  return (
+    <span
+      aria-label={`${count} new notification${count === 1 ? "" : "s"}`}
+      className={`absolute inline-flex min-w-5 items-center justify-center rounded-full bg-red-500 px-1 text-[10px] font-bold leading-5 text-white shadow ${
+        mobile ? "right-3 top-0" : "-right-1.5 -top-1.5"
+      }`}
+    >
+      {count > 99 ? "99+" : count}
+    </span>
   );
 }

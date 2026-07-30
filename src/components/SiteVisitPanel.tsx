@@ -2,7 +2,15 @@
 
 import { useState } from "react";
 import { useRouter } from "next/navigation";
-import { Camera, ImagePlus, Mic, Pencil, Save, Trash2 } from "lucide-react";
+import {
+  Camera,
+  ChevronDown,
+  ImagePlus,
+  Mic,
+  Pencil,
+  Save,
+  Trash2,
+} from "lucide-react";
 import { createClient } from "@/lib/supabase/client";
 import type { UserRole } from "@/lib/roles";
 import SelectedImagePreview from "@/components/SelectedImagePreview";
@@ -457,18 +465,24 @@ export default function SiteVisitPanel({
           />
           <label className="block text-sm text-neutral-300">
             <span className="mb-2 block">Assign estimator</span>
-            <select
-              name="estimator_id"
-              required
-              defaultValue={assignedEstimatorId}
-              className="h-11 w-full rounded-xl border border-white/10 bg-neutral-900 px-4 text-white outline-none focus:border-[#fb5411]"
-            >
-              {estimators.map((estimator) => (
-                <option key={estimator.id} value={estimator.id}>
-                  {estimator.name}
-                </option>
-              ))}
-            </select>
+            <span className="relative block">
+              <select
+                name="estimator_id"
+                required
+                defaultValue={assignedEstimatorId}
+                className="h-11 w-full appearance-none rounded-xl border border-white/10 bg-neutral-900 py-0 pl-4 pr-12 text-white outline-none focus:border-[#fb5411]"
+              >
+                {estimators.map((estimator) => (
+                  <option key={estimator.id} value={estimator.id}>
+                    {estimator.name}
+                  </option>
+                ))}
+              </select>
+              <ChevronDown
+                className="pointer-events-none absolute right-4 top-1/2 h-4 w-4 -translate-y-1/2 text-neutral-500"
+                aria-hidden="true"
+              />
+            </span>
           </label>
           <SiteTextArea
             label="Instructions for estimator"

@@ -15,6 +15,7 @@ type ProjectUpdateBody = {
   zip_code?: unknown;
   project_category?: unknown;
   project_type?: unknown;
+  engineering_services?: unknown;
   lead_source?: unknown;
   priority?: unknown;
   assigned_to?: unknown;
@@ -60,6 +61,7 @@ export async function PATCH(
       zip_code: stringValue(body.zip_code),
       project_category: stringValue(body.project_category),
       project_type: stringValue(body.project_type),
+      engineering_services: stringValue(body.engineering_services) || null,
       lead_source: stringValue(body.lead_source),
       priority: stringValue(body.priority, "normal"),
       assigned_to: stringValue(body.assigned_to),
@@ -104,7 +106,7 @@ export async function DELETE(
       .maybeSingle(),
     supabase
       .from("project_images")
-      .select("storage_path")
+      .select("storage_path, storage_bucket")
       .eq("project_id", id),
   ]);
 
@@ -113,7 +115,15 @@ export async function DELETE(
   }
 
   const projectImagePaths =
-    projectImages?.map((image) => image.storage_path).filter(Boolean) || [];
+    projectImages
+      ?.filter((image) => (image.storage_bucket || "project-images") === "project-images")
+      .map((image) => image.storage_path)
+      .filter(Boolean) || [];
+  const quoteAttachmentPaths =
+    projectImages
+      ?.filter((image) => image.storage_bucket === "quote-attachments")
+      .map((image) => image.storage_path)
+      .filter(Boolean) || [];
   const siteVisitImagePaths = Array.isArray(project.site_visit_image_paths)
     ? project.site_visit_image_paths.filter(
         (path: unknown): path is string => typeof path === "string"
@@ -123,6 +133,9 @@ export async function DELETE(
   const cleanupResults = await Promise.all([
     projectImagePaths.length
       ? supabase.storage.from("project-images").remove(projectImagePaths)
+      : Promise.resolve({ error: null }),
+    quoteAttachmentPaths.length
+      ? supabase.storage.from("quote-attachments").remove(quoteAttachmentPaths)
       : Promise.resolve({ error: null }),
     siteVisitImagePaths.length
       ? supabase.storage.from("site-visit-images").remove(siteVisitImagePaths)

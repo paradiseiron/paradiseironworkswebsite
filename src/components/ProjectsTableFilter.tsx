@@ -233,12 +233,12 @@ function FilterSelect({
     <div className="relative">
       <select
         {...props}
-        className="h-10 w-full appearance-none rounded-xl border border-white/10 bg-neutral-900 py-0 pl-3 pr-10 text-sm capitalize text-white outline-none focus:border-[#fb5411] lg:max-w-52"
+        className="h-10 w-full appearance-none rounded-xl border border-white/10 bg-neutral-900 py-0 pl-3 pr-12 text-sm capitalize text-white outline-none focus:border-[#fb5411] lg:max-w-52"
       >
         {children}
       </select>
       <ChevronDown
-        className="pointer-events-none absolute right-3 top-1/2 h-4 w-4 -translate-y-1/2 text-neutral-500"
+        className="pointer-events-none absolute right-4 top-1/2 h-4 w-4 -translate-y-1/2 text-neutral-500"
         aria-hidden="true"
       />
     </div>

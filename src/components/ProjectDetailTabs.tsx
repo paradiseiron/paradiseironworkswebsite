@@ -5,7 +5,6 @@ import Link from "next/link";
 import { useSearchParams } from "next/navigation";
 import {
   CheckCircle2,
-  Download,
   FileText,
   Phone,
   Plus,
@@ -30,6 +29,7 @@ import {
   type ProposalPricingLineItem,
 } from "@/lib/proposal-pricing";
 import { getInvoiceLineItems, getInvoiceSummary } from "@/lib/invoice";
+import PdfFileAction from "@/components/PdfFileAction";
 
 type ProjectTab =
   | "overview"
@@ -50,6 +50,8 @@ type ProjectRecord = {
   state?: string | null;
   zip_code?: string | null;
   project_category?: string | null;
+  project_type?: string | null;
+  engineering_services?: string | null;
   status?: string | null;
   notes?: string | null;
   received_at?: string | null;
@@ -361,6 +363,11 @@ export default function ProjectDetailTabs({
               />
               <Detail label="Email" value={project.email} />
               <Detail label="Source" value={project.lead_source} />
+              <Detail label="Project Type" value={project.project_type} />
+              <Detail
+                label="Engineering Services"
+                value={project.engineering_services || "Not required"}
+              />
               <Detail label="Address" value={project.project_address} />
               <Detail label="City" value={project.city} />
               <Detail label="State" value={project.state} />
@@ -837,13 +844,11 @@ function InvoicePanel({ project }: { project: ProjectRecord }) {
           <span>Preview Invoice</span>
         </Link>
 
-        <Link
+        <PdfFileAction
           href={`/admin/projects/${project.id}/invoice/pdf`}
-          className="inline-flex h-11 items-center justify-center gap-2 rounded-xl border border-white/10 px-4 text-sm font-semibold text-neutral-200 transition hover:bg-white/5 hover:text-white"
-        >
-          <Download className="h-4 w-4" aria-hidden="true" />
-          <span>Download PDF</span>
-        </Link>
+          label="Download PDF"
+          className="h-11 rounded-xl border border-white/10 px-4 text-sm font-semibold text-neutral-200 transition hover:bg-white/5 hover:text-white"
+        />
       </div>
     </div>
   );
@@ -888,13 +893,11 @@ function ProposalReadOnlyPanel({
             <FileText className="h-4 w-4" aria-hidden="true" />
             <span>Preview Proposal</span>
           </Link>
-          <Link
+          <PdfFileAction
             href={`/admin/projects/${project.id}/proposal/pdf`}
-            className="inline-flex h-11 items-center justify-center gap-2 rounded-xl border border-white/10 px-4 text-sm font-semibold text-neutral-200 transition hover:bg-white/5 hover:text-white"
-          >
-            <Download className="h-4 w-4" aria-hidden="true" />
-            <span>Download PDF</span>
-          </Link>
+            label="Download PDF"
+            className="h-11 rounded-xl border border-white/10 px-4 text-sm font-semibold text-neutral-200 transition hover:bg-white/5 hover:text-white"
+          />
         </div>
       </div>
 

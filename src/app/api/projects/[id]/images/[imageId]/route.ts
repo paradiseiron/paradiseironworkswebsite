@@ -15,7 +15,7 @@ export async function DELETE(
 
   const { data: image, error: imageError } = await supabase
     .from("project_images")
-    .select("id, storage_path")
+    .select("id, storage_path, storage_bucket")
     .eq("id", imageId)
     .eq("project_id", id)
     .maybeSingle();
@@ -28,7 +28,7 @@ export async function DELETE(
   }
 
   const { error: storageError } = await supabase.storage
-    .from("project-images")
+    .from(image.storage_bucket || "project-images")
     .remove([image.storage_path]);
   if (storageError) {
     return NextResponse.json(

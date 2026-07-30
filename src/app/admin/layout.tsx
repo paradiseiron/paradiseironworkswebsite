@@ -4,6 +4,7 @@ import AdminPwa from "@/components/AdminPwa";
 import AdminPushNotifications from "@/components/AdminPushNotifications";
 import { requireAuthenticatedUser } from "@/lib/auth";
 import { requireAssignedRole } from "@/lib/roles";
+import { createAdminClient } from "@/lib/supabase/admin";
 
 export const metadata: Metadata = {
   title: "Admin",
@@ -102,9 +103,31 @@ export default async function AdminLayout({
 }) {
   const user = await requireAuthenticatedUser();
   const role = await requireAssignedRole(user.id);
+  const supabase = createAdminClient();
+  let projectNotificationCount = 0;
+
+  if (role === "admin") {
+    const { count } = await supabase
+      .from("projects")
+      .select("id", { count: "exact", head: true })
+      .eq("lead_source", "Website")
+      .is("website_lead_reviewed_at", null);
+    projectNotificationCount = count || 0;
+  } else if (role === "estimator" || role === "operations_foreman") {
+    const { count } = await supabase
+      .from("projects")
+      .select("id", { count: "exact", head: true })
+      .eq("site_visit_status", "ready")
+      .eq("site_visit_assigned_to", user.id);
+    projectNotificationCount = count || 0;
+  }
 
   return (
-    <AdminShell userEmail={user.email} userRole={role}>
+    <AdminShell
+      userEmail={user.email}
+      userRole={role}
+      projectNotificationCount={projectNotificationCount}
+    >
       {children}
       <AdminPwa />
       <AdminPushNotifications

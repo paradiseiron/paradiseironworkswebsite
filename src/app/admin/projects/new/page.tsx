@@ -3,6 +3,10 @@ import NewProjectPhotoFields from "@/components/NewProjectPhotoFields";
 import { createAdminClient } from "@/lib/supabase/admin";
 import { requireAuthenticatedUser } from "@/lib/auth";
 import { requireOperationalRole } from "@/lib/roles";
+import {
+  ENGINEERING_SERVICES_OPTIONS,
+  PROJECT_TYPES,
+} from "@/lib/project-options";
 
 export const dynamic = "force-dynamic";
 export const revalidate = 0;
@@ -26,6 +30,9 @@ async function createProject(formData: FormData) {
 
   const project_category = String(formData.get("project_category") || "");
   const project_type = String(formData.get("project_type") || "");
+  const engineering_services = String(
+    formData.get("engineering_services") || ""
+  );
   const lead_source = String(formData.get("lead_source") || "");
   const priority = String(formData.get("priority") || "normal");
   const notes = String(formData.get("notes") || "");
@@ -68,6 +75,7 @@ async function createProject(formData: FormData) {
       zip_code,
       project_category,
       project_type,
+      engineering_services: engineering_services || null,
       lead_source,
       priority,
       status: "lead",
@@ -243,42 +251,25 @@ export default async function NewProjectPage() {
                   value: "",
                   label: "Select project type",
                 },
+                ...PROJECT_TYPES.map((option) => ({
+                  value: option,
+                  label: option,
+                })),
+              ]}
+            />
+
+            <SelectField
+              label="Engineering Services"
+              name="engineering_services"
+              options={[
                 {
-                  value: "Exterior Railing",
-                  label: "Exterior Railing",
+                  value: "",
+                  label: "Not required",
                 },
-                {
-                  value: "Interior Railing",
-                  label: "Interior Railing",
-                },
-                {
-                  value: "Gate",
-                  label: "Gate",
-                },
-                {
-                  value: "Fence",
-                  label: "Fence",
-                },
-                {
-                  value: "Storm Door",
-                  label: "Storm Door",
-                },
-                {
-                  value: "Structural Steel",
-                  label: "Structural Steel",
-                },
-                {
-                  value: "Commercial Metalwork",
-                  label: "Commercial Metalwork",
-                },
-                {
-                  value: "Repair / Restoration",
-                  label: "Repair / Restoration",
-                },
-                {
-                  value: "Other",
-                  label: "Other",
-                },
+                ...ENGINEERING_SERVICES_OPTIONS.map((option) => ({
+                  value: option,
+                  label: option,
+                })),
               ]}
             />
 

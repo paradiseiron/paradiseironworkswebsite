@@ -2,6 +2,10 @@
 
 import { useRouter } from "next/navigation";
 import { useState } from "react";
+import {
+  ENGINEERING_SERVICES_OPTIONS,
+  PROJECT_TYPES,
+} from "@/lib/project-options";
 
 type EditableProject = {
   id: string;
@@ -15,6 +19,7 @@ type EditableProject = {
   zip_code?: string | null;
   project_category?: string | null;
   project_type?: string | null;
+  engineering_services?: string | null;
   lead_source?: string | null;
   priority?: string | null;
   assigned_to?: string | null;
@@ -130,10 +135,23 @@ export default function EditProjectForm({
             ]}
           />
 
-          <Field
+          <Select
             label="Project Type"
             name="project_type"
             defaultValue={project.project_type}
+            options={PROJECT_TYPES.map((option) => [option, option])}
+          />
+
+          <Select
+            label="Engineering Services"
+            name="engineering_services"
+            defaultValue={project.engineering_services}
+            options={[
+              ["", "Not required"],
+              ...ENGINEERING_SERVICES_OPTIONS.map(
+                (option): [string, string] => [option, option]
+              ),
+            ]}
           />
 
           <Field

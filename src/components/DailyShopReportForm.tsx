@@ -402,16 +402,18 @@ export default function DailyShopReportForm({
   }
 }
 
-function ProjectCombobox({
+export function ProjectCombobox({
   projects,
   value,
   manualValue,
   onChange,
+  required = false,
 }: {
   projects: ProjectOption[];
   value: string;
   manualValue: string;
   onChange: (projectId: string, manualProjectName: string) => void;
+  required?: boolean;
 }) {
   const selected = projects.find((project) => project.id === value);
   const comboboxRef = useRef<HTMLDivElement>(null);
@@ -450,7 +452,7 @@ function ProjectCombobox({
     return (
       <label className="text-sm text-neutral-300">
         <span className="mb-2 flex items-center justify-between gap-3">
-          Manual project name
+          Manual project name{required ? " *" : ""}
           <button
             type="button"
             onClick={() => onChange("", "")}
@@ -471,7 +473,7 @@ function ProjectCombobox({
 
   return (
     <div ref={comboboxRef} className="relative text-sm text-neutral-300">
-      <span className="mb-2 block">Project</span>
+      <span className="mb-2 block">Project{required ? " *" : ""}</span>
       <button
         type="button"
         onClick={() => setOpen((current) => !current)}
@@ -533,29 +535,38 @@ function ProjectCombobox({
   );
 }
 
-function TimeSelect({
+export function TimeSelect({
   label,
   value,
   onChange,
+  allowEmpty = false,
 }: {
   label: string;
   value: string;
   onChange: (value: string) => void;
+  allowEmpty?: boolean;
 }) {
   return (
     <label className="text-sm text-neutral-300">
       <span className="mb-2 block">{label}</span>
-      <select
-        value={value}
-        onChange={(event) => onChange(event.target.value)}
-        className="h-11 w-full rounded-xl border border-white/10 bg-neutral-900 px-3 text-white outline-none focus:border-[#fb5411]"
-      >
-        {TIME_OPTIONS.map((option) => (
-          <option key={option.value} value={option.value}>
-            {option.label}
-          </option>
-        ))}
-      </select>
+      <span className="relative block">
+        <select
+          value={value}
+          onChange={(event) => onChange(event.target.value)}
+          className="h-11 w-full appearance-none rounded-xl border border-white/10 bg-neutral-900 py-0 pl-3 pr-12 text-white outline-none focus:border-[#fb5411]"
+        >
+          {allowEmpty && <option value="">Not specified</option>}
+          {TIME_OPTIONS.map((option) => (
+            <option key={option.value} value={option.value}>
+              {option.label}
+            </option>
+          ))}
+        </select>
+        <ChevronDown
+          className="pointer-events-none absolute right-4 top-1/2 h-4 w-4 -translate-y-1/2 text-neutral-500"
+          aria-hidden="true"
+        />
+      </span>
     </label>
   );
 }

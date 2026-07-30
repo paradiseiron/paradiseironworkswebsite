@@ -41,14 +41,14 @@ export default function DashboardDateFilter({
             onChange={(event) =>
               setSelectedPeriod(event.target.value as Period)
             }
-            className="h-10 w-full appearance-none rounded-xl border border-white/10 bg-neutral-900 py-0 pl-3 pr-10 text-sm text-white outline-none focus:border-[#fb5411]"
+            className="h-10 w-full appearance-none rounded-xl border border-white/10 bg-neutral-900 py-0 pl-3 pr-12 text-sm text-white outline-none focus:border-[#fb5411]"
           >
             <option value="all">All time</option>
             <option value="month">By month</option>
             <option value="range">Date range</option>
           </select>
           <ChevronDown
-            className="pointer-events-none absolute right-3 top-1/2 h-4 w-4 -translate-y-1/2 text-neutral-500"
+            className="pointer-events-none absolute right-4 top-1/2 h-4 w-4 -translate-y-1/2 text-neutral-500"
             aria-hidden="true"
           />
         </div>
@@ -68,7 +68,7 @@ export default function DashboardDateFilter({
               name="month"
               required
               defaultValue={month}
-              className="h-10 w-full appearance-none rounded-xl border border-white/10 bg-neutral-900 py-0 pl-3 pr-10 text-sm text-white outline-none focus:border-[#fb5411]"
+              className="h-10 w-full appearance-none rounded-xl border border-white/10 bg-neutral-900 py-0 pl-3 pr-12 text-sm text-white outline-none focus:border-[#fb5411]"
             >
               {availableMonths.map((availableMonth) => (
                 <option key={availableMonth} value={availableMonth}>
@@ -77,7 +77,7 @@ export default function DashboardDateFilter({
               ))}
             </select>
             <ChevronDown
-              className="pointer-events-none absolute right-3 top-1/2 h-4 w-4 -translate-y-1/2 text-neutral-500"
+              className="pointer-events-none absolute right-4 top-1/2 h-4 w-4 -translate-y-1/2 text-neutral-500"
               aria-hidden="true"
             />
           </div>

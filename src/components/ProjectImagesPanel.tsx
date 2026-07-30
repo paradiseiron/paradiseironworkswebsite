@@ -2,7 +2,7 @@
 
 import { useState } from "react";
 import { useRouter } from "next/navigation";
-import { Camera, ImagePlus, Trash2 } from "lucide-react";
+import { Camera, FileText, ImagePlus, Trash2 } from "lucide-react";
 import { createClient } from "@/lib/supabase/client";
 import SelectedImagePreview from "@/components/SelectedImagePreview";
 import { prepareImageInput } from "@/lib/image-compression";
@@ -13,6 +13,7 @@ export type ProjectImage = {
   url: string;
   thumbnailUrl?: string;
   fileName?: string | null;
+  contentType?: string | null;
   createdAt?: string | null;
 };
 
@@ -145,9 +146,9 @@ export default function ProjectImagesPanel({
     <section className="rounded-2xl border border-white/10 bg-white/[0.03] p-4 sm:p-6 lg:col-span-3">
       <div className="flex flex-wrap items-start justify-between gap-4">
         <div>
-          <h2 className="text-xl font-semibold">Project Photos</h2>
+          <h2 className="text-xl font-semibold">Project Files</h2>
           <p className="mt-1 text-sm text-neutral-400">
-            Upload and review project reference photos.
+            Upload and review project photos, drawings, and plans.
           </p>
         </div>
 
@@ -172,6 +173,12 @@ export default function ProjectImagesPanel({
       </div>
 
       {message && <p className="mt-4 text-sm text-amber-200">{message}</p>}
+      {images.some((image) => image.contentType === "application/pdf") && (
+        <p className="mt-4 rounded-lg border border-amber-400/20 bg-amber-400/10 px-3 py-2 text-xs text-amber-100">
+          Customer-supplied documents are untrusted. Confirm the sender and use
+          normal endpoint protection before opening.
+        </p>
+      )}
 
       <div className="mt-4">
         <SelectedImagePreview
@@ -188,12 +195,20 @@ export default function ProjectImagesPanel({
               className="group relative overflow-hidden rounded-xl border border-white/10 bg-neutral-900"
             >
               <a href={image.url} target="_blank" rel="noreferrer" className="block">
-                {/* eslint-disable-next-line @next/next/no-img-element */}
-                <img
-                  src={image.thumbnailUrl || image.url}
-                  alt={image.fileName || "Project photo"}
-                  className="aspect-square w-full object-cover transition group-hover:scale-105"
-                />
+                {image.contentType === "application/pdf" ||
+                image.contentType === "image/heic" ||
+                image.contentType === "image/heif" ? (
+                  <span className="flex aspect-square w-full items-center justify-center bg-white/[0.03] text-neutral-400">
+                    <FileText className="h-12 w-12" aria-hidden="true" />
+                  </span>
+                ) : (
+                  /* eslint-disable-next-line @next/next/no-img-element */
+                  <img
+                    src={image.thumbnailUrl || image.url}
+                    alt={image.fileName || "Project file"}
+                    className="aspect-square w-full object-cover transition group-hover:scale-105"
+                  />
+                )}
                 <span className="block truncate px-3 py-2 text-xs text-neutral-400">
                   {image.fileName || "Project photo"}
                 </span>
@@ -215,7 +230,7 @@ export default function ProjectImagesPanel({
         </div>
       ) : (
         <p className="mt-6 rounded-xl border border-dashed border-white/10 px-4 py-6 text-sm text-neutral-400">
-          No project photos uploaded yet.
+          No project files uploaded yet.
         </p>
       )}
     </section>

@@ -248,7 +248,7 @@ export default async function ProjectDetailPage({
       .order("role", { ascending: true }),
     supabase
       .from("project_images")
-      .select("id, storage_path, file_name, created_at")
+      .select("id, storage_path, storage_bucket, file_name, content_type, created_at")
       .eq("project_id", id)
       .order("created_at", { ascending: false }),
     createSignedImageUrls(supabase, "site-visit-images", imagePaths),
@@ -289,23 +289,43 @@ export default async function ProjectDetailPage({
     );
   }
 
-  const projectImagePaths =
-    projectImageRecords?.map((image) => image.storage_path).filter(Boolean) ||
-    [];
-  const signedProjectImages = await createSignedImageUrls(
-    supabase,
-    "project-images",
-    projectImagePaths
+  const storageBuckets = ["project-images", "quote-attachments"] as const;
+  const signedAssets = (
+    await Promise.all(
+      storageBuckets.map(async (bucket) => ({
+        bucket,
+        assets: await createSignedImageUrls(
+          supabase,
+          bucket,
+          projectImageRecords
+            ?.filter(
+              (image) => (image.storage_bucket || "project-images") === bucket
+            )
+            .map((image) => image.storage_path)
+            .filter(Boolean) || []
+        ),
+      }))
+    )
+  ).flatMap(({ bucket, assets }) =>
+    assets.map((asset) => ({ ...asset, bucket }))
   );
   const projectImages: ProjectImage[] =
-    projectImageRecords?.map((image, index) => ({
+    projectImageRecords?.map((image) => {
+      const bucket = image.storage_bucket || "project-images";
+      const signedAsset = signedAssets.find(
+        (asset) =>
+          asset.bucket === bucket && asset.path === image.storage_path
+      );
+      return {
       id: String(image.id),
       storagePath: image.storage_path,
-      url: signedProjectImages[index]?.url || "",
-      thumbnailUrl: signedProjectImages[index]?.thumbnailUrl || "",
+      url: signedAsset?.url || "",
+      thumbnailUrl: signedAsset?.thumbnailUrl || "",
       fileName: image.file_name,
+      contentType: image.content_type,
       createdAt: image.created_at,
-    })) || [];
+      };
+    }) || [];
 
   const isNewWebsiteLead =
     project.lead_source === "Website" && !project.website_lead_reviewed_at;

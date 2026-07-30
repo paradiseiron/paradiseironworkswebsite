@@ -1,6 +1,17 @@
 "use client";
 
-import { useMemo, useState } from "react";
+import { useMemo, useRef, useState } from "react";
+import {
+  ENGINEERING_SERVICES_OPTIONS,
+  PROJECT_TYPES,
+  requiresEngineeringServices,
+} from "@/lib/project-options";
+import {
+  isAllowedQuoteAttachment,
+  QUOTE_ATTACHMENT_MAX_FILES,
+  QUOTE_ATTACHMENT_MAX_FILE_BYTES,
+  QUOTE_ATTACHMENT_MAX_TOTAL_BYTES,
+} from "@/lib/quote-attachments";
 
 type FormState = {
   name: string;
@@ -9,6 +20,7 @@ type FormState = {
   zip: string;
   projectCategory: string;
   projectType: string;
+  engineeringServices: string;
   comments: string;
   disclaimer: boolean;
 };
@@ -23,6 +35,7 @@ const initialForm: FormState = {
   zip: "",
   projectCategory: "",
   projectType: "",
+  engineeringServices: "",
   comments: "",
   disclaimer: false,
 };
@@ -163,6 +176,13 @@ function validateForm(form: FormState): FormErrors {
     errors.projectType = "Please choose a project type.";
   }
 
+  if (
+    requiresEngineeringServices(form.projectType) &&
+    !form.engineeringServices
+  ) {
+    errors.engineeringServices = "Please choose an engineering service option.";
+  }
+
   if (!form.disclaimer) {
     errors.disclaimer = "You must agree before submitting.";
   }
@@ -176,6 +196,11 @@ export default function QuotePage() {
   const [submitting, setSubmitting] = useState(false);
   const [submitted, setSubmitted] = useState(false);
   const [submitError, setSubmitError] = useState("");
+  const [submissionWarning, setSubmissionWarning] = useState("");
+  const [attachments, setAttachments] = useState<File[]>([]);
+  const [attachmentError, setAttachmentError] = useState("");
+  const [isDraggingAttachments, setIsDraggingAttachments] = useState(false);
+  const attachmentInputRef = useRef<HTMLInputElement>(null);
 
   const errors = useMemo(() => validateForm(form), [form]);
   const isValid = Object.keys(errors).length === 0;
@@ -210,6 +235,7 @@ export default function QuotePage() {
       zip: true,
       projectCategory: true,
       projectType: true,
+      engineeringServices: true,
       comments: true,
       disclaimer: true,
     });
@@ -223,6 +249,7 @@ export default function QuotePage() {
     setSubmitError("");
     setSubmitting(true);
 
+    let quoteSaved = false;
     try {
       const res = await fetch("/api/quote-request", {
         method: "POST",
@@ -236,31 +263,154 @@ export default function QuotePage() {
           zip: form.zip.trim(),
           projectCategory: form.projectCategory,
           projectType: form.projectType,
+          engineeringServices: requiresEngineeringServices(form.projectType)
+            ? form.engineeringServices
+            : null,
           comments: form.comments.trim(),
+          attachments: attachments.map((file) => ({
+            name: file.name,
+            type: file.type,
+            size: file.size,
+          })),
         }),
       });
 
+      const data = await res.json().catch(() => null);
       if (!res.ok) {
-        const data = await res.json().catch(() => null);
         throw new Error(data?.error || "Failed to submit quote request.");
+      }
+      quoteSaved = true;
+
+      if (attachments.length) {
+        const uploads = Array.isArray(data?.uploads) ? data.uploads : [];
+        if (uploads.length !== attachments.length) {
+          throw new Error("Your quote was saved, but its attachments could not be prepared.");
+        }
+
+        for (let index = 0; index < attachments.length; index += 1) {
+          const upload = uploads[index];
+          const uploadBody = new FormData();
+          uploadBody.append("cacheControl", "3600");
+          uploadBody.append("", attachments[index]);
+          const uploadResponse = await fetch(upload.signedUrl, {
+            method: "PUT",
+            headers: { "x-upsert": "false" },
+            body: uploadBody,
+          });
+          if (!uploadResponse.ok) {
+            const uploadError = await uploadResponse
+              .json()
+              .catch(() => null);
+            throw new Error(
+              uploadError?.message ||
+                uploadError?.error ||
+                "An attachment could not be uploaded."
+            );
+          }
+        }
+
+        const finalizeResponse = await fetch("/api/quote-request/attachments", {
+          method: "POST",
+          headers: {
+            "Content-Type": "application/json",
+            Authorization: `Bearer ${data.attachmentToken}`,
+          },
+          body: JSON.stringify({
+            projectId: data.projectId,
+            attachments: uploads.map(
+              (upload: { path: string }, index: number) => ({
+                path: upload.path,
+                name: attachments[index].name,
+                type: attachments[index].type,
+                size: attachments[index].size,
+              })
+            ),
+          }),
+        });
+        if (!finalizeResponse.ok) {
+          const finalizeBody = await finalizeResponse.json().catch(() => null);
+          throw new Error(
+            finalizeBody?.error ||
+              "Your quote was saved, but its attachments could not be finalized."
+          );
+        }
       }
 
       setSubmitted(true);
-
-      setTimeout(() => {
-        window.scrollTo({ top: 0, left: 0, behavior: "smooth" });
-      }, 50);
+      scrollToConfirmation();
     } catch (err) {
       console.error(err);
 
-      setSubmitError(
-        err instanceof Error
-          ? err.message
-          : "Something went wrong submitting the form. Please try again or call 301-441-4919."
-      );
+      if (quoteSaved) {
+        const failureDetail =
+          process.env.NODE_ENV === "development" && err instanceof Error
+            ? ` (${err.message})`
+            : "";
+        setSubmissionWarning(
+          `We received your quote request, but one or more attachments could not be saved. Please mention them when we contact you.${failureDetail}`
+        );
+        setSubmitted(true);
+        scrollToConfirmation();
+      } else {
+        setSubmitError(
+          err instanceof Error
+            ? err.message
+            : "Something went wrong submitting the form. Please try again or call 301-441-4919."
+        );
+      }
     } finally {
       setSubmitting(false);
     }
+  }
+
+  function scrollToConfirmation() {
+    window.setTimeout(() => {
+      window.scrollTo({ top: 0, left: 0, behavior: "smooth" });
+    }, 50);
+  }
+
+  function addAttachments(files: File[]) {
+    setAttachmentError("");
+    const combined = [...attachments];
+    for (const file of files) {
+      const isDuplicate = combined.some(
+        (existing) =>
+          existing.name === file.name &&
+          existing.size === file.size &&
+          existing.lastModified === file.lastModified
+      );
+      if (!isDuplicate) combined.push(file);
+    }
+
+    if (combined.length > QUOTE_ATTACHMENT_MAX_FILES) {
+      setAttachmentError(`Choose up to ${QUOTE_ATTACHMENT_MAX_FILES} files.`);
+      return;
+    }
+    if (combined.some((file) => !isAllowedQuoteAttachment(file))) {
+      setAttachmentError("Use JPG, PNG, WebP, HEIC, HEIF, or PDF files only.");
+      return;
+    }
+    if (
+      combined.some((file) => file.size > QUOTE_ATTACHMENT_MAX_FILE_BYTES)
+    ) {
+      setAttachmentError("Each file must be 10 MB or smaller.");
+      return;
+    }
+    if (
+      combined.reduce((total, file) => total + file.size, 0) >
+      QUOTE_ATTACHMENT_MAX_TOTAL_BYTES
+    ) {
+      setAttachmentError("Attachments must total 30 MB or less.");
+      return;
+    }
+    setAttachments(combined);
+  }
+
+  function removeAttachment(index: number) {
+    setAttachments((current) =>
+      current.filter((_, attachmentIndex) => attachmentIndex !== index)
+    );
+    setAttachmentError("");
   }
 
   return (
@@ -300,6 +450,11 @@ export default function QuotePage() {
                     301-441-4919
                   </a>.
                 </p>
+                {submissionWarning && (
+                  <p className="mt-4 rounded-lg border border-amber-400/30 bg-amber-400/10 px-4 py-3 text-sm text-amber-100">
+                    {submissionWarning}
+                  </p>
+                )}
               </div>
             ) : (
               <form
@@ -431,17 +586,27 @@ export default function QuotePage() {
                         Boolean(getFieldError("projectType"))
                       )} appearance-none pr-12`}
                       value={form.projectType}
-                      onChange={(e) => setField("projectType", e.target.value)}
+                      onChange={(e) => {
+                        const projectType = e.target.value;
+                        setForm((prev) => ({
+                          ...prev,
+                          projectType,
+                          engineeringServices: requiresEngineeringServices(
+                            projectType
+                          )
+                            ? prev.engineeringServices
+                            : "",
+                        }));
+                      }}
                       onBlur={() => markTouched("projectType")}
                       aria-invalid={Boolean(getFieldError("projectType"))}
                     >
                       <option value="">Choose…</option>
-                      <option value="Custom Design">Custom Design</option>
-                      <option value="Railings">Railings</option>
-                      <option value="Repairs">Repairs</option>
-                      <option value="Security">Security</option>
-                      <option value="Stairs">Stairs</option>
-                      <option value="Other">Other</option>
+                      {PROJECT_TYPES.map((projectType) => (
+                        <option key={projectType} value={projectType}>
+                          {projectType}
+                        </option>
+                      ))}
                     </select>
                     <SelectChevron />
                   </div>
@@ -451,6 +616,42 @@ export default function QuotePage() {
                     </p>
                   )}
                 </div>
+
+                {requiresEngineeringServices(form.projectType) && (
+                  <div>
+                    <label className="block text-white/85 text-sm mb-2">
+                      Engineering Services *
+                    </label>
+                    <div className="relative">
+                      <select
+                        className={`${inputClass(
+                          Boolean(getFieldError("engineeringServices"))
+                        )} appearance-none pr-12`}
+                        value={form.engineeringServices}
+                        onChange={(e) =>
+                          setField("engineeringServices", e.target.value)
+                        }
+                        onBlur={() => markTouched("engineeringServices")}
+                        aria-invalid={Boolean(
+                          getFieldError("engineeringServices")
+                        )}
+                      >
+                        <option value="">Choose…</option>
+                        {ENGINEERING_SERVICES_OPTIONS.map((option) => (
+                          <option key={option} value={option}>
+                            {option}
+                          </option>
+                        ))}
+                      </select>
+                      <SelectChevron />
+                    </div>
+                    {getFieldError("engineeringServices") && (
+                      <p className="mt-2 text-sm text-red-400">
+                        {getFieldError("engineeringServices")}
+                      </p>
+                    )}
+                  </div>
+                )}
 
                 <div className="md:col-span-2">
                   <label className="block text-white/85 text-sm mb-2">
@@ -463,6 +664,98 @@ export default function QuotePage() {
                     onBlur={() => markTouched("comments")}
                     placeholder="e.g. 12 ft railing for front porch, installation needed within 4 weeks."
                   />
+                </div>
+
+                <div className="md:col-span-2">
+                  <label className="block text-white/85 text-sm mb-2">
+                    Project Photos, Drawings, or Plans
+                    <span className="ml-2 text-white/50">(Optional)</span>
+                  </label>
+                  <p className="mb-3 text-sm text-white/60">
+                    Supporting files can help us understand your project and
+                    provide a more accurate estimate. Upload up to 5 JPG, PNG,
+                    WebP, HEIC, or PDF files (10 MB each, 30 MB total).
+                  </p>
+                  <div
+                    onDragEnter={(event) => {
+                      event.preventDefault();
+                      setIsDraggingAttachments(true);
+                    }}
+                    onDragOver={(event) => {
+                      event.preventDefault();
+                      event.dataTransfer.dropEffect = "copy";
+                      setIsDraggingAttachments(true);
+                    }}
+                    onDragLeave={(event) => {
+                      event.preventDefault();
+                      if (!event.currentTarget.contains(event.relatedTarget as Node)) {
+                        setIsDraggingAttachments(false);
+                      }
+                    }}
+                    onDrop={(event) => {
+                      event.preventDefault();
+                      setIsDraggingAttachments(false);
+                      addAttachments(Array.from(event.dataTransfer.files));
+                    }}
+                    className={`rounded-[10px] border-2 border-dashed px-5 py-7 text-center transition-colors ${
+                      isDraggingAttachments
+                        ? "border-[#fb5411] bg-[#fb5411]/10"
+                        : "border-white/20 bg-black/30"
+                    }`}
+                  >
+                    <input
+                      ref={attachmentInputRef}
+                      type="file"
+                      multiple
+                      accept=".jpg,.jpeg,.png,.webp,.heic,.heif,.pdf,image/jpeg,image/png,image/webp,image/heic,image/heif,application/pdf"
+                      onChange={(event) => {
+                        addAttachments(
+                          Array.from(event.currentTarget.files || [])
+                        );
+                        event.currentTarget.value = "";
+                      }}
+                      className="sr-only"
+                    />
+                    <p className="text-sm font-medium text-white/85">
+                      Drag and drop files here
+                    </p>
+                    <p className="mt-1 text-xs text-white/50">or</p>
+                    <button
+                      type="button"
+                      onClick={() => attachmentInputRef.current?.click()}
+                      className="mt-3 cursor-pointer rounded-lg bg-[#fb5411] px-4 py-2 text-sm font-medium text-white transition-colors hover:bg-[#e64d0f]"
+                    >
+                      Select files
+                    </button>
+                  </div>
+                  {attachments.length > 0 && (
+                    <ul className="mt-3 space-y-2 text-sm text-white/70">
+                      {attachments.map((file, index) => (
+                        <li
+                          key={`${file.name}-${file.size}-${file.lastModified}`}
+                          className="flex items-center justify-between gap-3 rounded-lg border border-white/10 bg-black/30 px-3 py-2"
+                        >
+                          <span className="min-w-0 truncate">
+                            {file.name}{" "}
+                            <span className="text-white/45">
+                              ({(file.size / 1024 / 1024).toFixed(1)} MB)
+                            </span>
+                          </span>
+                          <button
+                            type="button"
+                            onClick={() => removeAttachment(index)}
+                            aria-label={`Remove ${file.name}`}
+                            className="shrink-0 rounded-md px-2 py-1 text-xs font-medium text-red-300 transition-colors hover:bg-red-400/10 hover:text-red-200"
+                          >
+                            Remove
+                          </button>
+                        </li>
+                      ))}
+                    </ul>
+                  )}
+                  {attachmentError && (
+                    <p className="mt-2 text-sm text-red-400">{attachmentError}</p>
+                  )}
                 </div>
 
                 <div className="md:col-span-2">
