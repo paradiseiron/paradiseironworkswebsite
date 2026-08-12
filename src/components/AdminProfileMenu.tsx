@@ -1,7 +1,14 @@
 "use client";
 
 import { useEffect, useRef, useState } from "react";
-import { Bell, LogOut, Moon, Sun, UserRound } from "lucide-react";
+import {
+  ArrowLeftRight,
+  Bell,
+  LogOut,
+  Moon,
+  Sun,
+  UserRound,
+} from "lucide-react";
 import { useRouter } from "next/navigation";
 import { createClient } from "@/lib/supabase/client";
 import { OPEN_NOTIFICATION_SETTINGS_EVENT } from "@/components/AdminPushNotifications";
@@ -12,12 +19,16 @@ export default function AdminProfileMenu({
   onToggleTheme,
   mobile = false,
   header = false,
+  workspaceHref,
+  workspaceLabel,
 }: {
   email?: string;
   theme: "dark" | "light";
   onToggleTheme: () => void;
   mobile?: boolean;
   header?: boolean;
+  workspaceHref?: string;
+  workspaceLabel?: string;
 }) {
   const router = useRouter();
   const menuRef = useRef<HTMLDivElement>(null);
@@ -111,6 +122,19 @@ export default function AdminProfileMenu({
             <Bell className="h-4 w-4" aria-hidden="true" />
             Notification settings
           </button>
+          {workspaceHref && workspaceLabel && (
+            <button
+              type="button"
+              onClick={() => {
+                setOpen(false);
+                router.push(workspaceHref);
+              }}
+              className="mt-1 flex w-full cursor-pointer items-center gap-3 rounded-xl px-3 py-2.5 text-left text-sm text-neutral-200 transition hover:bg-white/10"
+            >
+              <ArrowLeftRight className="h-4 w-4" aria-hidden="true" />
+              {workspaceLabel}
+            </button>
+          )}
           <button
             type="button"
             onClick={signOut}

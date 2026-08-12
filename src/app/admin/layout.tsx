@@ -103,6 +103,9 @@ export const metadata: Metadata = {
         media:
           "(device-width: 768px) and (device-height: 1024px) and (-webkit-device-pixel-ratio: 2) and (orientation: portrait)",
       },
+      {
+        url: "/admin/splash/apple-splash-1206x2622.png",
+      },
     ],
   },
 };

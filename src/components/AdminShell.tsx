@@ -297,21 +297,21 @@ export default function AdminShell({
             <div className="flex shrink-0 items-center gap-2">
               <div className="md:hidden">
                 <div className="flex items-center gap-2">
-                  {isDashboardPage && (
+                  {(isDashboardPage || pathname === "/admin/bids") && (
                     <AdminProfileMenu
                       email={userEmail}
                       theme={theme}
                       onToggleTheme={toggleTheme}
+                      workspaceHref={isBidWorkspace ? "/admin" : "/admin/bids"}
+                      workspaceLabel={
+                        isBidWorkspace
+                          ? "Switch to Operations"
+                          : "Switch to Commercial Bids"
+                      }
                       mobile
                       header
                     />
                   )}
-                  <WorkspaceSwitch
-                    isBidWorkspace={isBidWorkspace}
-                    switching={workspaceSwitching}
-                    onSwitch={switchWorkspace}
-                    mobile
-                  />
                 </div>
               </div>
               {isNewProjectPage && (
