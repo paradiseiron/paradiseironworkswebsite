@@ -18,6 +18,7 @@ export default function AdminPushNotifications({
   const [supported, setSupported] = useState(false);
   const [subscribed, setSubscribed] = useState(false);
   const [dismissed, setDismissed] = useState(true);
+  const [initialized, setInitialized] = useState(false);
   const [settingsOpen, setSettingsOpen] = useState(false);
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState("");
@@ -29,27 +30,39 @@ export default function AdminPushNotifications({
       const canPush =
         "serviceWorker" in navigator &&
         "Notification" in window;
+      const wasDismissed =
+        window.localStorage.getItem(DISMISSED_KEY) === "true";
 
       setSupported(canPush);
-      setDismissed(
-        window.localStorage.getItem(DISMISSED_KEY) === "true"
-      );
+      setDismissed(wasDismissed);
 
-      if (!canPush) return;
-
-      const registration = await navigator.serviceWorker.ready;
-      if (!("pushManager" in registration)) return;
-      const existingSubscription =
-        await registration.pushManager.getSubscription();
-      if (existingSubscription) {
-        await saveSubscription(existingSubscription);
-        window.localStorage.removeItem(DISMISSED_KEY);
-        setDismissed(true);
-        setSubscribed(true);
+      if (!canPush) {
+        setInitialized(true);
         return;
       }
 
-      setSubscribed(false);
+      try {
+        const registration = await navigator.serviceWorker.ready;
+        if (!("pushManager" in registration)) return;
+        const existingSubscription =
+          await registration.pushManager.getSubscription();
+        if (existingSubscription) {
+          await saveSubscription(existingSubscription);
+          window.localStorage.removeItem(DISMISSED_KEY);
+          setDismissed(true);
+          setSubscribed(true);
+          return;
+        }
+
+        setSubscribed(false);
+      } catch (initializationError) {
+        console.warn(
+          "Unable to initialize push notification settings:",
+          initializationError
+        );
+      } finally {
+        setInitialized(true);
+      }
     }, 0);
 
     return () => window.clearTimeout(timer);
@@ -63,7 +76,7 @@ export default function AdminPushNotifications({
   }, []);
 
   if (userRole === "unassigned") return null;
-  if (!supported) return null;
+  if (!initialized || !supported) return null;
 
   const notificationLabel = getNotificationLabel(userRole);
 

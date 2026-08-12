@@ -19,6 +19,21 @@ export const metadata: Metadata = {
     title: "Paradise Admin",
     startupImage: [
       {
+        url: "/admin/splash/apple-splash-1320x2868.png",
+        media:
+          "(device-width: 440px) and (device-height: 956px) and (-webkit-device-pixel-ratio: 3) and (orientation: portrait)",
+      },
+      {
+        url: "/admin/splash/apple-splash-1206x2622.png",
+        media:
+          "(device-width: 402px) and (device-height: 874px) and (-webkit-device-pixel-ratio: 3) and (orientation: portrait)",
+      },
+      {
+        url: "/admin/splash/apple-splash-1260x2736.png",
+        media:
+          "(device-width: 420px) and (device-height: 912px) and (-webkit-device-pixel-ratio: 3) and (orientation: portrait)",
+      },
+      {
         url: "/admin/splash/apple-splash-1290x2796.png",
         media:
           "(device-width: 430px) and (device-height: 932px) and (-webkit-device-pixel-ratio: 3) and (orientation: portrait)",

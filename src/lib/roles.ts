@@ -7,6 +7,8 @@ export type UserRole =
   | "admin"
   | "estimator"
   | "operations_foreman"
+  | "bid_estimator"
+  | "project_manager"
   | "viewer"
   | "unassigned";
 
@@ -29,6 +31,8 @@ export const getUserRole = cache(async function getUserRole(
     data?.role === "admin" ||
     data?.role === "estimator" ||
     data?.role === "operations_foreman" ||
+    data?.role === "bid_estimator" ||
+    data?.role === "project_manager" ||
     data?.role === "viewer"
   ) {
     return data.role;
@@ -52,10 +56,34 @@ export async function requireOperationalRole(userId: string) {
   if (role === "unassigned") {
     throw new Error("This account has not been assigned an application role.");
   }
-  if (role === "viewer") {
+  if (
+    role !== "admin" &&
+    role !== "estimator" &&
+    role !== "operations_foreman"
+  ) {
     throw new Error("This action requires a role with write access.");
   }
   return role;
+}
+
+export async function requireBidWriteRole(userId: string) {
+  const role = await getUserRole(userId);
+  if (
+    role !== "admin" &&
+    role !== "bid_estimator" &&
+    role !== "project_manager"
+  ) {
+    throw new Error("This action requires Commercial Bid write access.");
+  }
+  return role;
+}
+
+export function hasBidWriteAccess(role: UserRole) {
+  return (
+    role === "admin" ||
+    role === "bid_estimator" ||
+    role === "project_manager"
+  );
 }
 
 export async function requireEstimatorAccess(userId: string) {

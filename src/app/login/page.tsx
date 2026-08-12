@@ -30,7 +30,7 @@ export default function LoginPage() {
     const destination =
       requestedPath?.startsWith("/admin/") && !requestedPath.startsWith("//")
         ? requestedPath
-        : "/admin";
+        : "/admin/landing";
 
     router.refresh();
     router.push(destination);

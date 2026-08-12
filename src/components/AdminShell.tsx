@@ -3,9 +3,11 @@
 import { useEffect, useRef, useState } from "react";
 import Image from "next/image";
 import Link from "next/link";
-import { usePathname, useSearchParams } from "next/navigation";
+import { usePathname, useRouter, useSearchParams } from "next/navigation";
 import {
   ArrowLeft,
+  ArrowLeftRight,
+  BriefcaseBusiness,
   CalendarDays,
   Hammer,
   LayoutDashboard,
@@ -31,14 +33,21 @@ export default function AdminShell({
 }) {
   const [theme, setTheme] = useState<"dark" | "light">("dark");
   const [keyboardOpen, setKeyboardOpen] = useState(false);
+  const [workspaceSwitching, setWorkspaceSwitching] = useState(false);
   const viewportBaseline = useRef(0);
+  const workspaceTimer = useRef<number | null>(null);
+  const workspaceLogo = useRef<HTMLSpanElement>(null);
   const pathname = usePathname();
+  const router = useRouter();
   const searchParams = useSearchParams();
 
   const currentTab = searchParams.get("tab");
 
   const isDashboardPage = pathname === "/admin";
   const isProjectsPage = pathname === "/admin/projects";
+  const isBidsPage = pathname.startsWith("/admin/bids");
+  const isBidWorkspace = isBidsPage;
+  const isNewBidPage = pathname === "/admin/bids/new";
   const isCalendarPage = pathname === "/admin/calendar";
   const isDailyShopReportPage = pathname.startsWith(
     "/admin/daily-shop-report"
@@ -104,6 +113,45 @@ export default function AdminShell({
       delete document.documentElement.dataset.adminTheme;
     };
   }, [theme]);
+
+  useEffect(
+    () => () => {
+      if (workspaceTimer.current !== null) {
+        window.clearTimeout(workspaceTimer.current);
+      }
+    },
+    []
+  );
+
+  function switchWorkspace(href: string, animate = true) {
+    if (workspaceSwitching) return;
+    if (
+      !animate ||
+      window.matchMedia("(prefers-reduced-motion: reduce)").matches
+    ) {
+      router.push(href);
+      return;
+    }
+
+    setWorkspaceSwitching(true);
+    workspaceLogo.current?.animate(
+      [
+        { transform: "rotateY(0deg) scale(1)" },
+        { transform: "rotateY(180deg) scale(0.86)", offset: 0.5 },
+        { transform: "rotateY(360deg) scale(1)" },
+      ],
+      {
+        duration: 900,
+        easing: "cubic-bezier(0.4, 0, 0.2, 1)",
+        fill: "both",
+      }
+    );
+    workspaceTimer.current = window.setTimeout(() => {
+      workspaceTimer.current = null;
+      setWorkspaceSwitching(false);
+      router.push(href);
+    }, 900);
+  }
 
   useEffect(() => {
     const viewport = window.visualViewport;
@@ -184,48 +232,58 @@ export default function AdminShell({
     >
       <aside className="admin-sidebar fixed left-0 top-0 z-50 hidden h-screen w-20 border-r border-white/10 bg-black/50 backdrop-blur-xl md:block print:hidden">
         <div className="flex h-20 items-center justify-center border-b border-white/10">
-          <Link href="/admin" className="group">
-            <Image
-              src="/images/paradise_ironworks_logo.png"
-              alt="Projects"
-              width={34}
-              height={34}
-              className="opacity-80 transition group-hover:opacity-100"
-            />
+          <Link href={isBidWorkspace ? "/admin/bids" : "/admin"} className="group [perspective:600px]">
+            <span
+              ref={workspaceLogo}
+              className="block [transform-style:preserve-3d]"
+            >
+              <Image
+                src="/images/paradise_ironworks_logo.png"
+                alt="Projects"
+                width={34}
+                height={34}
+                className="opacity-80 transition group-hover:opacity-100"
+              />
+            </span>
           </Link>
         </div>
 
         <nav className="flex flex-col items-center gap-4 p-4">
-          <NavIcon
-            href="/admin"
-            active={pathname === "/admin"}
-            label="Dashboard"
-          >
-            <LayoutDashboard className="h-6 w-6" aria-hidden="true" />
-          </NavIcon>
-          <NavIcon
-            href="/admin/daily-shop-report"
-            active={isDailyShopReportPage}
-            label="Daily Shop Report"
-          >
-            <ClipboardList className="h-6 w-6" aria-hidden="true" />
-          </NavIcon>
-          <NavIcon
-            href="/admin/calendar"
-            active={isCalendarPage}
-            label="Calendar"
-          >
-            <CalendarDays className="h-6 w-6" aria-hidden="true" />
-          </NavIcon>
-          <NavIcon
-            href="/admin/projects"
-            active={pathname.startsWith("/admin/projects")}
-            label="Projects"
-            badgeCount={projectNotificationCount}
-          >
-            <Hammer className="h-6 w-6" aria-hidden="true" />
-          </NavIcon>
+          {isBidWorkspace ? (
+            <NavIcon href="/admin/bids" active label="Bid Opportunities">
+              <BriefcaseBusiness className="h-6 w-6" aria-hidden="true" />
+            </NavIcon>
+          ) : (
+            <>
+              <NavIcon href="/admin" active={pathname === "/admin"} label="Dashboard">
+                <LayoutDashboard className="h-6 w-6" aria-hidden="true" />
+              </NavIcon>
+              <NavIcon
+                href="/admin/daily-shop-report"
+                active={isDailyShopReportPage}
+                label="Daily Shop Report"
+              >
+                <ClipboardList className="h-6 w-6" aria-hidden="true" />
+              </NavIcon>
+              <NavIcon href="/admin/calendar" active={isCalendarPage} label="Calendar">
+                <CalendarDays className="h-6 w-6" aria-hidden="true" />
+              </NavIcon>
+              <NavIcon
+                href="/admin/projects"
+                active={pathname.startsWith("/admin/projects")}
+                label="Projects"
+                badgeCount={projectNotificationCount}
+              >
+                <Hammer className="h-6 w-6" aria-hidden="true" />
+              </NavIcon>
+            </>
+          )}
         </nav>
+        <WorkspaceSwitch
+          isBidWorkspace={isBidWorkspace}
+          switching={workspaceSwitching}
+          onSwitch={switchWorkspace}
+        />
         <AdminProfileMenu
           email={userEmail}
           theme={theme}
@@ -238,13 +296,23 @@ export default function AdminShell({
           <div className="flex min-h-16 flex-wrap items-center justify-between gap-3 px-4 py-3 sm:px-6 md:px-8 md:py-4">
             <div className="flex shrink-0 items-center gap-2">
               <div className="md:hidden">
-                <AdminProfileMenu
-                  email={userEmail}
-                  theme={theme}
-                  onToggleTheme={toggleTheme}
-                  mobile
-                  header
-                />
+                <div className="flex items-center gap-2">
+                  {isDashboardPage && (
+                    <AdminProfileMenu
+                      email={userEmail}
+                      theme={theme}
+                      onToggleTheme={toggleTheme}
+                      mobile
+                      header
+                    />
+                  )}
+                  <WorkspaceSwitch
+                    isBidWorkspace={isBidWorkspace}
+                    switching={workspaceSwitching}
+                    onSwitch={switchWorkspace}
+                    mobile
+                  />
+                </div>
               </div>
               {isNewProjectPage && (
                 <ReliableMobileLink
@@ -255,6 +323,18 @@ export default function AdminShell({
                 >
                   <ArrowLeft className="h-4 w-4" aria-hidden="true" />
                   <span className="hidden sm:inline">Back to Projects</span>
+                </ReliableMobileLink>
+              )}
+
+              {isNewBidPage && (
+                <ReliableMobileLink
+                  href="/admin/bids"
+                  aria-label="Back to Bid Opportunities"
+                  title="Back to Bid Opportunities"
+                  className="inline-flex h-10 touch-manipulation items-center justify-center gap-2 rounded-xl border border-white/10 px-3 text-sm text-neutral-300 transition hover:bg-white/5 hover:text-white sm:px-4"
+                >
+                  <ArrowLeft className="h-4 w-4" aria-hidden="true" />
+                  <span className="hidden sm:inline">Back to Bids</span>
                 </ReliableMobileLink>
               )}
 
@@ -342,6 +422,15 @@ export default function AdminShell({
                   Save Project
                 </button>
               )}
+              {isNewBidPage && (
+                <button
+                  type="submit"
+                  form="new-bid-opportunity-form"
+                  className="inline-flex h-10 shrink-0 cursor-pointer items-center justify-center rounded-xl bg-[#fb5411] px-4 text-sm font-semibold text-white transition hover:bg-[#e64d0f] sm:px-5"
+                >
+                  Create Opportunity
+                </button>
+              )}
 {userRole === "admin" && isProjectDetail && !isProjectProposalTab && !isEditProjectPage &&  (
   <>
     <Link
@@ -417,37 +506,74 @@ export default function AdminShell({
           keyboardOpen ? "hidden" : "flex"
         }`}
       >
-        <MobileNavLink
-          href="/admin"
-          active={pathname === "/admin"}
-          label="Dashboard"
-        >
-          <LayoutDashboard className="h-5 w-5" aria-hidden="true" />
-        </MobileNavLink>
-        <MobileNavLink
-          href="/admin/daily-shop-report"
-          active={isDailyShopReportPage}
-          label="Shop Report"
-        >
-          <ClipboardList className="h-5 w-5" aria-hidden="true" />
-        </MobileNavLink>
-        <MobileNavLink
-          href="/admin/calendar"
-          active={isCalendarPage}
-          label="Calendar"
-        >
-          <CalendarDays className="h-5 w-5" aria-hidden="true" />
-        </MobileNavLink>
-        <MobileNavLink
-          href="/admin/projects"
-          active={pathname.startsWith("/admin/projects")}
-          label="Projects"
-          badgeCount={projectNotificationCount}
-        >
-          <Hammer className="h-5 w-5" aria-hidden="true" />
-        </MobileNavLink>
+        {isBidWorkspace ? (
+          <MobileNavLink href="/admin/bids" active label="Bid Opportunities">
+            <BriefcaseBusiness className="h-5 w-5" aria-hidden="true" />
+          </MobileNavLink>
+        ) : (
+          <>
+            <MobileNavLink href="/admin" active={pathname === "/admin"} label="Dashboard">
+              <LayoutDashboard className="h-5 w-5" aria-hidden="true" />
+            </MobileNavLink>
+            <MobileNavLink
+              href="/admin/daily-shop-report"
+              active={isDailyShopReportPage}
+              label="Shop Report"
+            >
+              <ClipboardList className="h-5 w-5" aria-hidden="true" />
+            </MobileNavLink>
+            <MobileNavLink href="/admin/calendar" active={isCalendarPage} label="Calendar">
+              <CalendarDays className="h-5 w-5" aria-hidden="true" />
+            </MobileNavLink>
+            <MobileNavLink
+              href="/admin/projects"
+              active={pathname.startsWith("/admin/projects")}
+              label="Projects"
+              badgeCount={projectNotificationCount}
+            >
+              <Hammer className="h-5 w-5" aria-hidden="true" />
+            </MobileNavLink>
+          </>
+        )}
       </nav>
     </div>
+  );
+}
+
+function WorkspaceSwitch({
+  isBidWorkspace,
+  switching,
+  onSwitch,
+  mobile = false,
+}: {
+  isBidWorkspace: boolean;
+  switching: boolean;
+  onSwitch: (href: string, animate?: boolean) => void;
+  mobile?: boolean;
+}) {
+  const href = isBidWorkspace ? "/admin" : "/admin/bids";
+  const label = isBidWorkspace
+    ? "Switch to Operations"
+    : "Switch to Commercial Bids";
+
+  return (
+    <Link
+      href={href}
+      onClick={(event) => {
+        event.preventDefault();
+        onSwitch(href, !mobile);
+      }}
+      aria-label={label}
+      aria-disabled={switching}
+      title={label}
+      className={
+        mobile
+          ? "inline-flex h-11 w-11 cursor-pointer items-center justify-center rounded-xl border border-white/10 bg-white/[0.03] text-neutral-400 transition hover:bg-white/10 hover:text-white"
+          : "absolute bottom-20 left-4 flex h-12 w-12 cursor-pointer items-center justify-center rounded-2xl border border-white/10 bg-white/[0.03] text-neutral-300 transition hover:border-[#fb5411]/40 hover:bg-[#fb5411]/15 hover:text-[#fb5411]"
+      }
+    >
+      <ArrowLeftRight className={mobile ? "h-5 w-5" : "h-6 w-6"} aria-hidden="true" />
+    </Link>
   );
 }
 
