@@ -6,6 +6,7 @@ import { useSearchParams } from "next/navigation";
 import {
   CheckCircle2,
   FileText,
+  List,
   Phone,
   Plus,
   Trash2,
@@ -583,13 +584,6 @@ export default function ProjectDetailTabs({
                 type="email"
                 defaultValue={project.proposal_email || project.email || ""}
               />
-
-              <Field
-                label="Deposit Amount"
-                name="proposal_deposit_amount"
-                type="number"
-                defaultValue={project.proposal_deposit_amount || ""}
-              />
             </div>
 
             <TextArea
@@ -626,11 +620,10 @@ export default function ProjectDetailTabs({
               onChange={setPricingItems}
             />
 
-            <TextArea
-              label="Payment Terms"
-              name="proposal_payment_terms"
-              defaultValue={project.proposal_payment_terms || ""}
-              rows={3}
+            <DepositAndPaymentTerms
+              total={pricingTotal}
+              initialDeposit={project.proposal_deposit_amount}
+              initialPaymentTerms={project.proposal_payment_terms || ""}
             />
 
             <TextArea
@@ -926,6 +919,14 @@ function ProposalReadOnlyPanel({
           value={project.proposal_attention || project.contact_name}
         />
         <Detail label="Scope of Work" value={project.proposal_scope} />
+        <Detail
+          label="Deposit Amount"
+          value={
+            project.proposal_deposit_amount
+              ? formatCurrency(Number(project.proposal_deposit_amount))
+              : null
+          }
+        />
         <Detail label="Payment Terms" value={project.proposal_payment_terms} />
         <Detail label="Schedule" value={project.proposal_schedule} />
         <Detail
@@ -1087,6 +1088,192 @@ function PricingLineItems({
   );
 }
 
+type DepositChoice = "30" | "50" | "manual";
+
+function DepositAndPaymentTerms({
+  total,
+  initialDeposit,
+  initialPaymentTerms,
+}: {
+  total: number;
+  initialDeposit?: number | null;
+  initialPaymentTerms: string;
+}) {
+  const initialChoice = initialDepositChoice(initialDeposit, total);
+  const [choice, setChoice] = useState<DepositChoice>(() =>
+    initialChoice
+  );
+  const [manualAmount, setManualAmount] = useState(() =>
+    initialChoice === "manual" && initialDeposit
+      ? String(initialDeposit)
+      : ""
+  );
+  const [paymentTerms, setPaymentTerms] = useState(
+    () =>
+      initialPaymentTerms ||
+      depositPaymentTerms(
+        initialChoice,
+        initialChoice === "manual" && initialDeposit
+          ? String(initialDeposit)
+          : ""
+      )
+  );
+  const paymentTermsRef = useRef<HTMLTextAreaElement>(null);
+  const percentage = choice === "30" ? 0.3 : choice === "50" ? 0.5 : null;
+  const calculatedDeposit =
+    percentage === null
+      ? optionalPricingNumber(manualAmount)
+      : Math.round(total * percentage * 100) / 100;
+
+  return (
+    <section className="rounded-xl border border-white/10 bg-white/[0.02] p-4">
+      <div>
+        <h3 className="text-sm font-semibold text-white">
+          Deposit &amp; Payment Terms
+        </h3>
+        <p className="mt-1 text-xs text-neutral-400">
+          Choose a percentage of the proposal total or enter a specific deposit.
+        </p>
+      </div>
+
+      <input
+        type="hidden"
+        name="proposal_deposit_amount"
+        value={calculatedDeposit === null ? "" : calculatedDeposit}
+      />
+
+      <div className="mt-4 grid gap-3 sm:grid-cols-3">
+        {(
+          [
+            ["30", "30% deposit"],
+            ["50", "50% deposit"],
+            ["manual", "Manual amount"],
+          ] as const
+        ).map(([value, label]) => (
+          <label
+            key={value}
+            className={`flex min-h-12 cursor-pointer items-center gap-3 rounded-lg border px-4 py-3 text-sm transition ${
+              choice === value
+                ? "border-[#fb5411] bg-[#fb5411]/10 text-white"
+                : "border-white/10 bg-neutral-900 text-neutral-300 hover:border-white/20"
+            }`}
+          >
+            <input
+              type="radio"
+              name="proposal_deposit_choice"
+              value={value}
+              checked={choice === value}
+              onChange={() => {
+                setChoice(value);
+                setPaymentTerms(depositPaymentTerms(value, manualAmount));
+              }}
+              className="h-4 w-4 cursor-pointer accent-[#fb5411]"
+            />
+            <span>{label}</span>
+          </label>
+        ))}
+      </div>
+
+      <div className="mt-4 grid gap-4 sm:grid-cols-2">
+        <label className="block">
+          <span className="text-sm font-medium text-neutral-200">
+            Deposit amount
+          </span>
+          <div className="relative mt-2">
+            <span className="pointer-events-none absolute left-3 top-1/2 -translate-y-1/2 text-neutral-500">
+              $
+            </span>
+            <input
+              type="number"
+              min="0"
+              step="0.01"
+              value={
+                choice === "manual"
+                  ? manualAmount
+                  : calculatedDeposit === null
+                    ? ""
+                    : calculatedDeposit
+              }
+              onChange={(event) => {
+                const amount = event.target.value;
+                setManualAmount(amount);
+                setPaymentTerms(depositPaymentTerms("manual", amount));
+              }}
+              disabled={choice !== "manual"}
+              required={choice === "manual"}
+              className="h-11 w-full rounded-lg border border-white/10 bg-neutral-900 pl-7 pr-3 text-sm text-white outline-none disabled:cursor-not-allowed disabled:text-neutral-400 focus:border-[#fb5411]"
+            />
+          </div>
+        </label>
+
+        <div className="rounded-lg border border-white/10 bg-neutral-900 px-4 py-3">
+          <p className="text-xs uppercase tracking-[0.14em] text-neutral-500">
+            Proposal total
+          </p>
+          <p className="mt-1 text-lg font-semibold text-white">
+            {formatCurrency(total)}
+          </p>
+        </div>
+      </div>
+
+      <div className="mt-4">
+        <div className="mb-2 flex items-center justify-between gap-3">
+          <label className="block text-sm text-neutral-300">Payment Terms</label>
+          <BulletButton
+            onClick={() => {
+              const textarea = paymentTermsRef.current;
+              if (!textarea) return;
+              const result = toggleBulletedLines(
+                paymentTerms,
+                textarea.selectionStart,
+                textarea.selectionEnd
+              );
+              setPaymentTerms(result.value);
+              notifyFormChanged();
+              window.requestAnimationFrame(() => {
+                textarea.focus();
+                textarea.setSelectionRange(result.start, result.end);
+              });
+            }}
+          />
+        </div>
+        <textarea
+          ref={paymentTermsRef}
+          name="proposal_payment_terms"
+          rows={3}
+          value={paymentTerms}
+          onChange={(event) => setPaymentTerms(event.target.value)}
+          className="w-full rounded-xl border border-white/10 bg-white/5 px-4 py-3 text-white outline-none focus:border-[#fb5411]"
+        />
+      </div>
+    </section>
+  );
+}
+
+function initialDepositChoice(
+  deposit: number | null | undefined,
+  total: number
+): DepositChoice {
+  if (!deposit) return "30";
+  if (total > 0 && Math.abs(deposit - total * 0.3) < 0.01) return "30";
+  if (total > 0 && Math.abs(deposit - total * 0.5) < 0.01) return "50";
+  return "manual";
+}
+
+function depositPaymentTerms(choice: DepositChoice, manualAmount: string) {
+  if (choice === "30") {
+    return "30% deposit due upon acceptance. The remaining 70% is due upon completion of the project.";
+  }
+
+  if (choice === "50") {
+    return "50% deposit due upon acceptance. The remaining 50% is due upon completion of the project.";
+  }
+
+  const amount = optionalPricingNumber(manualAmount);
+  const deposit = amount === null ? "The specified deposit" : formatCurrency(amount);
+  return `${deposit} is due upon acceptance. The remaining balance is due upon completion of the project.`;
+}
+
 function pricingItemsToFormState(items: ProposalPricingLineItem[]) {
   return items.map((item, index) => ({
     id: `existing-${index}`,
@@ -1216,11 +1403,31 @@ function TextArea({
   defaultValue?: string;
   rows?: number;
 }) {
+  const textareaRef = useRef<HTMLTextAreaElement>(null);
+
   return (
     <div>
-      <label className="mb-2 block text-sm text-neutral-300">{label}</label>
+      <div className="mb-2 flex items-center justify-between gap-3">
+        <label className="block text-sm text-neutral-300">{label}</label>
+        <BulletButton
+          onClick={() => {
+            const textarea = textareaRef.current;
+            if (!textarea) return;
+            const result = toggleBulletedLines(
+              textarea.value,
+              textarea.selectionStart,
+              textarea.selectionEnd
+            );
+            textarea.value = result.value;
+            textarea.focus();
+            textarea.setSelectionRange(result.start, result.end);
+            textarea.dispatchEvent(new Event("input", { bubbles: true }));
+          }}
+        />
+      </div>
 
       <textarea
+        ref={textareaRef}
         name={name}
         rows={rows}
         defaultValue={defaultValue}
@@ -1228,4 +1435,43 @@ function TextArea({
       />
     </div>
   );
+}
+
+function BulletButton({ onClick }: { onClick: () => void }) {
+  return (
+    <button
+      type="button"
+      onMouseDown={(event) => event.preventDefault()}
+      onClick={onClick}
+      className="inline-flex h-8 cursor-pointer items-center gap-2 rounded-lg border border-white/10 px-3 text-xs font-medium text-neutral-300 transition hover:border-white/20 hover:bg-white/10 hover:text-white"
+      aria-label="Toggle bullet list"
+      title="Toggle bullet list"
+    >
+      <List className="h-4 w-4" aria-hidden="true" />
+      <span>Bullets</span>
+    </button>
+  );
+}
+
+function toggleBulletedLines(value: string, start: number, end: number) {
+  const lineStart = value.lastIndexOf("\n", Math.max(0, start - 1)) + 1;
+  const nextNewline = value.indexOf("\n", end);
+  const lineEnd = nextNewline === -1 ? value.length : nextNewline;
+  const selectedLines = value.slice(lineStart, lineEnd).split("\n");
+  const nonEmptyLines = selectedLines.filter((line) => line.trim());
+  const removeBullets =
+    nonEmptyLines.length > 0 &&
+    nonEmptyLines.every((line) => /^\s*•\s*/.test(line));
+  const formatted = selectedLines
+    .map((line) => {
+      if (!line.trim()) return line;
+      return removeBullets ? line.replace(/^\s*•\s*/, "") : `• ${line.replace(/^\s*•\s*/, "")}`;
+    })
+    .join("\n");
+
+  return {
+    value: `${value.slice(0, lineStart)}${formatted}${value.slice(lineEnd)}`,
+    start: lineStart,
+    end: lineStart + formatted.length,
+  };
 }

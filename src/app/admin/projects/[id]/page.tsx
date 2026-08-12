@@ -130,8 +130,6 @@ async function updateProposal(formData: FormData) {
         formData.get("proposal_prepared_by_title") || ""
       ),
       proposal_updated_at: new Date().toISOString(),
-      proposal_sent_at: proposal_amount ? new Date().toISOString() : null,
-      status: proposal_amount ? "quoted" : "lead",
       updated_at: new Date().toISOString(),
     })
     .eq("id", project_id);
@@ -140,7 +138,7 @@ async function updateProposal(formData: FormData) {
 
   await supabase.from("project_activities").insert({
     project_id,
-    activity_type: proposal_number ? "proposal_sent" : "status_change",
+    activity_type: "note",
     summary: proposal_number
       ? `Proposal ${proposal_number} updated.`
       : "Proposal draft updated.",

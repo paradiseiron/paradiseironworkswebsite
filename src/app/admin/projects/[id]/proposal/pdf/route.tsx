@@ -18,6 +18,7 @@ import {
   proposalPricingTotal,
   type ProposalPricingLineItem,
 } from "@/lib/proposal-pricing";
+import { createAdminClient } from "@/lib/supabase/admin";
 
 export const dynamic = "force-dynamic";
 export const runtime = "nodejs";
@@ -51,6 +52,8 @@ export async function GET(
     );
     const filename = safeFilename(project.proposal_number || "proposal");
 
+    await recordFirstProposalDownload(project);
+
     return new NextResponse(Buffer.from(pdfBuffer), {
       headers: {
         "Content-Type": "application/pdf",
@@ -63,6 +66,53 @@ export async function GET(
     return new NextResponse("Unable to generate proposal PDF. Code: render", {
       status: 500,
     });
+  }
+}
+
+async function recordFirstProposalDownload(project: Record<string, unknown>) {
+  const supabase = createAdminClient();
+  const downloadedAt = new Date().toISOString();
+  const shouldPromote =
+    project.status === "lead" && Number(project.proposal_amount || 0) > 0;
+  const update: Record<string, string> = {
+    proposal_first_downloaded_at: downloadedAt,
+    updated_at: downloadedAt,
+  };
+
+  if (shouldPromote) {
+    update.status = "quoted";
+    update.proposal_sent_at = downloadedAt;
+  }
+
+  const { data, error } = await supabase
+    .from("projects")
+    .update(update)
+    .eq("id", String(project.id))
+    .is("proposal_first_downloaded_at", null)
+    .select("id")
+    .maybeSingle();
+
+  if (error) throw error;
+  if (!data) return;
+
+  const proposalNumber = String(project.proposal_number || "").trim();
+  const summary = shouldPromote
+    ? `${proposalNumber ? `Proposal ${proposalNumber}` : "Proposal"} downloaded for the first time. Project moved to quoted.`
+    : `${proposalNumber ? `Proposal ${proposalNumber}` : "Proposal"} downloaded for the first time.`;
+
+  const { error: activityError } = await supabase
+    .from("project_activities")
+    .insert({
+      project_id: String(project.id),
+      activity_type: "proposal_sent",
+      summary,
+    });
+
+  if (activityError) {
+    console.error(
+      "Unable to record first proposal download activity:",
+      activityError
+    );
   }
 }
 
