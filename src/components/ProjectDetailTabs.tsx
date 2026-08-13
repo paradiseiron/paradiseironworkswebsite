@@ -1108,17 +1108,15 @@ function DepositAndPaymentTerms({
       ? String(initialDeposit)
       : ""
   );
-  const [paymentTerms, setPaymentTerms] = useState(
-    () =>
-      initialPaymentTerms ||
-      depositPaymentTerms(
-        initialChoice,
-        initialChoice === "manual" && initialDeposit
-          ? String(initialDeposit)
-          : ""
-      )
-  );
   const paymentTermsRef = useRef<HTMLTextAreaElement>(null);
+  const initialTerms =
+    initialPaymentTerms ||
+    depositPaymentTerms(
+      initialChoice,
+      initialChoice === "manual" && initialDeposit
+        ? String(initialDeposit)
+        : ""
+    );
   const percentage = choice === "30" ? 0.3 : choice === "50" ? 0.5 : null;
   const calculatedDeposit =
     percentage === null
@@ -1165,7 +1163,10 @@ function DepositAndPaymentTerms({
               checked={choice === value}
               onChange={() => {
                 setChoice(value);
-                setPaymentTerms(depositPaymentTerms(value, manualAmount));
+                replacePaymentTerms(
+                  paymentTermsRef.current,
+                  depositPaymentTerms(value, manualAmount)
+                );
               }}
               className="h-4 w-4 cursor-pointer accent-[#fb5411]"
             />
@@ -1197,7 +1198,10 @@ function DepositAndPaymentTerms({
               onChange={(event) => {
                 const amount = event.target.value;
                 setManualAmount(amount);
-                setPaymentTerms(depositPaymentTerms("manual", amount));
+                replacePaymentTerms(
+                  paymentTermsRef.current,
+                  depositPaymentTerms("manual", amount)
+                );
               }}
               disabled={choice !== "manual"}
               required={choice === "manual"}
@@ -1224,16 +1228,14 @@ function DepositAndPaymentTerms({
               const textarea = paymentTermsRef.current;
               if (!textarea) return;
               const result = toggleBulletedLines(
-                paymentTerms,
+                textarea.value,
                 textarea.selectionStart,
                 textarea.selectionEnd
               );
-              setPaymentTerms(result.value);
-              notifyFormChanged();
-              window.requestAnimationFrame(() => {
-                textarea.focus();
-                textarea.setSelectionRange(result.start, result.end);
-              });
+              textarea.value = result.value;
+              textarea.focus();
+              textarea.setSelectionRange(result.start, result.end);
+              textarea.dispatchEvent(new Event("input", { bubbles: true }));
             }}
           />
         </div>
@@ -1241,13 +1243,21 @@ function DepositAndPaymentTerms({
           ref={paymentTermsRef}
           name="proposal_payment_terms"
           rows={3}
-          value={paymentTerms}
-          onChange={(event) => setPaymentTerms(event.target.value)}
+          defaultValue={initialTerms}
           className="w-full rounded-xl border border-white/10 bg-white/5 px-4 py-3 text-white outline-none focus:border-[#fb5411]"
         />
       </div>
     </section>
   );
+}
+
+function replacePaymentTerms(
+  textarea: HTMLTextAreaElement | null,
+  value: string
+) {
+  if (!textarea) return;
+  textarea.value = value;
+  textarea.dispatchEvent(new Event("input", { bubbles: true }));
 }
 
 function initialDepositChoice(
