@@ -19,6 +19,7 @@ import {
   type ProposalPricingLineItem,
 } from "@/lib/proposal-pricing";
 import { createAdminClient } from "@/lib/supabase/admin";
+import { DEFAULT_PROPOSAL_TERMS_AND_CONDITIONS } from "@/lib/proposal-terms";
 
 export const dynamic = "force-dynamic";
 export const runtime = "nodejs";
@@ -209,6 +210,10 @@ export function ProposalPdf({
         <PdfSection title="Scope of Work" content={value("proposal_scope")} />
         <PdfSection title="Finish" content={value("proposal_finish")} />
         <PdfSection title="Exclusions" content={value("proposal_exclusions")} />
+        <PdfSection
+          title="Customer Responsibilities"
+          content={value("proposal_customer_responsibilities")}
+        />
         <PdfPricingSection items={pricingItems} total={pricingTotal} />
         <PdfSection
           title="Payment Terms"
@@ -220,6 +225,13 @@ export function ProposalPdf({
         <PdfSection
           title="Clarifications"
           content={value("proposal_clarifications")}
+        />
+        <PdfSection
+          title="Terms and Conditions"
+          content={
+            value("proposal_terms_and_conditions") ||
+            DEFAULT_PROPOSAL_TERMS_AND_CONDITIONS
+          }
         />
 
         <View style={styles.closing}>

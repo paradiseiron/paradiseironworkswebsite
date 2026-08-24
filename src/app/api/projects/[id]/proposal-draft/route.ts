@@ -22,6 +22,8 @@ const TEXT_FIELDS = [
   "proposal_payment_terms",
   "proposal_schedule",
   "proposal_clarifications",
+  "proposal_customer_responsibilities",
+  "proposal_terms_and_conditions",
   "proposal_prepared_by",
   "proposal_prepared_by_title",
 ] as const;

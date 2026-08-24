@@ -82,9 +82,10 @@ export default async function BidOpportunitiesPage({
       <div className="grid gap-4">
         {opportunities?.length ? (
           opportunities.map((opportunity) => (
-            <article
+            <Link
               key={opportunity.id}
-              className="rounded-2xl border border-white/10 bg-white/[0.03] p-4 sm:p-5"
+              href={`/admin/bids/${opportunity.id}`}
+              className="block cursor-pointer rounded-2xl border border-white/10 bg-white/[0.03] p-4 transition hover:border-white/20 hover:bg-white/[0.06] sm:p-5"
             >
               <div className="flex flex-wrap items-start justify-between gap-3">
                 <div className="min-w-0">
@@ -140,7 +141,7 @@ export default async function BidOpportunitiesPage({
                   }`}
                 />
               </dl>
-            </article>
+            </Link>
           ))
         ) : (
           <div className="rounded-2xl border border-dashed border-white/15 bg-white/[0.02] px-6 py-14 text-center">

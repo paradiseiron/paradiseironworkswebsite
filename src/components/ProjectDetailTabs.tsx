@@ -31,6 +31,7 @@ import {
 } from "@/lib/proposal-pricing";
 import { getInvoiceLineItems, getInvoiceSummary } from "@/lib/invoice";
 import PdfFileAction from "@/components/PdfFileAction";
+import { DEFAULT_PROPOSAL_TERMS_AND_CONDITIONS } from "@/lib/proposal-terms";
 
 type ProjectTab =
   | "overview"
@@ -77,6 +78,8 @@ type ProjectRecord = {
   proposal_payment_terms?: string | null;
   proposal_schedule?: string | null;
   proposal_clarifications?: string | null;
+  proposal_customer_responsibilities?: string | null;
+  proposal_terms_and_conditions?: string | null;
   proposal_prepared_by?: string | null;
   proposal_prepared_by_title?: string | null;
   site_visit_status?: string | null;
@@ -614,6 +617,13 @@ export default function ProjectDetailTabs({
               rows={4}
             />
 
+            <TextArea
+              label="Customer Responsibilities"
+              name="proposal_customer_responsibilities"
+              defaultValue={project.proposal_customer_responsibilities || ""}
+              rows={5}
+            />
+
             <PricingLineItems
               items={pricingItems}
               total={pricingTotal}
@@ -638,6 +648,16 @@ export default function ProjectDetailTabs({
               name="proposal_clarifications"
               defaultValue={project.proposal_clarifications || ""}
               rows={4}
+            />
+
+            <TextArea
+              label="Terms and Conditions"
+              name="proposal_terms_and_conditions"
+              defaultValue={
+                project.proposal_terms_and_conditions ||
+                DEFAULT_PROPOSAL_TERMS_AND_CONDITIONS
+              }
+              rows={18}
             />
 
             <div className="grid gap-5 md:grid-cols-2">
@@ -920,6 +940,10 @@ function ProposalReadOnlyPanel({
         />
         <Detail label="Scope of Work" value={project.proposal_scope} />
         <Detail
+          label="Customer Responsibilities"
+          value={project.proposal_customer_responsibilities}
+        />
+        <Detail
           label="Deposit Amount"
           value={
             project.proposal_deposit_amount
@@ -932,6 +956,13 @@ function ProposalReadOnlyPanel({
         <Detail
           label="Clarifications"
           value={project.proposal_clarifications}
+        />
+        <Detail
+          label="Terms and Conditions"
+          value={
+            project.proposal_terms_and_conditions ||
+            DEFAULT_PROPOSAL_TERMS_AND_CONDITIONS
+          }
         />
       </div>
     </section>

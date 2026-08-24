@@ -15,6 +15,7 @@ import {
   Pencil,
 } from "lucide-react";
 import DeleteProjectButton from "@/components/DeleteProjectButton";
+import DeleteBidOpportunityButton from "@/components/DeleteBidOpportunityButton";
 import AdminProfileMenu from "@/components/AdminProfileMenu";
 import ReliableMobileLink from "@/components/ReliableMobileLink";
 import type { UserRole } from "@/lib/roles";
@@ -48,6 +49,10 @@ export default function AdminShell({
   const isBidsPage = pathname.startsWith("/admin/bids");
   const isBidWorkspace = isBidsPage;
   const isNewBidPage = pathname === "/admin/bids/new";
+  const isEditBidPage = isBidsPage && pathname.endsWith("/edit");
+  const isBidDetailPage =
+    isBidsPage && pathname !== "/admin/bids" && !isNewBidPage && !isEditBidPage;
+  const bidOpportunityId = pathname.split("/")[3] || "";
   const isCalendarPage = pathname === "/admin/calendar";
   const isDailyShopReportPage = pathname.startsWith(
     "/admin/daily-shop-report"
@@ -338,6 +343,30 @@ export default function AdminShell({
                 </ReliableMobileLink>
               )}
 
+              {isBidDetailPage && (
+                <ReliableMobileLink
+                  href="/admin/bids"
+                  aria-label="Back to Bid Opportunities"
+                  title="Back to Bid Opportunities"
+                  className="inline-flex h-10 touch-manipulation items-center justify-center gap-2 rounded-xl border border-white/10 px-3 text-sm text-neutral-300 transition hover:bg-white/5 hover:text-white sm:px-4"
+                >
+                  <ArrowLeft className="h-4 w-4" aria-hidden="true" />
+                  <span className="hidden sm:inline">Back to Bids</span>
+                </ReliableMobileLink>
+              )}
+
+              {isEditBidPage && (
+                <ReliableMobileLink
+                  href={`/admin/bids/${bidOpportunityId}`}
+                  aria-label="Back to Bid Opportunity"
+                  title="Back to Bid Opportunity"
+                  className="inline-flex h-10 touch-manipulation items-center justify-center gap-2 rounded-xl border border-white/10 px-3 text-sm text-neutral-300 transition hover:bg-white/5 hover:text-white sm:px-4"
+                >
+                  <ArrowLeft className="h-4 w-4" aria-hidden="true" />
+                  <span className="hidden sm:inline">Back to Bid</span>
+                </ReliableMobileLink>
+              )}
+
               {isDailyShopReportSubpage && (
                 <ReliableMobileLink
                   href={dailyShopReportBackPath}
@@ -454,6 +483,36 @@ export default function AdminShell({
     Save Changes
   </button>
 )}
+
+              {(userRole === "admin" ||
+                userRole === "bid_estimator" ||
+                userRole === "project_manager") &&
+                isBidDetailPage && (
+                  <>
+                    <Link
+                      href={`${pathname}/edit`}
+                      aria-label="Edit Bid Opportunity"
+                      title="Edit Bid Opportunity"
+                      className="inline-flex h-10 shrink-0 cursor-pointer items-center justify-center gap-2 rounded-xl border border-white/10 px-3 text-sm font-semibold text-neutral-300 transition hover:bg-white/5 hover:text-white sm:px-5"
+                    >
+                      <Pencil className="h-4 w-4" aria-hidden="true" />
+                      <span className="hidden sm:inline">Edit Opportunity</span>
+                    </Link>
+                    {userRole === "admin" && (
+                      <DeleteBidOpportunityButton id={bidOpportunityId} />
+                    )}
+                  </>
+                )}
+
+              {isEditBidPage && (
+                <button
+                  type="submit"
+                  form="edit-bid-opportunity-form"
+                  className="inline-flex h-10 shrink-0 cursor-pointer items-center justify-center rounded-xl bg-[#fb5411] px-4 text-sm font-semibold text-white transition hover:bg-[#e64d0f] sm:px-5"
+                >
+                  Save Changes
+                </button>
+              )}
 
               {canWrite && isProjectProposalTab && (
                 <button

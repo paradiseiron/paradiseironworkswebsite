@@ -125,6 +125,12 @@ async function updateProposal(formData: FormData) {
       proposal_payment_terms: String(formData.get("proposal_payment_terms") || ""),
       proposal_schedule: String(formData.get("proposal_schedule") || ""),
       proposal_clarifications: String(formData.get("proposal_clarifications") || ""),
+      proposal_customer_responsibilities: String(
+        formData.get("proposal_customer_responsibilities") || ""
+      ),
+      proposal_terms_and_conditions: String(
+        formData.get("proposal_terms_and_conditions") || ""
+      ),
       proposal_prepared_by: String(formData.get("proposal_prepared_by") || ""),
       proposal_prepared_by_title: String(
         formData.get("proposal_prepared_by_title") || ""

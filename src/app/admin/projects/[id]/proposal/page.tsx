@@ -10,6 +10,7 @@ import {
   proposalPricingTotal,
   type ProposalPricingLineItem,
 } from "@/lib/proposal-pricing";
+import { DEFAULT_PROPOSAL_TERMS_AND_CONDITIONS } from "@/lib/proposal-terms";
 
 export default async function ProposalPreviewPage({
   params,
@@ -159,6 +160,11 @@ export default async function ProposalPreviewPage({
           content={project.proposal_exclusions}
         />
 
+        <ProposalSection
+          title="Customer Responsibilities"
+          content={project.proposal_customer_responsibilities}
+        />
+
         <PricingSection items={pricingItems} total={pricingTotal} />
 
         <ProposalSection
@@ -177,6 +183,14 @@ export default async function ProposalPreviewPage({
         <ProposalSection
           title="Clarifications"
           content={project.proposal_clarifications}
+        />
+
+        <ProposalSection
+          title="Terms and Conditions"
+          content={
+            project.proposal_terms_and_conditions ||
+            DEFAULT_PROPOSAL_TERMS_AND_CONDITIONS
+          }
         />
 
         <section className="mt-10 text-sm leading-7">
