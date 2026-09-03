@@ -12,6 +12,7 @@ import {
 } from "@/lib/proposal-pricing";
 import type { ProjectImage } from "@/components/ProjectImagesPanel";
 import { createSignedImageUrls } from "@/lib/signed-images";
+import { MHIC_DRAFT_CONTRACTOR } from "@/lib/mhic-contract";
 
 export const dynamic = "force-dynamic";
 export const revalidate = 0;
@@ -135,6 +136,21 @@ async function updateProposal(formData: FormData) {
       proposal_prepared_by_title: String(
         formData.get("proposal_prepared_by_title") || ""
       ),
+      proposal_mhic_enabled: formData.get("proposal_mhic_enabled") === "true",
+      proposal_mhic_contract_date: optionalFormValue(formData, "proposal_mhic_contract_date"),
+      proposal_mhic_start_date: optionalFormValue(formData, "proposal_mhic_start_date"),
+      proposal_mhic_completion_date: optionalFormValue(formData, "proposal_mhic_completion_date"),
+      proposal_mhic_salesperson_name: MHIC_DRAFT_CONTRACTOR.licenseeName,
+      proposal_mhic_salesperson_license_number: MHIC_DRAFT_CONTRACTOR.licenseNumber,
+      proposal_mhic_payment_schedule: String(formData.get("proposal_mhic_payment_schedule") || ""),
+      proposal_mhic_finance_charge: String(formData.get("proposal_mhic_finance_charge") || ""),
+      proposal_mhic_collateral_security: String(formData.get("proposal_mhic_collateral_security") || ""),
+      proposal_mhic_incorporated_documents: String(formData.get("proposal_mhic_incorporated_documents") || ""),
+      proposal_mhic_door_to_door_status: String(formData.get("proposal_mhic_door_to_door_status") || ""),
+      proposal_mhic_buyer_age_65_plus: formData.get("proposal_mhic_buyer_age_65_plus") === "true",
+      proposal_mhic_cancellation_deadline: optionalFormValue(formData, "proposal_mhic_cancellation_deadline"),
+      proposal_mhic_secured_by_property: formData.get("proposal_mhic_secured_by_property") === "true",
+      proposal_mhic_warranty_claim_procedure: String(formData.get("proposal_mhic_warranty_claim_procedure") || ""),
       proposal_updated_at: new Date().toISOString(),
       updated_at: new Date().toISOString(),
     })
@@ -155,6 +171,11 @@ async function updateProposal(formData: FormData) {
   }
 
   redirect(`/admin/projects/${project_id}?tab=proposal`);
+}
+
+function optionalFormValue(formData: FormData, name: string) {
+  const value = String(formData.get(name) || "").trim();
+  return value || null;
 }
 
 async function addProjectActivity(formData: FormData) {
@@ -286,6 +307,16 @@ export default async function ProjectDetailPage({
 
   const siteVisitImages = signedSiteImages;
 
+  const { data: portfolioProject, error: portfolioError } = await supabase
+    .from("portfolio_projects")
+    .select("*")
+    .eq("project_id", id)
+    .maybeSingle();
+
+  if (portfolioError) {
+    console.error("Unable to load portfolio project:", portfolioError);
+  }
+
   if (projectImagesError) {
     console.error(
       "Error loading project images:",
@@ -388,6 +419,7 @@ export default async function ProjectDetailPage({
         siteVisitImages={siteVisitImages}
         projectImages={projectImages}
         estimators={estimators}
+        portfolioProject={portfolioProject || null}
       />
     </div>
   );

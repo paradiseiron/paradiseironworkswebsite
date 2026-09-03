@@ -2,6 +2,9 @@ import type { Metadata } from "next";
 import { notFound } from "next/navigation";
 import { getProjectBySlug, normalizeSlug, projects } from "@/data/projects";
 import ProjectDetailsPage from "@/components/ProjectDetailPage";
+import { getPublishedPortfolioProject } from "@/lib/portfolio";
+
+export const dynamic = "force-dynamic";
 
 type PageProps = {
   params: Promise<{ slug: string }>;
@@ -15,7 +18,10 @@ export async function generateMetadata({
   params,
 }: PageProps): Promise<Metadata> {
   const { slug } = await params;
-  const project = getProjectBySlug(normalizeSlug(slug));
+  const normalizedSlug = normalizeSlug(slug);
+  const project =
+    (await getPublishedPortfolioProject(normalizedSlug)) ||
+    getProjectBySlug(normalizedSlug);
 
   if (!project) {
     return {};
@@ -49,7 +55,8 @@ export default async function Page({
   const { slug: rawSlug } = await params;
 
   const slug = normalizeSlug(rawSlug);
-  const project = getProjectBySlug(slug);
+  const project =
+    (await getPublishedPortfolioProject(slug)) || getProjectBySlug(slug);
 
   if (!project) {
     notFound();

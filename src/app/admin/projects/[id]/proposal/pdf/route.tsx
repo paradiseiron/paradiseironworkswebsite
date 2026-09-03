@@ -20,6 +20,12 @@ import {
 } from "@/lib/proposal-pricing";
 import { createAdminClient } from "@/lib/supabase/admin";
 import { DEFAULT_PROPOSAL_TERMS_AND_CONDITIONS } from "@/lib/proposal-terms";
+import {
+  MHIC_COMMISSION_NOTICE,
+  MHIC_DOOR_TO_DOOR_PLACEHOLDER,
+  MHIC_DRAFT_CONTRACTOR,
+  MHIC_SECURITY_PLACEHOLDER,
+} from "@/lib/mhic-contract";
 
 export const dynamic = "force-dynamic";
 export const runtime = "nodejs";
@@ -44,14 +50,19 @@ export async function GET(
   }
 
   try {
-    const origin = new URL(request.url).origin;
+    const requestUrl = new URL(request.url);
+    const origin = requestUrl.origin;
+    const mhicDraft = Boolean(project.proposal_mhic_enabled);
     const pdfBuffer = await renderToBuffer(
       <ProposalPdf
         project={project}
         logoUrl={`${origin}/images/paradise_ironworks_logo.png`}
+        mhicDraft={mhicDraft}
       />
     );
-    const filename = safeFilename(project.proposal_number || "proposal");
+    const filename = safeFilename(
+      `${project.proposal_number || "proposal"}${mhicDraft ? "-mhic" : ""}`
+    );
 
     await recordFirstProposalDownload(project);
 
@@ -120,9 +131,11 @@ async function recordFirstProposalDownload(project: Record<string, unknown>) {
 export function ProposalPdf({
   project,
   logoUrl,
+  mhicDraft = false,
 }: {
   project: Record<string, unknown>;
   logoUrl: string;
+  mhicDraft?: boolean;
 }) {
   const value = (key: string) => String(project[key] || "");
   const projectLocation = [
@@ -154,7 +167,9 @@ export function ProposalPdf({
             <Text style={styles.company}>
               Paradise Ironworks & Construction LLC
             </Text>
-            <Text style={styles.title}>Proposal</Text>
+            <Text style={styles.title}>
+              {mhicDraft ? "Maryland Home Improvement Contract" : "Proposal"}
+            </Text>
             <View style={styles.metaGroup}>
               <Text style={styles.meta}>
                 <Text style={styles.inlineLabel}>Proposal #:</Text>{" "}
@@ -162,9 +177,24 @@ export function ProposalPdf({
               </Text>
               <Text style={styles.meta}>
                 <Text style={styles.inlineLabel}>Date:</Text>{" "}
-                {formatWashingtonDate(new Date())}
+                {mhicDraft && value("proposal_mhic_contract_date")
+                  ? formatWashingtonDate(value("proposal_mhic_contract_date"))
+                  : formatWashingtonDate(new Date())}
               </Text>
             </View>
+            {mhicDraft && (
+              <View style={styles.mhicContractor}>
+                <Text>Contractor: {MHIC_DRAFT_CONTRACTOR.licensedBusinessName}</Text>
+                <Text>Licensee: {MHIC_DRAFT_CONTRACTOR.licenseeName}</Text>
+                <Text>Address: {MHIC_DRAFT_CONTRACTOR.address}</Text>
+                <Text>Telephone: {MHIC_DRAFT_CONTRACTOR.phone}</Text>
+                <Text>MHIC license: {MHIC_DRAFT_CONTRACTOR.licenseNumber}</Text>
+                <Text>Classification: {MHIC_DRAFT_CONTRACTOR.licenseClassification}</Text>
+                <Text>License expiration: {MHIC_DRAFT_CONTRACTOR.licenseExpiration}</Text>
+                <Text>Salesperson: {MHIC_DRAFT_CONTRACTOR.licenseeName}</Text>
+                <Text>Salesperson license: {MHIC_DRAFT_CONTRACTOR.licenseNumber}</Text>
+              </View>
+            )}
           </View>
           {/* react-pdf Image does not expose the HTML alt prop. */}
           {/* eslint-disable-next-line jsx-a11y/alt-text */}
@@ -215,6 +245,12 @@ export function ProposalPdf({
           content={value("proposal_customer_responsibilities")}
         />
         <PdfPricingSection items={pricingItems} total={pricingTotal} />
+        {mhicDraft && (
+          <PdfSection
+            title="Deposit Check"
+            content={`Proposed deposit: ${formatCurrency(deposit)}\nMaximum one-third deposit: ${formatCurrency(pricingTotal / 3)}\n${deposit > pricingTotal / 3 ? "FAIL — reduce the deposit before execution." : "PASS — the proposed deposit does not exceed one-third of the current contract total."}`}
+          />
+        )}
         <PdfSection
           title="Payment Terms"
           content={
@@ -222,6 +258,12 @@ export function ProposalPdf({
           }
         />
         <PdfSection title="Schedule" content={value("proposal_schedule")} />
+        {mhicDraft && (
+          <PdfSection
+            title="Required Contract Dates"
+            content={`Approximate work start date: ${value("proposal_mhic_start_date") ? formatWashingtonDate(value("proposal_mhic_start_date")) : "Not entered"}\nApproximate substantial completion date: ${value("proposal_mhic_completion_date") ? formatWashingtonDate(value("proposal_mhic_completion_date")) : "Not entered"}`}
+          />
+        )}
         <PdfSection
           title="Clarifications"
           content={value("proposal_clarifications")}
@@ -233,6 +275,24 @@ export function ProposalPdf({
             DEFAULT_PROPOSAL_TERMS_AND_CONDITIONS
           }
         />
+        {mhicDraft && (
+          <>
+            <PdfSection title="MHIC Consumer Protection Notice" content={MHIC_COMMISSION_NOTICE} />
+            <PdfSection
+              title="Financing and Security"
+              content={`Finance charge: ${value("proposal_mhic_finance_charge") || "None"}\nNumber and amount of payments:\n${value("proposal_mhic_payment_schedule") || value("proposal_payment_terms") || "Not entered"}\n\nCollateral security: ${value("proposal_mhic_collateral_security") || "None"}\n\n${project.proposal_mhic_secured_by_property ? MHIC_SECURITY_PLACEHOLDER : "Payment is not represented as secured by an interest in residential real estate."}`}
+            />
+            <PdfSection
+              title="Cancellation Review"
+              content={value("proposal_mhic_door_to_door_status") === "applies" ? `${MHIC_DOOR_TO_DOOR_PLACEHOLDER}\n\nBuyer age 65 or older: ${project.proposal_mhic_buyer_age_65_plus ? "Yes" : "No"}\nCancellation deadline: ${value("proposal_mhic_cancellation_deadline") ? formatWashingtonDate(value("proposal_mhic_cancellation_deadline")) : "Not entered"}` : `Door-to-door status: ${value("proposal_mhic_door_to_door_status") || "Not determined"}`}
+            />
+            <PdfSection
+              title="Documents Incorporated into This Contract"
+              content={value("proposal_mhic_incorporated_documents") || "None"}
+            />
+            <PdfSection title="Warranty Claim Procedure" content={value("proposal_mhic_warranty_claim_procedure") || "Not entered"} />
+          </>
+        )}
 
         <View style={styles.closing}>
           <Text style={styles.body}>
@@ -253,15 +313,35 @@ export function ProposalPdf({
         </View>
 
         <View style={styles.acceptance} wrap={false}>
-          <Text style={styles.acceptanceTitle}>Acceptance of Proposal</Text>
-          <Text style={styles.acceptanceCopy}>
-            The above proposal, pricing, scope, and terms are hereby accepted.
+          <Text style={styles.acceptanceTitle}>
+            {mhicDraft ? "Contract Acceptance" : "Acceptance of Proposal"}
           </Text>
-          <SignatureLine label="Accepted By" />
-          <SignatureLine label="Company" />
-          <SignatureLine label="Signature" />
-          <SignatureLine label="Date" />
-          <SignatureLine label="Purchase Order / Authorization No." />
+          <Text style={styles.acceptanceCopy}>
+            {mhicDraft
+              ? "The homeowner and contractor accept this written contract, including the identified incorporated documents. A fully signed copy must be provided to the homeowner before work begins."
+              : "The above proposal, pricing, scope, and terms are hereby accepted."}
+          </Text>
+          {mhicDraft ? (
+            <>
+              <SignatureLine label="Homeowner printed name" />
+              <SignatureLine label="Homeowner signature" />
+              <SignatureLine label="Date" />
+              <SignatureLine label="Contractor authorized signer" value={MHIC_DRAFT_CONTRACTOR.licenseeName} />
+              <SignatureLine label="Contractor signature" />
+              <SignatureLine label="Contractor license number" value={MHIC_DRAFT_CONTRACTOR.licenseNumber} />
+              <SignatureLine label="Date" />
+              <SignatureLine label="Salesperson name / license no." value={`${MHIC_DRAFT_CONTRACTOR.licenseeName} / ${MHIC_DRAFT_CONTRACTOR.licenseNumber}`} />
+              <SignatureLine label="Salesperson signature / date" />
+            </>
+          ) : (
+            <>
+              <SignatureLine label="Accepted By" />
+              <SignatureLine label="Company" />
+              <SignatureLine label="Signature" />
+              <SignatureLine label="Date" />
+              <SignatureLine label="Purchase Order / Authorization No." />
+            </>
+          )}
         </View>
 
       </Page>
@@ -378,11 +458,11 @@ function PdfContent({ content }: { content: string }) {
   );
 }
 
-function SignatureLine({ label }: { label: string }) {
+function SignatureLine({ label, value }: { label: string; value?: string }) {
   return (
     <View style={styles.signatureLine} wrap={false}>
       <Text style={styles.signatureLabel}>{label}:</Text>
-      <View style={styles.signatureRule} />
+      <Text style={styles.signatureRule}>{value || " "}</Text>
     </View>
   );
 }
@@ -422,6 +502,7 @@ const styles = StyleSheet.create({
     fontFamily: "Helvetica-Bold",
   },
   metaGroup: { marginTop: 12 },
+  mhicContractor: { marginTop: 10, fontSize: 8.5, lineHeight: 1.45 },
   meta: { color: "#525252", fontSize: 9.5, lineHeight: 1.55 },
   inlineLabel: { fontFamily: "Helvetica-Bold" },
   logo: { width: 72, height: 72, objectFit: "contain" },

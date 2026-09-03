@@ -28,13 +28,13 @@ export type ProjectImage = { src: string; alt: string };
  * - [slug] detail page
  */
 export type ProjectDetails = {
-  id: number;
+  id: number | string;
   slug: string;
 
   name: string;
   location: string;
   workType: WorkType;
-  productTypes: Exclude<ProductType, "All">[];
+  productTypes: string[];
 
 
   // Gallery thumbnail

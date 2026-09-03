@@ -81,10 +81,15 @@ export default function AdminShell({
     pathname.startsWith("/admin/projects/") &&
     pathname.endsWith("/invoice");
 
+  const isReceiptPreview =
+    pathname.startsWith("/admin/projects/") &&
+    pathname.endsWith("/receipt");
+
   const isProjectDetail =
     pathname.startsWith("/admin/projects/") &&
     !pathname.endsWith("/proposal") &&
     !pathname.endsWith("/invoice") &&
+    !pathname.endsWith("/receipt") &&
     pathname !== "/admin/projects" &&
     pathname !== "/admin/projects/new";
 
@@ -99,6 +104,8 @@ export default function AdminShell({
     ? `${pathname.replace("/proposal", "")}?tab=proposal`
     : isInvoicePreview
       ? `${pathname.replace("/invoice", "")}?tab=invoice`
+    : isReceiptPreview
+      ? `${pathname.replace("/receipt", "")}?tab=close`
     : pathname;
 
   useEffect(() => {
@@ -393,7 +400,7 @@ export default function AdminShell({
                 </ReliableMobileLink>
               )}
 
-              {(isProposalPreview || isInvoicePreview) && (
+              {(isProposalPreview || isInvoicePreview || isReceiptPreview) && (
                 <ReliableMobileLink
                   href={projectPath}
                   aria-label="Back to Project"
@@ -526,7 +533,7 @@ export default function AdminShell({
                 </button>
               )}
 
-              {(isProposalPreview || isInvoicePreview) && (
+              {(isProposalPreview || isInvoicePreview || isReceiptPreview) && (
   <>
     <button
       type="button"

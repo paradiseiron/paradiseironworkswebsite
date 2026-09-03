@@ -76,7 +76,7 @@ export default async function AdminPage({
   const { data: projects, error } = await supabase
     .from("projects")
     .select(
-      "id, customer_name, status, project_category, project_type, lead_source, received_at, has_open_follow_up, proposal_amount, balance_due, website_lead_reviewed_at, site_visit_status, site_visit_assigned_to"
+      "id, customer_name, status, project_category, project_type, lead_source, received_at, has_open_follow_up, proposal_amount, balance_due, proposal_deposit_amount, website_lead_reviewed_at, site_visit_status, site_visit_assigned_to"
     )
     .order("received_at", { ascending: false });
 
@@ -118,10 +118,17 @@ export default async function AdminPage({
     (total, project) => total + Number(project.proposal_amount || 0),
     0
   );
-  const balanceDue = records.reduce(
-    (total, project) => total + Number(project.balance_due || 0),
-    0
-  );
+  const balanceDue = records
+    .filter(
+      (project) => (project.status || "lead").toLowerCase() === "active"
+    )
+    .reduce(
+      (total, project) =>
+        total +
+        Number(project.proposal_amount || 0) -
+        Number(project.proposal_deposit_amount || 0),
+      0
+    );
   const pipelineRevenue = records
     .filter((project) =>
       ["active", "completed"].includes(

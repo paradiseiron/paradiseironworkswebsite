@@ -78,7 +78,7 @@ export default function SiteVisitPanel({
   const [completedVisit, setCompletedVisit] =
     useState<CompletedVisitDraft | null>(null);
   const [editingVisit, setEditingVisit] = useState(
-    (project.site_visit_status || "not_ready") === "ready"
+    (project.site_visit_status || "not_ready") === "ready" && role !== "admin"
   );
   const [editingSchedule, setEditingSchedule] = useState(
     (project.site_visit_status || "not_ready") !== "ready"
@@ -94,8 +94,10 @@ export default function SiteVisitPanel({
     .filter(Boolean)
     .join(", ");
   const status = project.site_visit_status || "not_ready";
-  const hasEstimatorAccess =
-    role === "estimator" || role === "operations_foreman";
+  const canCompleteSiteVisit =
+    role === "admin" ||
+    role === "estimator" ||
+    role === "operations_foreman";
   const effectiveStatus = scheduledVisit ? "ready" : status;
   const scheduledDate =
     scheduledVisit?.date || project.site_visit_scheduled_date || "";
@@ -285,7 +287,7 @@ export default function SiteVisitPanel({
   }
 
   if (
-    hasEstimatorAccess &&
+    canCompleteSiteVisit &&
     (completedVisit || status === "completed") &&
     !editingVisit
   ) {
@@ -367,7 +369,7 @@ export default function SiteVisitPanel({
     );
   }
 
-  if (role === "admin" && status !== "completed") {
+  if (role === "admin" && status !== "completed" && !editingVisit) {
     if (effectiveStatus === "ready" && !editingSchedule) {
       return (
         <section className="rounded-2xl border border-white/10 bg-white/[0.03] p-4 sm:p-6">
@@ -379,17 +381,30 @@ export default function SiteVisitPanel({
               </p>
             </div>
 
-            <button
-              type="button"
-              onClick={() => {
-                setMessage("");
-                setEditingSchedule(true);
-              }}
-              className="inline-flex h-10 cursor-pointer items-center gap-2 rounded-xl border border-white/10 px-4 text-sm font-semibold text-neutral-200 transition hover:border-white/20 hover:bg-white/10 hover:text-white"
-            >
-              <Pencil className="h-4 w-4" aria-hidden="true" />
-              Edit visit
-            </button>
+            <div className="flex flex-wrap gap-2">
+              <button
+                type="button"
+                onClick={() => {
+                  setMessage("");
+                  setEditingSchedule(true);
+                }}
+                className="inline-flex h-10 cursor-pointer items-center gap-2 rounded-xl border border-white/10 px-4 text-sm font-semibold text-neutral-200 transition hover:border-white/20 hover:bg-white/10 hover:text-white"
+              >
+                <Pencil className="h-4 w-4" aria-hidden="true" />
+                Edit schedule
+              </button>
+              <button
+                type="button"
+                onClick={() => {
+                  setMessage("");
+                  setEditingVisit(true);
+                }}
+                className="inline-flex h-10 cursor-pointer items-center gap-2 rounded-xl bg-[#fb5411] px-4 text-sm font-semibold text-white"
+              >
+                <Save className="h-4 w-4" aria-hidden="true" />
+                Complete site visit
+              </button>
+            </div>
           </div>
 
           <div className="mt-6 rounded-xl border border-[#fb5411]/20 bg-[#fb5411]/10 p-4">
@@ -507,7 +522,7 @@ export default function SiteVisitPanel({
   }
 
   if (
-    hasEstimatorAccess &&
+    canCompleteSiteVisit &&
     (status === "ready" || status === "completed") &&
     editingVisit
   ) {

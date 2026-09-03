@@ -6,6 +6,7 @@ import { useSearchParams } from "next/navigation";
 import {
   CheckCircle2,
   FileText,
+  Info,
   List,
   Phone,
   Plus,
@@ -32,13 +33,16 @@ import {
 import { getInvoiceLineItems, getInvoiceSummary } from "@/lib/invoice";
 import PdfFileAction from "@/components/PdfFileAction";
 import { DEFAULT_PROPOSAL_TERMS_AND_CONDITIONS } from "@/lib/proposal-terms";
+import ProjectClosePanel, { type PortfolioDraft } from "@/components/ProjectClosePanel";
+import { MHIC_DRAFT_CONTRACTOR } from "@/lib/mhic-contract";
 
 type ProjectTab =
   | "overview"
   | "proposal"
   | "site-visit"
   | "timeline"
-  | "invoice";
+  | "invoice"
+  | "close";
 
 type ProjectRecord = {
   id: string;
@@ -55,6 +59,7 @@ type ProjectRecord = {
   project_type?: string | null;
   engineering_services?: string | null;
   status?: string | null;
+  completed_at?: string | null;
   notes?: string | null;
   received_at?: string | null;
   has_open_follow_up?: boolean | null;
@@ -82,6 +87,21 @@ type ProjectRecord = {
   proposal_terms_and_conditions?: string | null;
   proposal_prepared_by?: string | null;
   proposal_prepared_by_title?: string | null;
+  proposal_mhic_enabled?: boolean | null;
+  proposal_mhic_contract_date?: string | null;
+  proposal_mhic_start_date?: string | null;
+  proposal_mhic_completion_date?: string | null;
+  proposal_mhic_salesperson_name?: string | null;
+  proposal_mhic_salesperson_license_number?: string | null;
+  proposal_mhic_payment_schedule?: string | null;
+  proposal_mhic_finance_charge?: string | null;
+  proposal_mhic_collateral_security?: string | null;
+  proposal_mhic_incorporated_documents?: string | null;
+  proposal_mhic_door_to_door_status?: string | null;
+  proposal_mhic_buyer_age_65_plus?: boolean | null;
+  proposal_mhic_cancellation_deadline?: string | null;
+  proposal_mhic_secured_by_property?: boolean | null;
+  proposal_mhic_warranty_claim_procedure?: string | null;
   site_visit_status?: string | null;
   site_visit_scheduled_date?: string | null;
   site_visit_window_start?: string | null;
@@ -94,6 +114,7 @@ type ProjectRecord = {
   site_visit_access_safety_concerns?: string | null;
   site_visit_completed_at?: string | null;
   site_visit_assigned_to?: string | null;
+  review_request_sent_at?: string | null;
 };
 
 type ProjectActivity = {
@@ -122,6 +143,7 @@ type Props = {
   siteVisitImages: { path: string; url: string }[];
   projectImages: ProjectImage[];
   estimators: { id: string; name: string }[];
+  portfolioProject: PortfolioDraft;
 };
 
 export default function ProjectDetailTabs({
@@ -134,6 +156,7 @@ export default function ProjectDetailTabs({
   siteVisitImages,
   projectImages,
   estimators,
+  portfolioProject,
 }: Props) {
   const searchParams = useSearchParams();
   const initialTab = searchParams.get("tab");
@@ -146,7 +169,8 @@ export default function ProjectDetailTabs({
     initialTab === "proposal" ||
       initialTab === "site-visit" ||
       initialTab === "timeline" ||
-      initialTab === "invoice"
+      initialTab === "invoice" ||
+      initialTab === "close"
       ? initialTab
       : "overview"
   );
@@ -155,6 +179,9 @@ export default function ProjectDetailTabs({
   const [autosaveStatus, setAutosaveStatus] = useState<
     "idle" | "saving" | "saved" | "error"
   >("idle");
+  const [mhicDraftEnabled, setMhicDraftEnabled] = useState(
+    Boolean(project.proposal_mhic_enabled)
+  );
   const [pricingItems, setPricingItems] = useState<PricingLineItemFormState[]>(
     () =>
       pricingItemsToFormState(
@@ -331,6 +358,7 @@ export default function ProjectDetailTabs({
             "proposal",
             "timeline",
             "invoice",
+            "close",
           ] as ProjectTab[]
         ).map(
           (item) => (
@@ -552,6 +580,95 @@ export default function ProjectDetailTabs({
               value={project.proposal_number || ""}
             />
 
+            {project.project_category?.trim().toLowerCase() === "residential" &&
+              ["MD", "MARYLAND"].includes(project.state?.trim().toUpperCase() || "") && (
+                <section className="rounded-xl border border-blue-400/30 bg-blue-400/10 p-4">
+                  <label className="flex cursor-pointer items-start justify-between gap-4">
+                    <span>
+                      <span className="block font-semibold text-blue-100">MHIC home improvement contract</span>
+                      <span className="mt-1 block text-sm leading-6 text-blue-100/70">
+                        Adds the Maryland residential contract fields and uses them in the standard proposal preview and PDF.
+                      </span>
+                    </span>
+                    <span className="relative mt-1 inline-flex shrink-0">
+                    <input
+                      name="proposal_mhic_enabled"
+                      value="true"
+                      type="checkbox"
+                      role="switch"
+                      aria-checked={mhicDraftEnabled}
+                      checked={mhicDraftEnabled}
+                      onChange={(event) => setMhicDraftEnabled(event.target.checked)}
+                      className="peer sr-only"
+                    />
+                    <span className="h-7 w-12 rounded-full bg-neutral-700 transition peer-checked:bg-[#fb5411] peer-focus-visible:outline peer-focus-visible:outline-2 peer-focus-visible:outline-offset-2 peer-focus-visible:outline-[#fb5411]" />
+                    <span className="pointer-events-none absolute left-1 top-1 h-5 w-5 rounded-full bg-white shadow transition-transform peer-checked:translate-x-5" />
+                    </span>
+                  </label>
+
+                  {mhicDraftEnabled && (
+                    <div className="mt-5 space-y-5 border-t border-blue-300/20 pt-5">
+                      <div className="grid gap-5 md:grid-cols-3">
+                        <Field label="Contract date" name="proposal_mhic_contract_date" type="date" defaultValue={project.proposal_mhic_contract_date || ""} />
+                        <Field label="Approximate start date" name="proposal_mhic_start_date" type="date" defaultValue={project.proposal_mhic_start_date || ""} />
+                        <Field label="Substantial completion date" name="proposal_mhic_completion_date" type="date" defaultValue={project.proposal_mhic_completion_date || ""} help="Enter the approximate date when the contracted work should be substantially usable and complete, even if minor punch-list work remains." />
+                      </div>
+
+                      <div className="grid gap-5 md:grid-cols-2">
+                        <div className="rounded-xl border border-white/10 bg-white/[0.03] p-4 text-sm">
+                          <p className="text-neutral-500">Contractor / salesperson</p>
+                          <p className="mt-1 font-semibold text-white">{MHIC_DRAFT_CONTRACTOR.licenseeName}</p>
+                          <p className="mt-1 text-neutral-300">MHIC #{MHIC_DRAFT_CONTRACTOR.licenseNumber} · {MHIC_DRAFT_CONTRACTOR.licenseClassification}</p>
+                          <p className="mt-1 text-neutral-400">Expires {MHIC_DRAFT_CONTRACTOR.licenseExpiration}</p>
+                        </div>
+                        <Field label="Finance charge" name="proposal_mhic_finance_charge" defaultValue={project.proposal_mhic_finance_charge || "None"} help="Enter the total financing charge, interest, or other cost of extending payment over time. Use “None” when PIWC is not financing the contract." />
+                        <Field label="Collateral security" name="proposal_mhic_collateral_security" defaultValue={project.proposal_mhic_collateral_security || "None"} help="Describe any property or other security pledged to guarantee payment. Use “None” when the homeowner is not pledging collateral." />
+                      </div>
+
+                      <TextArea label="Payment schedule (number and amount of each payment)" name="proposal_mhic_payment_schedule" defaultValue={project.proposal_mhic_payment_schedule || project.proposal_payment_terms || ""} rows={4} help="List every payment separately with its amount or percentage and the milestone that makes it due. The initial deposit cannot exceed one-third of the contract price." />
+                      <TextArea label="Documents incorporated into the contract" name="proposal_mhic_incorporated_documents" defaultValue={project.proposal_mhic_incorporated_documents || "None"} rows={3} help="Identify every drawing, specification, finish schedule, addendum, or other document that becomes part of the contract. Include its title and date or revision; enter “None” if there are no incorporated documents." />
+
+                      <div className="grid gap-5 md:grid-cols-2">
+                        <SelectField
+                          label="Door-to-door sales rules"
+                          name="proposal_mhic_door_to_door_status"
+                          defaultValue={project.proposal_mhic_door_to_door_status || "review"}
+                          options={[["review", "Needs review"], ["applies", "Applies"], ["not_applicable", "Does not apply"]]}
+                          help="Select Applies when the sale was personally solicited and the homeowner agreed somewhere other than PIWC’s place of business, including at the home. Keep Needs review if you are unsure."
+                        />
+                        <SelectField
+                          label="Payment secured by residential real estate?"
+                          name="proposal_mhic_secured_by_property"
+                          defaultValue={project.proposal_mhic_secured_by_property ? "true" : "false"}
+                          options={[["false", "No"], ["true", "Yes"]]}
+                          help="Choose Yes only if payment is secured by a mortgage, lien agreement, or other contractual interest in the residence. This triggers a special first-page warning and homeowner initials."
+                        />
+                        <SelectField
+                          label="Buyer age 65 or older?"
+                          name="proposal_mhic_buyer_age_65_plus"
+                          defaultValue={project.proposal_mhic_buyer_age_65_plus ? "true" : "false"}
+                          options={[["false", "No"], ["true", "Yes"]]}
+                          help="This affects the cancellation period only when the Door-to-Door Sales Act applies: buyers age 65 or older generally receive seven business days instead of five."
+                        />
+                        <Field label="Cancellation deadline" name="proposal_mhic_cancellation_deadline" type="date" defaultValue={project.proposal_mhic_cancellation_deadline || ""} help="Enter the final date by which the homeowner may cancel when door-to-door rules apply. Calculate business days from the transaction date and account for the buyer’s age." />
+                      </div>
+
+                      <TextArea
+                        label="Warranty claim procedure"
+                        name="proposal_mhic_warranty_claim_procedure"
+                        defaultValue={project.proposal_mhic_warranty_claim_procedure || "Submit a written warranty request describing the issue to PIWC at 5110 Lakeland Road, College Park, MD 20740. PIWC will arrange a reasonable opportunity to inspect and, when covered, correct defective PIWC workmanship."}
+                        rows={4}
+                        help="Explain exactly how the homeowner submits a warranty claim, where it should be sent, what information to include, and the inspection or correction process PIWC will follow."
+                      />
+
+                      <p className="rounded-lg border border-amber-400/25 bg-amber-400/10 p-3 text-sm leading-6 text-amber-100">
+                        MHIC deposits may not exceed one-third of the contract price. If door-to-door rules apply or payment is secured by the residence, the preview will flag the additional cancellation or lien notice requirements.
+                      </p>
+                    </div>
+                  )}
+                </section>
+              )}
+
             <div className="grid gap-5 md:grid-cols-2">
               <Field
                 label="Project Name"
@@ -766,6 +883,25 @@ export default function ProjectDetailTabs({
               </p>
             </>
           )}
+        </section>
+      )}
+
+      {tab === "close" && canWrite && project.status === "completed" && (
+        <ProjectClosePanel project={project} portfolio={portfolioProject} />
+      )}
+
+      {tab === "close" && canWrite && project.status !== "completed" && (
+        <section className="rounded-2xl border border-white/10 bg-white/[0.03] p-4 sm:p-6">
+          <h2 className="text-xl font-semibold">Close Project</h2>
+          <p className="mt-4 text-sm text-neutral-400">
+            Receipt, portfolio publishing, final-photo, and review-request tools become available once this project is completed.
+          </p>
+        </section>
+      )}
+
+      {tab === "close" && !canWrite && (
+        <section className="rounded-2xl border border-white/10 bg-white/[0.03] p-4 text-sm text-neutral-400 sm:p-6">
+          Close-project tools require write access.
         </section>
       )}
     </div>
@@ -1412,15 +1548,20 @@ function Field({
   name,
   type = "text",
   defaultValue = "",
+  help,
 }: {
   label: string;
   name: string;
   type?: string;
   defaultValue?: string | number;
+  help?: string;
 }) {
   return (
     <div>
-      <label className="mb-2 block text-sm text-neutral-300">{label}</label>
+      <div className="mb-2 flex items-center gap-1.5">
+        <label className="block text-sm text-neutral-300">{label}</label>
+        {help && <FieldHelp text={help} />}
+      </div>
 
       <input
         name={name}
@@ -1438,18 +1579,23 @@ function TextArea({
   name,
   defaultValue = "",
   rows = 4,
+  help,
 }: {
   label: string;
   name: string;
   defaultValue?: string;
   rows?: number;
+  help?: string;
 }) {
   const textareaRef = useRef<HTMLTextAreaElement>(null);
 
   return (
     <div>
       <div className="mb-2 flex items-center justify-between gap-3">
-        <label className="block text-sm text-neutral-300">{label}</label>
+        <div className="flex items-center gap-1.5">
+          <label className="block text-sm text-neutral-300">{label}</label>
+          {help && <FieldHelp text={help} />}
+        </div>
         <BulletButton
           onClick={() => {
             const textarea = textareaRef.current;
@@ -1475,6 +1621,76 @@ function TextArea({
         className="w-full rounded-xl border border-white/10 bg-white/5 px-4 py-3 text-white outline-none focus:border-[#fb5411]"
       />
     </div>
+  );
+}
+
+function SelectField({
+  label,
+  name,
+  defaultValue,
+  options,
+  help,
+}: {
+  label: string;
+  name: string;
+  defaultValue: string;
+  options: readonly (readonly [string, string])[];
+  help?: string;
+}) {
+  return (
+    <div>
+      <div className="mb-2 flex items-center gap-1.5">
+        <label className="block text-sm text-neutral-300">{label}</label>
+        {help && <FieldHelp text={help} />}
+      </div>
+      <div className="relative">
+        <select
+          name={name}
+          defaultValue={defaultValue}
+          className="w-full appearance-none rounded-xl border border-white/10 bg-neutral-900 py-3 pl-4 pr-12 text-white outline-none focus:border-[#fb5411]"
+        >
+          {options.map(([value, optionLabel]) => (
+            <option key={value} value={value}>{optionLabel}</option>
+          ))}
+        </select>
+        <span className="pointer-events-none absolute inset-y-0 right-4 flex items-center text-neutral-500">
+          <svg
+            xmlns="http://www.w3.org/2000/svg"
+            className="h-4 w-4"
+            viewBox="0 0 20 20"
+            fill="currentColor"
+            aria-hidden="true"
+          >
+            <path
+              fillRule="evenodd"
+              d="M5.23 7.21a.75.75 0 0 1 1.06.02L10 11.168l3.71-3.94a.75.75 0 1 1 1.08 1.04l-4.24 4.5a.75.75 0 0 1-1.08 0l-4.24-4.5a.75.75 0 0 1 .02-1.06Z"
+              clipRule="evenodd"
+            />
+          </svg>
+        </span>
+      </div>
+    </div>
+  );
+}
+
+function FieldHelp({ text }: { text: string }) {
+  return (
+    <span className="group relative inline-flex">
+      <button
+        type="button"
+        aria-label="Field guidance"
+        className="inline-flex h-5 w-5 cursor-help items-center justify-center rounded-full text-neutral-500 transition hover:bg-white/10 hover:text-blue-200 focus-visible:bg-white/10 focus-visible:text-blue-200 focus-visible:outline-none"
+      >
+        <Info className="h-3.5 w-3.5" aria-hidden="true" />
+      </button>
+      <span
+        role="tooltip"
+        className="pointer-events-none absolute bottom-full left-1/2 z-30 mb-2 hidden w-72 -translate-x-1/2 rounded-lg border border-white/10 bg-neutral-950 px-3 py-2 text-left text-xs font-normal leading-5 text-neutral-200 shadow-2xl group-hover:block group-focus-within:block"
+      >
+        {text}
+        <span className="absolute left-1/2 top-full -translate-x-1/2 border-4 border-transparent border-t-neutral-950" />
+      </span>
+    </span>
   );
 }
 

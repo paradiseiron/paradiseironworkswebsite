@@ -1,7 +1,7 @@
 import { NextResponse } from "next/server";
 import { revalidatePath } from "next/cache";
 import { requireAuthenticatedUser } from "@/lib/auth";
-import { getUserRole, requireOperationalRole } from "@/lib/roles";
+import { requireOperationalRole } from "@/lib/roles";
 import { createAdminClient } from "@/lib/supabase/admin";
 
 export async function DELETE(
@@ -10,7 +10,6 @@ export async function DELETE(
 ) {
   const user = await requireAuthenticatedUser();
   await requireOperationalRole(user.id);
-  const role = await getUserRole(user.id);
   const { id } = await context.params;
   const body = (await request.json().catch(() => null)) as
     | { path?: unknown }
@@ -23,7 +22,7 @@ export async function DELETE(
   const supabase = createAdminClient();
   const { data: project, error: projectError } = await supabase
     .from("projects")
-    .select("site_visit_image_paths, site_visit_assigned_to")
+    .select("site_visit_image_paths")
     .eq("id", id)
     .maybeSingle();
 
@@ -33,14 +32,6 @@ export async function DELETE(
   if (!project) {
     return NextResponse.json({ error: "Project not found." }, { status: 404 });
   }
-  if (
-    role !== "admin" &&
-    project.site_visit_assigned_to &&
-    project.site_visit_assigned_to !== user.id
-  ) {
-    return NextResponse.json({ error: "Forbidden" }, { status: 403 });
-  }
-
   const paths = Array.isArray(project.site_visit_image_paths)
     ? project.site_visit_image_paths.filter(
         (value: unknown): value is string => typeof value === "string"

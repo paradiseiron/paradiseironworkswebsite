@@ -11,6 +11,12 @@ import {
   type ProposalPricingLineItem,
 } from "@/lib/proposal-pricing";
 import { DEFAULT_PROPOSAL_TERMS_AND_CONDITIONS } from "@/lib/proposal-terms";
+import {
+  MHIC_COMMISSION_NOTICE,
+  MHIC_DOOR_TO_DOOR_PLACEHOLDER,
+  MHIC_DRAFT_CONTRACTOR,
+  MHIC_SECURITY_PLACEHOLDER,
+} from "@/lib/mhic-contract";
 
 export default async function ProposalPreviewPage({
   params,
@@ -32,6 +38,7 @@ export default async function ProposalPreviewPage({
   if (error || !project) {
     notFound();
   }
+  const mhicDraft = Boolean(project.proposal_mhic_enabled);
 
   const projectLocation = [
     project.project_address,
@@ -54,7 +61,6 @@ export default async function ProposalPreviewPage({
     <main className="min-h-screen bg-neutral-200 py-4 text-neutral-950 sm:px-4 sm:py-8 print:min-h-0 print:bg-white print:p-0">
      <article className="proposal-document mx-auto max-w-[850px] bg-white px-5 py-8 shadow-xl sm:px-10 sm:py-10 md:px-14 md:py-12 print:max-w-none print:shadow-none">
 
-
        <header className="border-b border-neutral-300 pb-6">
   <div className="flex flex-col-reverse gap-5 sm:flex-row sm:items-start sm:justify-between sm:gap-8">
     <div>
@@ -63,7 +69,7 @@ export default async function ProposalPreviewPage({
       </p>
 
       <h1 className="mt-4 text-3xl font-bold tracking-tight sm:mt-6 sm:text-4xl">
-        Proposal
+        {mhicDraft ? "Maryland Home Improvement Contract" : "Proposal"}
       </h1>
 
       <div className="mt-4 text-sm text-neutral-600">
@@ -74,9 +80,25 @@ export default async function ProposalPreviewPage({
 
         <p>
           <strong>Date:</strong>{" "}
-          {formatWashingtonDate(new Date())}
+          {mhicDraft && project.proposal_mhic_contract_date
+            ? formatWashingtonDate(project.proposal_mhic_contract_date)
+            : formatWashingtonDate(new Date())}
         </p>
       </div>
+
+      {mhicDraft && (
+        <div className="mt-4 text-sm leading-6 text-neutral-700">
+          <p><strong>Contractor:</strong> {MHIC_DRAFT_CONTRACTOR.licensedBusinessName}</p>
+          <p><strong>Licensee:</strong> {MHIC_DRAFT_CONTRACTOR.licenseeName}</p>
+          <p><strong>Business address:</strong> {MHIC_DRAFT_CONTRACTOR.address}</p>
+          <p><strong>Telephone:</strong> {MHIC_DRAFT_CONTRACTOR.phone}</p>
+          <p><strong>MHIC license:</strong> {MHIC_DRAFT_CONTRACTOR.licenseNumber}</p>
+          <p><strong>Classification:</strong> {MHIC_DRAFT_CONTRACTOR.licenseClassification}</p>
+          <p><strong>License expiration:</strong> {MHIC_DRAFT_CONTRACTOR.licenseExpiration}</p>
+          <p><strong>Salesperson:</strong> {MHIC_DRAFT_CONTRACTOR.licenseeName}</p>
+          <p><strong>Salesperson license:</strong> {MHIC_DRAFT_CONTRACTOR.licenseNumber}</p>
+        </div>
+      )}
     </div>
 
     <Image
@@ -167,6 +189,20 @@ export default async function ProposalPreviewPage({
 
         <PricingSection items={pricingItems} total={pricingTotal} />
 
+        {mhicDraft && (
+          <section className={`mt-8 border p-4 text-sm leading-7 ${Number(project.proposal_deposit_amount || 0) > pricingTotal / 3 ? "border-red-500 bg-red-50 text-red-900" : "border-emerald-500 bg-emerald-50 text-emerald-950"}`}>
+            <h2 className="text-lg font-bold">Deposit Check</h2>
+            <p className="mt-2">
+              Proposed deposit: {formatCurrency(Number(project.proposal_deposit_amount || 0))}. Maximum one-third deposit: {formatCurrency(pricingTotal / 3)}.
+            </p>
+            <p className="font-semibold">
+              {Number(project.proposal_deposit_amount || 0) > pricingTotal / 3
+                ? "FAIL — reduce the deposit before execution."
+                : "PASS — the proposed deposit does not exceed one-third of the current contract total."}
+            </p>
+          </section>
+        )}
+
         <ProposalSection
           title="Payment Terms"
           content={
@@ -180,6 +216,14 @@ export default async function ProposalPreviewPage({
           content={project.proposal_schedule}
         />
 
+        {mhicDraft && (
+          <section className="mt-8 border border-amber-400 bg-amber-50 p-4 text-sm leading-7">
+            <h2 className="text-lg font-bold">Required Contract Dates</h2>
+            <p className="mt-3"><strong>Approximate work start date:</strong> {project.proposal_mhic_start_date ? formatWashingtonDate(project.proposal_mhic_start_date) : "Not entered"}</p>
+            <p><strong>Approximate substantial completion date:</strong> {project.proposal_mhic_completion_date ? formatWashingtonDate(project.proposal_mhic_completion_date) : "Not entered"}</p>
+          </section>
+        )}
+
         <ProposalSection
           title="Clarifications"
           content={project.proposal_clarifications}
@@ -192,6 +236,31 @@ export default async function ProposalPreviewPage({
             DEFAULT_PROPOSAL_TERMS_AND_CONDITIONS
           }
         />
+
+        {mhicDraft && (
+          <>
+            <ProposalSection
+              title="MHIC Consumer Protection Notice"
+              content={MHIC_COMMISSION_NOTICE}
+            />
+            <ProposalSection
+              title="Financing and Security"
+              content={`Finance charge: ${project.proposal_mhic_finance_charge || "None"}\nNumber and amount of payments:\n${project.proposal_mhic_payment_schedule || project.proposal_payment_terms || "Not entered"}\n\nCollateral security: ${project.proposal_mhic_collateral_security || "None"}\n\n${project.proposal_mhic_secured_by_property ? MHIC_SECURITY_PLACEHOLDER : "Payment is not represented as secured by an interest in residential real estate."}`}
+            />
+            <ProposalSection
+              title="Cancellation Review"
+              content={project.proposal_mhic_door_to_door_status === "applies" ? `${MHIC_DOOR_TO_DOOR_PLACEHOLDER}\n\nBuyer age 65 or older: ${project.proposal_mhic_buyer_age_65_plus ? "Yes" : "No"}\nCancellation deadline: ${project.proposal_mhic_cancellation_deadline ? formatWashingtonDate(project.proposal_mhic_cancellation_deadline) : "Not entered"}` : `Door-to-door status: ${project.proposal_mhic_door_to_door_status || "Not determined"}`}
+            />
+            <ProposalSection
+              title="Documents Incorporated into This Contract"
+              content={project.proposal_mhic_incorporated_documents || "None"}
+            />
+            <ProposalSection
+              title="Warranty Claim Procedure"
+              content={project.proposal_mhic_warranty_claim_procedure || "Not entered"}
+            />
+          </>
+        )}
 
         <section className="mt-10 text-sm leading-7">
           <p>
@@ -216,19 +285,37 @@ export default async function ProposalPreviewPage({
 
         <section className="mt-12 border-t border-neutral-300 pt-8">
           <h2 className="text-lg font-bold uppercase tracking-wide">
-            Acceptance of Proposal
+            {mhicDraft ? "Contract Acceptance" : "Acceptance of Proposal"}
           </h2>
 
           <p className="mt-4 text-sm">
-            The above proposal, pricing, scope, and terms are hereby accepted.
+            {mhicDraft
+              ? "The homeowner and contractor accept this written contract, including the identified incorporated documents. A fully signed copy must be provided to the homeowner before work begins."
+              : "The above proposal, pricing, scope, and terms are hereby accepted."}
           </p>
 
           <div className="mt-8 space-y-5 text-sm">
-            <SignatureLine label="Accepted By" />
-            <SignatureLine label="Company" />
-            <SignatureLine label="Signature" />
-            <SignatureLine label="Date" />
-            <SignatureLine label="Purchase Order / Authorization No." />
+            {mhicDraft ? (
+              <>
+                <SignatureLine label="Homeowner printed name" />
+                <SignatureLine label="Homeowner signature" />
+                <SignatureLine label="Date" />
+                <SignatureLine label="Contractor authorized signer" value={MHIC_DRAFT_CONTRACTOR.licenseeName} />
+                <SignatureLine label="Contractor signature" />
+                <SignatureLine label="Contractor license number" value={MHIC_DRAFT_CONTRACTOR.licenseNumber} />
+                <SignatureLine label="Date" />
+                <SignatureLine label="Salesperson name / license no." value={`${MHIC_DRAFT_CONTRACTOR.licenseeName} / ${MHIC_DRAFT_CONTRACTOR.licenseNumber}`} />
+                <SignatureLine label="Salesperson signature / date" />
+              </>
+            ) : (
+              <>
+                <SignatureLine label="Accepted By" />
+                <SignatureLine label="Company" />
+                <SignatureLine label="Signature" />
+                <SignatureLine label="Date" />
+                <SignatureLine label="Purchase Order / Authorization No." />
+              </>
+            )}
           </div>
         </section>
       </article>
@@ -307,11 +394,11 @@ function ProposalSection({
   );
 }
 
-function SignatureLine({ label }: { label: string }) {
+function SignatureLine({ label, value }: { label: string; value?: string }) {
   return (
     <div className="flex flex-col gap-2 sm:flex-row sm:gap-3">
       <span className="font-medium sm:w-56">{label}:</span>
-      <span className="flex-1 border-b border-neutral-500" />
+      <span className="min-h-6 flex-1 border-b border-neutral-500 px-1">{value}</span>
     </div>
   );
 }

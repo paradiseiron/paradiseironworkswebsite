@@ -1,7 +1,7 @@
 import { NextResponse } from "next/server";
 import { requireAuthenticatedUser } from "@/lib/auth";
 import { createAdminClient } from "@/lib/supabase/admin";
-import { requireEstimatorAccess } from "@/lib/roles";
+import { requireOperationalRole } from "@/lib/roles";
 import { sendWorkflowNotification } from "@/lib/notifications/workflow-notification";
 
 export async function POST(
@@ -9,7 +9,7 @@ export async function POST(
   context: { params: Promise<{ id: string }> }
 ) {
   const user = await requireAuthenticatedUser();
-  await requireEstimatorAccess(user.id);
+  await requireOperationalRole(user.id);
   const { id } = await context.params;
   const body = (await request.json()) as {
     scopeObservations?: string;
@@ -26,14 +26,34 @@ export async function POST(
     );
   }
 
+  const supabase = createAdminClient();
+  const { data: existingProject, error: projectError } = await supabase
+    .from("projects")
+    .select("site_visit_image_paths")
+    .eq("id", id)
+    .maybeSingle();
+
+  if (projectError) {
+    return NextResponse.json({ error: projectError.message }, { status: 500 });
+  }
+  if (!existingProject) {
+    return NextResponse.json({ error: "Project not found." }, { status: 404 });
+  }
+
+  const existingImagePaths = new Set(
+    Array.isArray(existingProject.site_visit_image_paths)
+      ? existingProject.site_visit_image_paths.filter(
+          (path: unknown): path is string => typeof path === "string"
+        )
+      : []
+  );
   const imagePaths = (body.imagePaths || []).filter(
     (path) =>
       typeof path === "string" &&
-      path.startsWith(`${user.id}/${id}/`) &&
+      (path.startsWith(`${user.id}/${id}/`) || existingImagePaths.has(path)) &&
       !path.includes("..")
   );
   const completedAt = new Date().toISOString();
-  const supabase = createAdminClient();
   const { data: project, error } = await supabase
     .from("projects")
     .update({
@@ -48,13 +68,12 @@ export async function POST(
       updated_at: completedAt,
     })
     .eq("id", id)
-    .eq("site_visit_assigned_to", user.id)
     .select("customer_name")
     .single();
 
   if (error || !project) {
     return NextResponse.json(
-      { error: "Unable to complete this assigned site visit." },
+      { error: "Unable to complete this site visit." },
       { status: 500 }
     );
   }
@@ -63,7 +82,7 @@ export async function POST(
     project_id: id,
     activity_type: "site_visit_completed",
     activity_date: completedAt,
-    summary: "Estimator completed the site visit. Proposal drafting can begin.",
+    summary: "Site visit completed. Proposal drafting can begin.",
   });
 
   await sendWorkflowNotification({

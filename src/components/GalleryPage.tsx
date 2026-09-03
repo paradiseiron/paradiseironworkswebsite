@@ -5,8 +5,7 @@ import Image, { type StaticImageData } from "next/image";
 import Link from "next/link";
 import { X } from "lucide-react";
 
-import { projects } from "@/data/projects";
-import type { ProjectDetails, WorkType, ProductType } from "@/data/projects";
+import type { ProjectDetails, WorkType } from "@/data/projects";
 
 /**
  * Next/Image friendly:
@@ -22,7 +21,7 @@ function asNextImageSrc(src: unknown): NextImageLike {
 }
 
 type WorkTypeFilter = "All" | WorkType;
-type ProductTypeFilter = "All" | ProductType;
+type ProductTypeFilter = "All" | string;
 type LocationFilter = "All" | string;
 
 function Tag({ children }: { children: React.ReactNode }) {
@@ -145,22 +144,22 @@ function ProjectCard({ project }: { project: ProjectDetails }) {
   );
 }
 
-export default function GalleryPage() {
+export default function GalleryPage({ projects }: { projects: ProjectDetails[] }) {
   // ✅ Work type options
   const workTypes = useMemo(
     () => ["All", ...Array.from(new Set(projects.map((p) => p.workType)))].sort() as WorkTypeFilter[],
-    []
+    [projects]
   );
 
   // ✅ Product type options (FIX: flatMap if productTypes is an array)
   const productTypes = useMemo(() => {
     const all = projects.flatMap((p) => (Array.isArray(p.productTypes) ? p.productTypes : [p.productTypes]));
     return ["All", ...Array.from(new Set(all.filter(Boolean)))].sort() as ProductTypeFilter[];
-  }, []);
+  }, [projects]);
 
   const locations = useMemo(
     () => ["All", ...Array.from(new Set(projects.map((p) => p.location)))].sort() as LocationFilter[],
-    []
+    [projects]
   );
 
   const [selectedWorkType, setSelectedWorkType] = useState<WorkTypeFilter>("All");
@@ -179,7 +178,7 @@ export default function GalleryPage() {
 
       return matchesWorkType && matchesProductType && matchesLocation;
     });
-  }, [selectedWorkType, selectedProductType, selectedLocation]);
+  }, [projects, selectedWorkType, selectedProductType, selectedLocation]);
 
   const clearFilters = () => {
     setSelectedWorkType("All");
