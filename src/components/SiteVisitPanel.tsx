@@ -4,7 +4,6 @@ import { useState } from "react";
 import { useRouter } from "next/navigation";
 import {
   Camera,
-  ChevronDown,
   ImagePlus,
   Mic,
   Pencil,
@@ -39,16 +38,7 @@ type SiteVisitProject = {
 
 type SiteVisitImage = { path: string; url: string; thumbnailUrl?: string };
 
-type ScheduledVisitDraft = {
-  date: string;
-  windowStart: string;
-  windowEnd: string;
-  location: string;
-  adminNotes: string;
-  estimatorId: string;
-};
-
-type CompletedVisitDraft = {
+type SiteVisitDraft = {
   scopeObservations: string;
   visitNotes: string;
   exclusionNotes: string;
@@ -59,7 +49,6 @@ export default function SiteVisitPanel({
   project,
   role,
   images,
-  estimators,
   onToast,
 }: {
   project: SiteVisitProject;
@@ -75,105 +64,16 @@ export default function SiteVisitPanel({
   const [chosenPhotos, setChosenPhotos] = useState<File[]>([]);
   const selectedPhotos = [...cameraPhotos, ...chosenPhotos];
   const [removingImagePath, setRemovingImagePath] = useState("");
-  const [completedVisit, setCompletedVisit] =
-    useState<CompletedVisitDraft | null>(null);
-  const [editingVisit, setEditingVisit] = useState(
-    (project.site_visit_status || "not_ready") === "ready" && role !== "admin"
+  const canEdit = role !== "viewer" && role !== "unassigned";
+  const hasSubmittedDetails = Boolean(
+    project.site_visit_scope_observations ||
+      project.site_visit_notes ||
+      project.site_visit_exclusion_notes ||
+      project.site_visit_access_safety_concerns ||
+      images.length
   );
-  const [editingSchedule, setEditingSchedule] = useState(
-    (project.site_visit_status || "not_ready") !== "ready"
-  );
-  const [scheduledVisit, setScheduledVisit] =
-    useState<ScheduledVisitDraft | null>(null);
-  const defaultLocation = [
-    project.project_address,
-    project.city,
-    project.state,
-    project.zip_code,
-  ]
-    .filter(Boolean)
-    .join(", ");
-  const status = project.site_visit_status || "not_ready";
-  const canCompleteSiteVisit =
-    role === "admin" ||
-    role === "estimator" ||
-    role === "operations_foreman";
-  const effectiveStatus = scheduledVisit ? "ready" : status;
-  const scheduledDate =
-    scheduledVisit?.date || project.site_visit_scheduled_date || "";
-  const scheduledWindowStart =
-    scheduledVisit?.windowStart || shortTime(project.site_visit_window_start);
-  const scheduledWindowEnd =
-    scheduledVisit?.windowEnd || shortTime(project.site_visit_window_end);
-  const scheduledLocation =
-    scheduledVisit?.location || project.site_visit_location || defaultLocation;
-  const scheduledAdminNotes =
-    scheduledVisit?.adminNotes || project.site_visit_admin_notes || "";
-  const assignedEstimatorId =
-    scheduledVisit?.estimatorId ||
-    project.site_visit_assigned_to ||
-    estimators[0]?.id ||
-    "";
-  const assignedEstimatorName =
-    estimators.find((estimator) => estimator.id === assignedEstimatorId)?.name ||
-    "Estimator";
-
-  async function markReady(formData: FormData) {
-    setBusy(true);
-    setMessage("");
-
-    try {
-      const wasAlreadyReady = effectiveStatus === "ready";
-      const nextVisit = {
-        date: String(formData.get("scheduled_date") || ""),
-        windowStart: String(formData.get("window_start") || ""),
-        windowEnd: String(formData.get("window_end") || ""),
-        location: String(formData.get("location") || ""),
-        adminNotes: String(formData.get("admin_notes") || ""),
-        estimatorId: String(formData.get("estimator_id") || ""),
-      };
-      const response = await fetch(
-        `/api/projects/${encodeURIComponent(project.id)}/site-visit/ready`,
-        {
-          method: "POST",
-          headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({
-            scheduledDate: nextVisit.date,
-            windowStart: nextVisit.windowStart,
-            windowEnd: nextVisit.windowEnd,
-            location: nextVisit.location,
-            adminNotes: nextVisit.adminNotes,
-            estimatorId: nextVisit.estimatorId,
-          }),
-        }
-      );
-      const body = (await response.json().catch(() => null)) as
-        | { error?: string }
-        | null;
-
-      if (!response.ok) {
-        setMessage(body?.error || "Unable to schedule site visit.");
-        return;
-      }
-
-      setScheduledVisit(nextVisit);
-      setEditingSchedule(false);
-      onToast?.(
-        wasAlreadyReady
-          ? "Site visit updated and estimator notified."
-          : "Site visit scheduled and estimator notified."
-      );
-      router.refresh();
-    } catch (scheduleError) {
-      setMessage(
-        scheduleError instanceof Error
-          ? scheduleError.message
-          : "Unable to schedule site visit."
-      );
-    } finally {
-      setBusy(false);
-    }
-  }
+  const [editing, setEditing] = useState(canEdit && !hasSubmittedDetails);
+  const [savedVisit, setSavedVisit] = useState<SiteVisitDraft | null>(null);
 
   async function completeVisit(formData: FormData) {
     setBusy(true);
@@ -235,13 +135,9 @@ export default function SiteVisitPanel({
       setMessage("");
       setCameraPhotos([]);
       setChosenPhotos([]);
-      setCompletedVisit(nextVisit);
-      setEditingVisit(false);
-      onToast?.(
-        project.site_visit_status === "completed"
-          ? "Site visit details updated successfully."
-          : "Site visit completed and admin notified."
-      );
+      setSavedVisit(nextVisit);
+      setEditing(false);
+      onToast?.("Site visit details saved successfully.");
       router.refresh();
     } catch (submitError) {
       setMessage(
@@ -286,12 +182,8 @@ export default function SiteVisitPanel({
     }
   }
 
-  if (
-    canCompleteSiteVisit &&
-    (completedVisit || status === "completed") &&
-    !editingVisit
-  ) {
-    const submittedVisit = completedVisit || {
+  if (!editing) {
+    const details = savedVisit || {
       scopeObservations: project.site_visit_scope_observations || "",
       visitNotes: project.site_visit_notes || "",
       exclusionNotes: project.site_visit_exclusion_notes || "",
@@ -303,65 +195,38 @@ export default function SiteVisitPanel({
       <section className="rounded-2xl border border-white/10 bg-white/[0.03] p-4 sm:p-6">
         <div className="flex flex-wrap items-start justify-between gap-4">
           <div>
-            <h2 className="text-xl font-semibold">Site Visit Completed</h2>
+            <h2 className="text-xl font-semibold">Site Visit Details</h2>
             <p className="mt-1 text-sm text-neutral-400">
-              Review the submitted visit details below.
+              {canEdit
+                ? "Review the saved information from the site visit."
+                : "This information is read-only for your account."}
             </p>
           </div>
-          <button
-            type="button"
-            onClick={() => {
-              setMessage("");
-              setEditingVisit(true);
-            }}
-            className="inline-flex h-10 cursor-pointer items-center gap-2 rounded-xl border border-white/10 px-4 text-sm font-semibold text-neutral-200 transition hover:border-white/20 hover:bg-white/10 hover:text-white"
-          >
-            <Pencil className="h-4 w-4" aria-hidden="true" />
-            Edit visit
-          </button>
+          {canEdit && (
+            <button
+              type="button"
+              onClick={() => {
+                setMessage("");
+                setEditing(true);
+              }}
+              className="inline-flex h-10 cursor-pointer items-center gap-2 rounded-xl border border-white/10 px-4 text-sm font-semibold text-neutral-200 transition hover:border-white/20 hover:bg-white/10 hover:text-white"
+            >
+              <Pencil className="h-4 w-4" aria-hidden="true" />
+              Edit site visit
+            </button>
+          )}
         </div>
-
-        <div className="mt-6 rounded-xl border border-emerald-500/20 bg-emerald-500/10 p-4">
-          <p className="text-sm font-semibold text-emerald-100">
-            Site visit is complete and ready for proposal drafting.
-          </p>
-          <div className="mt-4 grid gap-4 sm:grid-cols-2">
-            <ReadOnlyDetail
-              label="Date and time"
-              value={
-                project.site_visit_scheduled_date
-                  ? `${project.site_visit_scheduled_date} · ${shortTime(project.site_visit_window_start)}–${shortTime(project.site_visit_window_end)}`
-                  : null
-              }
-            />
-            <ReadOnlyDetail
-              label="Location"
-              value={project.site_visit_location}
-            />
-            <ReadOnlyDetail label="Status" value="completed" />
-          </div>
-        </div>
-
         <div className="mt-6 grid gap-5">
-          <ReadOnlyDetail
-            label="Site scope observations"
-            value={submittedVisit.scopeObservations}
-          />
-          <ReadOnlyDetail label="Visit notes" value={submittedVisit.visitNotes} />
-          <ReadOnlyDetail
-            label="Exclusion notes"
-            value={submittedVisit.exclusionNotes}
-          />
-          <ReadOnlyDetail
-            label="Access / safety concerns"
-            value={submittedVisit.accessSafetyConcerns}
-          />
+          <ReadOnlyDetail label="Site scope observations" value={details.scopeObservations} />
+          <ReadOnlyDetail label="Visit notes" value={details.visitNotes} />
+          <ReadOnlyDetail label="Exclusion notes" value={details.exclusionNotes} />
+          <ReadOnlyDetail label="Access / safety concerns" value={details.accessSafetyConcerns} />
           {images.length > 0 && (
             <SiteVisitImageGallery
               images={images}
-              canRemove
-              removingPath={removingImagePath}
-              onRemove={removeSiteVisitPhoto}
+              canRemove={false}
+              removingPath=""
+              onRemove={() => undefined}
             />
           )}
         </div>
@@ -369,175 +234,22 @@ export default function SiteVisitPanel({
     );
   }
 
-  if (role === "admin" && status !== "completed" && !editingVisit) {
-    if (effectiveStatus === "ready" && !editingSchedule) {
-      return (
-        <section className="rounded-2xl border border-white/10 bg-white/[0.03] p-4 sm:p-6">
-          <div className="flex flex-wrap items-start justify-between gap-4">
-            <div>
-              <h2 className="text-xl font-semibold">Site Visit Scheduled</h2>
-              <p className="mt-1 text-sm text-neutral-400">
-                The estimator has been notified. Review the visit details below.
-              </p>
-            </div>
-
-            <div className="flex flex-wrap gap-2">
-              <button
-                type="button"
-                onClick={() => {
-                  setMessage("");
-                  setEditingSchedule(true);
-                }}
-                className="inline-flex h-10 cursor-pointer items-center gap-2 rounded-xl border border-white/10 px-4 text-sm font-semibold text-neutral-200 transition hover:border-white/20 hover:bg-white/10 hover:text-white"
-              >
-                <Pencil className="h-4 w-4" aria-hidden="true" />
-                Edit schedule
-              </button>
-              <button
-                type="button"
-                onClick={() => {
-                  setMessage("");
-                  setEditingVisit(true);
-                }}
-                className="inline-flex h-10 cursor-pointer items-center gap-2 rounded-xl bg-[#fb5411] px-4 text-sm font-semibold text-white"
-              >
-                <Save className="h-4 w-4" aria-hidden="true" />
-                Complete site visit
-              </button>
-            </div>
-          </div>
-
-          <div className="mt-6 rounded-xl border border-[#fb5411]/20 bg-[#fb5411]/10 p-4">
-            <p className="text-sm font-semibold text-orange-100">
-              Site visit is ready for the estimator.
-            </p>
-            <div className="mt-4 grid gap-4 sm:grid-cols-2">
-              <ReadOnlyDetail
-                label="Date and time"
-                value={
-                  scheduledDate
-                    ? `${scheduledDate} · ${scheduledWindowStart}-${scheduledWindowEnd}`
-                    : null
-                }
-              />
-              <ReadOnlyDetail
-                label="Location"
-                value={scheduledLocation}
-              />
-              <ReadOnlyDetail
-                label="Instructions for estimator"
-                value={scheduledAdminNotes}
-              />
-              <ReadOnlyDetail
-                label="Assigned estimator"
-                value={assignedEstimatorName}
-              />
-              <ReadOnlyDetail label="Status" value="ready" />
-            </div>
-          </div>
-        </section>
-      );
-    }
-
-    return (
-      <section className="rounded-2xl border border-white/10 bg-white/[0.03] p-4 sm:p-6">
-        <h2 className="text-xl font-semibold">
-          {effectiveStatus === "ready" ? "Update Site Visit" : "Schedule Site Visit"}
-        </h2>
-        <p className="mt-1 text-sm text-neutral-400">
-          Set the visit window and notify the estimator when the project is
-          ready.
-        </p>
-        <form action={markReady} className="mt-6 space-y-5">
-          <div className="grid gap-5 sm:grid-cols-3">
-            <SiteField
-              label="Visit date"
-              name="scheduled_date"
-              type="date"
-              required
-              defaultValue={scheduledDate}
-            />
-            <SiteField
-              label="Window start"
-              name="window_start"
-              type="time"
-              required
-              defaultValue={scheduledWindowStart}
-            />
-            <SiteField
-              label="Window end"
-              name="window_end"
-              type="time"
-              required
-              defaultValue={scheduledWindowEnd}
-            />
-          </div>
-          <SiteField
-            label="Location"
-            name="location"
-            required
-            defaultValue={scheduledLocation}
-          />
-          <label className="block text-sm text-neutral-300">
-            <span className="mb-2 block">Assign estimator</span>
-            <span className="relative block">
-              <select
-                name="estimator_id"
-                required
-                defaultValue={assignedEstimatorId}
-                className="h-11 w-full appearance-none rounded-xl border border-white/10 bg-neutral-900 py-0 pl-4 pr-12 text-white outline-none focus:border-[#fb5411]"
-              >
-                {estimators.map((estimator) => (
-                  <option key={estimator.id} value={estimator.id}>
-                    {estimator.name}
-                  </option>
-                ))}
-              </select>
-              <ChevronDown
-                className="pointer-events-none absolute right-4 top-1/2 h-4 w-4 -translate-y-1/2 text-neutral-500"
-                aria-hidden="true"
-              />
-            </span>
-          </label>
-          <SiteTextArea
-            label="Instructions for estimator"
-            name="admin_notes"
-            defaultValue={scheduledAdminNotes}
-          />
-          {message && <p className="text-sm text-amber-200">{message}</p>}
-          <button
-            type="submit"
-            disabled={busy}
-            className="rounded-xl bg-[#fb5411] px-5 py-3 text-sm font-semibold text-white disabled:opacity-60"
-          >
-            {busy
-              ? "Notifying…"
-              : effectiveStatus === "ready"
-                ? "Update visit and notify estimator"
-                : "Mark ready and notify estimator"}
-          </button>
-        </form>
-      </section>
-    );
-  }
-
-  if (
-    canCompleteSiteVisit &&
-    (status === "ready" || status === "completed") &&
-    editingVisit
-  ) {
+  if (canEdit) {
     return (
       <section className="rounded-2xl border border-[#fb5411]/20 bg-white/[0.03] p-4 sm:p-6">
-        <VisitSchedule project={project} />
+        <div>
+          <h2 className="text-xl font-semibold">Site Visit Details</h2>
+          <p className="mt-1 text-sm text-neutral-400">
+            Enter observations, notes, concerns, and photos from the visit.
+          </p>
+        </div>
         <form action={completeVisit} className="mt-6 space-y-5">
           <DictationTextArea
             label="Site scope observations"
             name="scope_observations"
             required
             defaultValue={
-              completedVisit?.scopeObservations ||
-              project.site_visit_scope_observations ||
-              ""
+              project.site_visit_scope_observations || ""
             }
           />
           <DictationTextArea
@@ -545,25 +257,21 @@ export default function SiteVisitPanel({
             name="visit_notes"
             required
             defaultValue={
-              completedVisit?.visitNotes || project.site_visit_notes || ""
+              project.site_visit_notes || ""
             }
           />
           <DictationTextArea
             label="Exclusion notes"
             name="exclusion_notes"
             defaultValue={
-              completedVisit?.exclusionNotes ||
-              project.site_visit_exclusion_notes ||
-              ""
+              project.site_visit_exclusion_notes || ""
             }
           />
           <DictationTextArea
             label="Access / safety concerns"
             name="access_safety_concerns"
             defaultValue={
-              completedVisit?.accessSafetyConcerns ||
-              project.site_visit_access_safety_concerns ||
-              ""
+              project.site_visit_access_safety_concerns || ""
             }
           />
           <div className="grid gap-3 sm:grid-cols-2">
@@ -607,130 +315,14 @@ export default function SiteVisitPanel({
             className="inline-flex items-center gap-2 rounded-xl bg-[#fb5411] px-5 py-3 text-sm font-semibold text-white disabled:opacity-60"
           >
             <Save className="h-4 w-4" aria-hidden="true" />
-            {busy
-              ? "Submitting…"
-              : status === "completed"
-                ? "Save site visit changes"
-                : "Complete site visit"}
+            {busy ? "Saving…" : "Save site visit details"}
           </button>
         </form>
       </section>
     );
   }
 
-  return (
-    <section className="rounded-2xl border border-white/10 bg-white/[0.03] p-4 sm:p-6">
-      <VisitSchedule project={project} />
-      {status === "not_ready" ? (
-        <p className="mt-5 text-sm text-neutral-400">
-          This project has not been marked ready for a site visit.
-        </p>
-      ) : (
-        <div className="mt-6 grid gap-5">
-          <ReadOnlyDetail
-            label="Site scope observations"
-            value={project.site_visit_scope_observations}
-          />
-          <ReadOnlyDetail label="Visit notes" value={project.site_visit_notes} />
-          <ReadOnlyDetail
-            label="Exclusion notes"
-            value={project.site_visit_exclusion_notes}
-          />
-          <ReadOnlyDetail
-            label="Access / safety concerns"
-            value={project.site_visit_access_safety_concerns}
-          />
-          {images.length > 0 && (
-            <SiteVisitImageGallery
-              images={images}
-              canRemove={false}
-              removingPath=""
-              onRemove={() => undefined}
-            />
-          )}
-        </div>
-      )}
-    </section>
-  );
-}
-
-function VisitSchedule({ project }: { project: SiteVisitProject }) {
-  return (
-    <div>
-      <h2 className="text-xl font-semibold">Site Visit</h2>
-      <div className="mt-4 grid gap-4 sm:grid-cols-2">
-        <ReadOnlyDetail
-          label="Date and time"
-          value={
-            project.site_visit_scheduled_date
-              ? `${project.site_visit_scheduled_date} · ${shortTime(project.site_visit_window_start)}–${shortTime(project.site_visit_window_end)}`
-              : null
-          }
-        />
-        <ReadOnlyDetail
-          label="Location"
-          value={project.site_visit_location}
-        />
-        <ReadOnlyDetail
-          label="Admin instructions"
-          value={project.site_visit_admin_notes}
-        />
-        <ReadOnlyDetail
-          label="Status"
-          value={(project.site_visit_status || "not ready").replaceAll("_", " ")}
-        />
-      </div>
-    </div>
-  );
-}
-
-function SiteField({
-  label,
-  name,
-  type = "text",
-  defaultValue,
-  required,
-}: {
-  label: string;
-  name: string;
-  type?: string;
-  defaultValue: string;
-  required?: boolean;
-}) {
-  return (
-    <label className="block text-sm text-neutral-300">
-      <span className="mb-2 block">{label}</span>
-      <input
-        name={name}
-        type={type}
-        defaultValue={defaultValue}
-        required={required}
-        className="h-11 w-full rounded-xl border border-white/10 bg-neutral-900 px-4 text-white outline-none focus:border-[#fb5411]"
-      />
-    </label>
-  );
-}
-
-function SiteTextArea({
-  label,
-  name,
-  defaultValue,
-}: {
-  label: string;
-  name: string;
-  defaultValue: string;
-}) {
-  return (
-    <label className="block text-sm text-neutral-300">
-      <span className="mb-2 block">{label}</span>
-      <textarea
-        name={name}
-        defaultValue={defaultValue}
-        rows={4}
-        className="w-full rounded-xl border border-white/10 bg-neutral-900 px-4 py-3 text-white outline-none focus:border-[#fb5411]"
-      />
-    </label>
-  );
+  return null;
 }
 
 function DictationTextArea({
@@ -900,8 +492,4 @@ function ReadOnlyDetail({
       </p>
     </div>
   );
-}
-
-function shortTime(value?: string | null) {
-  return value ? value.slice(0, 5) : "";
 }

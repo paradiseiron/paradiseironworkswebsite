@@ -39,6 +39,11 @@ export default async function InvoicePreviewPage({
   const summary = getInvoiceSummary(project);
   const lineItems = getInvoiceLineItems(summary);
   const projectLocation = getProjectLocation(project);
+  const showCustomerAccount = Boolean(
+    project.contact_name?.trim() &&
+      project.contact_name.trim().toLowerCase() !==
+        String(project.customer_name || "").trim().toLowerCase()
+  );
 
   return (
     <main className="min-h-screen bg-neutral-200 py-4 text-neutral-950 sm:px-4 sm:py-8 print:min-h-0 print:bg-white print:p-0">
@@ -86,7 +91,9 @@ export default async function InvoicePreviewPage({
             <p className="mt-2 font-medium">
               {project.contact_name || project.customer_name || "—"}
             </p>
-            <p className="mt-1">{project.customer_name || "—"}</p>
+            {showCustomerAccount && (
+              <p className="mt-1">{project.customer_name || "—"}</p>
+            )}
             <p className="mt-1">{project.email || "—"}</p>
             <p className="mt-1">{project.phone || "—"}</p>
           </div>

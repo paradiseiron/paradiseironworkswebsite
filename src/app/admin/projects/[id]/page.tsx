@@ -1,4 +1,5 @@
 import { notFound, redirect } from "next/navigation";
+import Link from "next/link";
 import { createAdminClient } from "@/lib/supabase/admin";
 import ProjectDetailTabs from "@/components/ProjectDetailTabs";
 import FollowUpAlertModal from "@/components/FollowUpAlertModal";
@@ -123,6 +124,8 @@ async function updateProposal(formData: FormData) {
       proposal_pricing: "",
       proposal_pricing_items,
       proposal_deposit_amount,
+      proposal_initial_payment_required:
+        formData.get("proposal_initial_payment_required") === "true",
       proposal_payment_terms: String(formData.get("proposal_payment_terms") || ""),
       proposal_schedule: String(formData.get("proposal_schedule") || ""),
       proposal_clarifications: String(formData.get("proposal_clarifications") || ""),
@@ -374,7 +377,16 @@ export default async function ProjectDetailPage({
       <div className="mt-0 flex flex-wrap items-start justify-between gap-4">
         <div>
           <h1 className="break-words text-2xl font-semibold sm:text-3xl">
-            {project.customer_name}
+            {project.customer_id ? (
+              <Link
+                href={`/admin/customers/${project.customer_id}`}
+                className="underline decoration-white/20 underline-offset-4 transition hover:text-[#fb5411] hover:decoration-[#fb5411]"
+              >
+                {project.customer_name}
+              </Link>
+            ) : (
+              project.customer_name
+            )}
           </h1>
 
           <p className="mt-2 text-neutral-400">

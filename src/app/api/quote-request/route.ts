@@ -2,6 +2,7 @@ import { NextResponse } from "next/server";
 import { createHash, randomBytes, randomUUID } from "node:crypto";
 import { createClient } from "@supabase/supabase-js";
 import { sendNewLeadNotification } from "@/lib/email/new-lead-notification";
+import { upsertCustomerProfile } from "@/lib/customers";
 import { sendNewLeadPushNotification } from "@/lib/push/send-new-lead-push";
 import {
   ENGINEERING_SERVICES_OPTIONS,
@@ -200,12 +201,19 @@ export async function POST(req: Request) {
     }
 
     const receivedAt = new Date().toISOString();
+    const customerId = await upsertCustomerProfile(supabaseAdmin, {
+      name,
+      phone,
+      email,
+      zipCode: zip,
+    });
 
     const { data, error } = await supabaseAdmin
       .from("projects")
       .insert({
         customer_name: name,
-        contact_name: name,
+        customer_id: customerId,
+        contact_name: null,
         phone,
         email,
         zip_code: zip,

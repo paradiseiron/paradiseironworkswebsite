@@ -68,6 +68,8 @@ export async function PATCH(
     body.proposal_deposit_amount
   );
   update.proposal_mhic_enabled = body.proposal_mhic_enabled === "true";
+  update.proposal_initial_payment_required =
+    body.proposal_initial_payment_required === "true";
   update.proposal_mhic_buyer_age_65_plus =
     body.proposal_mhic_buyer_age_65_plus === "true";
   update.proposal_mhic_secured_by_property =

@@ -1,6 +1,5 @@
 import { notFound, redirect } from "next/navigation";
 import Image from "next/image";
-import Link from "next/link";
 import { requireAuthenticatedUser } from "@/lib/auth";
 import { requireAssignedRole } from "@/lib/roles";
 import { createClient } from "@/lib/supabase/server";
@@ -31,7 +30,6 @@ export default async function FinalReceiptPage({ params }: { params: Promise<{ i
         </section>
         <section className="mt-10 overflow-hidden border border-neutral-300 text-sm"><div className="grid grid-cols-[1fr_150px] bg-neutral-100 font-semibold"><div className="border-r border-neutral-300 px-4 py-3">Description</div><div className="px-4 py-3 text-right">Amount</div></div><div className="grid grid-cols-[1fr_150px] border-t border-neutral-300"><div className="border-r border-neutral-300 px-4 py-4">Final payment received for completed project</div><div className="px-4 py-4 text-right">{formatCurrency(amount)}</div></div><div className="grid grid-cols-[1fr_150px] border-t-2 border-neutral-500 bg-neutral-50 font-bold"><div className="px-4 py-4 text-right">Balance Due</div><div className="border-l border-neutral-300 px-4 py-4 text-right">{formatCurrency(0)}</div></div></section>
         <p className="mt-8 text-sm leading-6 text-neutral-600">Thank you for choosing Paradise Ironworks &amp; Construction LLC. This receipt acknowledges payment in full for the project shown above.</p>
-        <div className="mt-8 flex gap-3 print:hidden"><Link href={`/admin/projects/${id}?tab=close`} className="rounded-lg border border-neutral-300 px-4 py-2 text-sm font-semibold">Back to Close</Link><Link href={`/admin/projects/${id}/receipt/pdf`} className="rounded-lg bg-[#fb5411] px-4 py-2 text-sm font-semibold text-white">Download PDF</Link></div>
       </article>
     </main>
   );

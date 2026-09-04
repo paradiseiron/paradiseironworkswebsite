@@ -84,6 +84,11 @@ function InvoicePdf({
   const summary = getInvoiceSummary(project);
   const lineItems = getInvoiceLineItems(summary);
   const projectLocation = getProjectLocation(project);
+  const showCustomerAccount = Boolean(
+    value("contact_name") &&
+      value("contact_name").trim().toLowerCase() !==
+        value("customer_name").trim().toLowerCase()
+  );
 
   return (
     <Document
@@ -123,7 +128,9 @@ function InvoicePdf({
             <Text style={styles.bodyStrong}>
               {value("contact_name") || value("customer_name") || "—"}
             </Text>
-            <Text style={styles.body}>{value("customer_name") || "—"}</Text>
+            {showCustomerAccount && (
+              <Text style={styles.body}>{value("customer_name") || "—"}</Text>
+            )}
             <Text style={styles.body}>{value("email") || "—"}</Text>
             <Text style={styles.body}>{value("phone") || "—"}</Text>
           </View>

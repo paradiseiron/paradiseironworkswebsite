@@ -1,7 +1,7 @@
 import { NextResponse } from "next/server";
 import { revalidatePath } from "next/cache";
 import { requireAuthenticatedUser } from "@/lib/auth";
-import { requireOperationalRole } from "@/lib/roles";
+import { requireSiteVisitWriteRole } from "@/lib/roles";
 import { createAdminClient } from "@/lib/supabase/admin";
 
 export async function DELETE(
@@ -9,7 +9,7 @@ export async function DELETE(
   context: { params: Promise<{ id: string }> }
 ) {
   const user = await requireAuthenticatedUser();
-  await requireOperationalRole(user.id);
+  await requireSiteVisitWriteRole(user.id);
   const { id } = await context.params;
   const body = (await request.json().catch(() => null)) as
     | { path?: unknown }

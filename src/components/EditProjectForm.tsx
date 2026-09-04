@@ -85,7 +85,7 @@ export default function EditProjectForm({
           <Field
             label="Contact Name"
             name="contact_name"
-            defaultValue={project.contact_name || project.customer_name}
+            defaultValue={project.contact_name}
           />
 
           <Field label="Phone" name="phone" defaultValue={project.phone} />

@@ -3,6 +3,7 @@ import { revalidatePath } from "next/cache";
 import { createAdminClient } from "@/lib/supabase/admin";
 import { createClient } from "@/lib/supabase/server";
 import { getUserRole } from "@/lib/roles";
+import { upsertCustomerProfile } from "@/lib/customers";
 
 type ProjectUpdateBody = {
   customer_name?: unknown;
@@ -47,12 +48,27 @@ export async function PATCH(
   const body = (await request.json()) as ProjectUpdateBody;
 
   const supabase = createAdminClient();
+  const customerName = stringValue(body.customer_name);
+  if (!customerName) {
+    return NextResponse.json({ error: "Customer name is required." }, { status: 400 });
+  }
+  const customerId = await upsertCustomerProfile(supabase, {
+    name: customerName,
+    contactName: stringValue(body.contact_name),
+    phone: stringValue(body.phone),
+    email: stringValue(body.email),
+    address: stringValue(body.project_address),
+    city: stringValue(body.city),
+    state: stringValue(body.state),
+    zipCode: stringValue(body.zip_code),
+  });
 
   const { error } = await supabase
     .from("projects")
     .update({
-      customer_name: stringValue(body.customer_name),
-      contact_name: stringValue(body.contact_name),
+      customer_name: customerName,
+      customer_id: customerId,
+      contact_name: stringValue(body.contact_name) || null,
       phone: stringValue(body.phone),
       email: stringValue(body.email),
       project_address: stringValue(body.project_address),

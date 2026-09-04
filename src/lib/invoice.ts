@@ -5,23 +5,34 @@ export type InvoiceSummary = {
   contractAmount: number;
   paidToDate: number;
   amountDue: number;
+  remainingBalance: number;
+  isInitialPaymentInvoice: boolean;
 };
 
 export function getInvoiceSummary(project: Record<string, unknown>) {
   const contractAmount = optionalNumber(project.proposal_amount) || 0;
-  const recordedBalance = optionalNumber(project.balance_due);
   const depositAmount = optionalNumber(project.proposal_deposit_amount) || 0;
-  const amountDue =
-    recordedBalance !== null
-      ? Math.max(recordedBalance, 0)
-      : Math.max(contractAmount - depositAmount, 0);
-  const paidToDate = Math.max(contractAmount - amountDue, 0);
+  const paidToDate = Math.max(
+    optionalNumber(project.initial_payment_received_amount) || 0,
+    0
+  );
+  const remainingBalance = Math.max(contractAmount - paidToDate, 0);
+  const isInitialPaymentInvoice =
+    project.status === "active" &&
+    project.proposal_initial_payment_required === true &&
+    !project.initial_payment_received_at &&
+    depositAmount > 0;
+  const amountDue = isInitialPaymentInvoice
+    ? Math.min(depositAmount, remainingBalance)
+    : remainingBalance;
 
   return {
     invoiceNumber: getInvoiceNumber(project),
     contractAmount,
     paidToDate,
     amountDue,
+    remainingBalance,
+    isInitialPaymentInvoice,
   };
 }
 
@@ -45,6 +56,9 @@ export function getProjectLocation(project: Record<string, unknown>) {
 }
 
 export function getInvoiceLineItems(summary: InvoiceSummary) {
+  if (summary.isInitialPaymentInvoice) {
+    return [{ description: "Initial payment due", amount: summary.amountDue }];
+  }
   return [
     {
       description: "Contract amount",

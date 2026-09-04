@@ -2,7 +2,7 @@
 
 import { useState } from "react";
 import Link from "next/link";
-import { Camera, ExternalLink, FileCheck2, ImagePlus, Mail, Upload } from "lucide-react";
+import { Camera, CheckCircle2, ExternalLink, FileCheck2, ImagePlus, Mail, Upload, X } from "lucide-react";
 import { createClient } from "@/lib/supabase/client";
 import { prepareImageInput } from "@/lib/image-compression";
 import SelectedImagePreview from "@/components/SelectedImagePreview";
@@ -47,6 +47,9 @@ export default function ProjectClosePanel({ project, portfolio }: { project: Clo
   const [busy, setBusy] = useState(false);
   const [message, setMessage] = useState("");
   const [reviewSentAt, setReviewSentAt] = useState(project.review_request_sent_at || "");
+  const [reviewModalOpen, setReviewModalOpen] = useState(false);
+  const [reviewError, setReviewError] = useState("");
+  const [allowReviewResend, setAllowReviewResend] = useState(false);
   const defaultName = project.proposal_project_name || project.project_type || project.customer_name || "";
   const defaultLocation = [project.city, project.state].filter(Boolean).join(", ");
   const workType = titleCase(project.project_category || "Not specified");
@@ -124,17 +127,17 @@ export default function ProjectClosePanel({ project, portfolio }: { project: Clo
   }
 
   async function sendReviewRequest() {
-    if (!window.confirm(`Send a Google review request to ${project.email || "this customer"}?`)) return;
     setBusy(true);
-    setMessage("");
+    setReviewError("");
     try {
       const response = await fetch(`/api/projects/${encodeURIComponent(project.id)}/review-request`, { method: "POST" });
       const body = await response.json().catch(() => null) as { error?: string; sentAt?: string } | null;
       if (!response.ok) throw new Error(body?.error || "Unable to send review request.");
       setReviewSentAt(body?.sentAt || new Date().toISOString());
-      setMessage(`Google review request sent to ${project.email}.`);
+      setAllowReviewResend(false);
+      setReviewModalOpen(false);
     } catch (error) {
-      setMessage(error instanceof Error ? error.message : "Unable to send review request.");
+      setReviewError(error instanceof Error ? error.message : "Unable to send review request.");
     } finally {
       setBusy(false);
     }
@@ -152,13 +155,43 @@ export default function ProjectClosePanel({ project, portfolio }: { project: Clo
           <Link href={`/admin/projects/${project.id}/receipt/pdf`} className="inline-flex h-11 items-center gap-2 rounded-xl border border-white/10 px-4 text-sm font-semibold text-neutral-200">
             <Upload className="h-4 w-4" /> Download receipt PDF
           </Link>
-          <button type="button" onClick={sendReviewRequest} disabled={busy || !project.email} className="inline-flex h-11 items-center gap-2 rounded-xl border border-white/10 px-4 text-sm font-semibold text-neutral-200 disabled:opacity-50">
-            <Mail className="h-4 w-4" /> {reviewSentAt ? "Send review reminder" : "Request Google review"}
+          <button type="button" onClick={() => { setReviewError(""); setReviewModalOpen(true); }} disabled={busy || !project.email || Boolean(reviewSentAt && !allowReviewResend)} className="inline-flex h-11 items-center gap-2 rounded-xl border border-white/10 px-4 text-sm font-semibold text-neutral-200 disabled:cursor-not-allowed disabled:opacity-50">
+            <Mail className="h-4 w-4" /> {reviewSentAt ? "Resend Google review request" : "Request Google review"}
           </button>
+          {reviewSentAt && (
+            <div className="flex flex-wrap items-center gap-3 rounded-xl border border-emerald-500/20 bg-emerald-500/10 px-3 py-2">
+              <span className="inline-flex items-center gap-2 text-xs text-emerald-100">
+                <CheckCircle2 className="h-4 w-4" aria-hidden="true" />
+                Sent {new Date(reviewSentAt).toLocaleString()}
+              </span>
+              <label className="inline-flex cursor-pointer items-center gap-2 text-xs text-neutral-300">
+                <input type="checkbox" checked={allowReviewResend} onChange={(event) => setAllowReviewResend(event.target.checked)} className="h-4 w-4 accent-[#fb5411]" />
+                Allow resend
+              </label>
+            </div>
+          )}
         </div>
         {!project.email && <p className="mt-3 text-sm text-amber-200">Add a customer email to enable the review request.</p>}
-        {reviewSentAt && <p className="mt-3 text-xs text-neutral-500">Last review request sent {new Date(reviewSentAt).toLocaleString()}.</p>}
       </section>
+
+      {reviewModalOpen && (
+        <div className="fixed inset-0 z-[70] flex items-center justify-center bg-black/70 p-4" role="presentation" onMouseDown={(event) => { if (event.target === event.currentTarget && !busy) setReviewModalOpen(false); }}>
+          <section role="dialog" aria-modal="true" aria-labelledby="review-request-title" className="w-full max-w-md rounded-2xl border border-white/10 bg-neutral-900 p-5 shadow-2xl sm:p-6">
+            <div className="flex items-start justify-between gap-4">
+              <div>
+                <h2 id="review-request-title" className="text-xl font-semibold text-white">Send Google review request?</h2>
+                <p className="mt-2 text-sm leading-6 text-neutral-400">An email with the Google review link will be sent to <span className="font-semibold text-neutral-200">{project.email}</span>.</p>
+              </div>
+              <button type="button" onClick={() => setReviewModalOpen(false)} disabled={busy} aria-label="Close review request confirmation" className="rounded-lg p-2 text-neutral-400 transition hover:bg-white/10 hover:text-white disabled:opacity-50"><X className="h-5 w-5" /></button>
+            </div>
+            {reviewError && <p className="mt-4 rounded-xl border border-red-500/20 bg-red-500/10 px-3 py-2 text-sm text-red-200">{reviewError}</p>}
+            <div className="mt-6 flex justify-end gap-3">
+              <button type="button" onClick={() => setReviewModalOpen(false)} disabled={busy} className="h-11 rounded-xl border border-white/10 px-4 text-sm font-semibold text-neutral-200 transition hover:bg-white/5 disabled:opacity-50">Cancel</button>
+              <button type="button" onClick={sendReviewRequest} disabled={busy} className="inline-flex h-11 items-center gap-2 rounded-xl bg-[#fb5411] px-4 text-sm font-semibold text-white transition hover:bg-[#e64d0f] disabled:opacity-60"><Mail className="h-4 w-4" />{busy ? "Sending…" : "Send email"}</button>
+            </div>
+          </section>
+        </div>
+      )}
 
       <form action={publish} className="rounded-2xl border border-white/10 bg-white/[0.03] p-4 sm:p-6">
         <div className="flex flex-wrap items-start justify-between gap-3">

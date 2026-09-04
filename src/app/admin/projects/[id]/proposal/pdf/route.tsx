@@ -209,6 +209,22 @@ export function ProposalPdf({
             </Text>
             <Label spaced>Project Location</Label>
             <Text style={styles.body}>{projectLocation || "—"}</Text>
+            {mhicDraft && (
+              <View style={styles.contact}>
+                <Text style={styles.contactLine}>
+                  <Text style={styles.inlineLabel}>Approximate work start:</Text>{" "}
+                  {value("proposal_mhic_start_date")
+                    ? formatWashingtonDate(value("proposal_mhic_start_date"))
+                    : "—"}
+                </Text>
+                <Text style={styles.contactLine}>
+                  <Text style={styles.inlineLabel}>Substantial completion:</Text>{" "}
+                  {value("proposal_mhic_completion_date")
+                    ? formatWashingtonDate(value("proposal_mhic_completion_date"))
+                    : "—"}
+                </Text>
+              </View>
+            )}
           </View>
           <View style={styles.column}>
             <Label>Attention</Label>
@@ -245,12 +261,6 @@ export function ProposalPdf({
           content={value("proposal_customer_responsibilities")}
         />
         <PdfPricingSection items={pricingItems} total={pricingTotal} />
-        {mhicDraft && (
-          <PdfSection
-            title="Deposit Check"
-            content={`Proposed deposit: ${formatCurrency(deposit)}\nMaximum one-third deposit: ${formatCurrency(pricingTotal / 3)}\n${deposit > pricingTotal / 3 ? "FAIL — reduce the deposit before execution." : "PASS — the proposed deposit does not exceed one-third of the current contract total."}`}
-          />
-        )}
         <PdfSection
           title="Payment Terms"
           content={
@@ -258,12 +268,6 @@ export function ProposalPdf({
           }
         />
         <PdfSection title="Schedule" content={value("proposal_schedule")} />
-        {mhicDraft && (
-          <PdfSection
-            title="Required Contract Dates"
-            content={`Approximate work start date: ${value("proposal_mhic_start_date") ? formatWashingtonDate(value("proposal_mhic_start_date")) : "Not entered"}\nApproximate substantial completion date: ${value("proposal_mhic_completion_date") ? formatWashingtonDate(value("proposal_mhic_completion_date")) : "Not entered"}`}
-          />
-        )}
         <PdfSection
           title="Clarifications"
           content={value("proposal_clarifications")}

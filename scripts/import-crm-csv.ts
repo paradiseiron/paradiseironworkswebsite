@@ -1,6 +1,7 @@
 import fs from "node:fs";
 import { parse } from "csv-parse/sync";
 import { createClient } from "@supabase/supabase-js";
+import { upsertCustomerProfile } from "../src/lib/customers";
 
 type CsvRow = Record<string, string>;
 
@@ -72,7 +73,7 @@ function status(value?: string) {
 function mappedProject(row: CsvRow, isNew: boolean) {
   const quoteNumber = row["Quote #"].trim();
   const customerName = row["Client / Company"].trim();
-  const contactName = row["Contact Person"].trim() || customerName;
+  const contactName = row["Contact Person"].trim();
   const projectType = row["Project Name / Type"].trim();
   const assignedTo =
     normalize(row["Assigned To"]) === "pending"
@@ -86,7 +87,7 @@ function mappedProject(row: CsvRow, isNew: boolean) {
 
   const mapped: Record<string, string | number | boolean | null> = {
     customer_name: customerName,
-    contact_name: contactName,
+    contact_name: contactName || null,
     project_category: quoteNumber.toUpperCase().startsWith("C-")
       ? "commercial"
       : "residential",
@@ -113,6 +114,16 @@ function mappedProject(row: CsvRow, isNew: boolean) {
   }
 
   return mapped;
+}
+
+async function customerIdForRow(row: CsvRow) {
+  const contact = contactDetails(row["Phone / Email"]);
+  return upsertCustomerProfile(supabase, {
+    name: row["Client / Company"].trim(),
+    contactName: row["Contact Person"].trim() || null,
+    phone: contact.phone,
+    email: contact.email,
+  });
 }
 
 async function run() {
@@ -163,15 +174,17 @@ async function run() {
 
   for (const row of matched) {
     const existing = byQuote.get(normalize(row["Quote #"]))!;
+    const customerId = await customerIdForRow(row);
     const { error: updateError } = await supabase
       .from("projects")
-      .update(mappedProject(row, false))
+      .update({ ...mappedProject(row, false), customer_id: customerId })
       .eq("id", existing.id);
     if (updateError) throw updateError;
   }
 
   for (const row of additions) {
-    const project = mappedProject(row, true);
+    const customerId = await customerIdForRow(row);
+    const project = { ...mappedProject(row, true), customer_id: customerId };
     const { data: inserted, error: insertError } = await supabase
       .from("projects")
       .insert(project)

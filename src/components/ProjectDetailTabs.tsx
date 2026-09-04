@@ -80,6 +80,10 @@ type ProjectRecord = {
   proposal_pricing?: string | null;
   proposal_pricing_items?: unknown;
   proposal_deposit_amount?: number | null;
+  proposal_initial_payment_required?: boolean | null;
+  initial_payment_received_amount?: number | null;
+  initial_payment_method?: string | null;
+  initial_payment_received_at?: string | null;
   proposal_payment_terms?: string | null;
   proposal_schedule?: string | null;
   proposal_clarifications?: string | null;
@@ -582,11 +586,11 @@ export default function ProjectDetailTabs({
 
             {project.project_category?.trim().toLowerCase() === "residential" &&
               ["MD", "MARYLAND"].includes(project.state?.trim().toUpperCase() || "") && (
-                <section className="rounded-xl border border-blue-400/30 bg-blue-400/10 p-4">
+                <section className="rounded-xl border border-white/10 bg-white/[0.02] p-4">
                   <label className="flex cursor-pointer items-start justify-between gap-4">
                     <span>
-                      <span className="block font-semibold text-blue-100">MHIC home improvement contract</span>
-                      <span className="mt-1 block text-sm leading-6 text-blue-100/70">
+                      <span className="block font-semibold text-white">MHIC home improvement contract</span>
+                      <span className="mt-1 block text-sm leading-6 text-neutral-400">
                         Adds the Maryland residential contract fields and uses them in the standard proposal preview and PDF.
                       </span>
                     </span>
@@ -607,11 +611,11 @@ export default function ProjectDetailTabs({
                   </label>
 
                   {mhicDraftEnabled && (
-                    <div className="mt-5 space-y-5 border-t border-blue-300/20 pt-5">
+                    <div className="mt-5 space-y-5 border-t border-white/10 pt-5">
                       <div className="grid gap-5 md:grid-cols-3">
-                        <Field label="Contract date" name="proposal_mhic_contract_date" type="date" defaultValue={project.proposal_mhic_contract_date || ""} />
-                        <Field label="Approximate start date" name="proposal_mhic_start_date" type="date" defaultValue={project.proposal_mhic_start_date || ""} />
-                        <Field label="Substantial completion date" name="proposal_mhic_completion_date" type="date" defaultValue={project.proposal_mhic_completion_date || ""} help="Enter the approximate date when the contracted work should be substantially usable and complete, even if minor punch-list work remains." />
+                        <Field label="Contract date" name="proposal_mhic_contract_date" type="date" required defaultValue={project.proposal_mhic_contract_date || ""} />
+                        <Field label="Approximate start date" name="proposal_mhic_start_date" type="date" required defaultValue={project.proposal_mhic_start_date || ""} />
+                        <Field label="Substantial completion date" name="proposal_mhic_completion_date" type="date" required defaultValue={project.proposal_mhic_completion_date || ""} help="Enter the approximate date when the contracted work should be substantially usable and complete, even if minor punch-list work remains." />
                       </div>
 
                       <div className="grid gap-5 md:grid-cols-2">
@@ -752,6 +756,24 @@ export default function ProjectDetailTabs({
               initialDeposit={project.proposal_deposit_amount}
               initialPaymentTerms={project.proposal_payment_terms || ""}
             />
+
+            <label className="flex cursor-pointer items-start gap-3 rounded-xl border border-white/10 bg-white/[0.02] p-4">
+              <input
+                type="checkbox"
+                name="proposal_initial_payment_required"
+                value="true"
+                defaultChecked={Boolean(project.proposal_initial_payment_required)}
+                className="mt-0.5 h-4 w-4 accent-[#fb5411]"
+              />
+              <span>
+                <span className="block text-sm font-semibold text-white">
+                  Invoice the first payment when this project becomes active
+                </span>
+                <span className="mt-1 block text-xs leading-5 text-neutral-400">
+                  The active-project invoice will request the deposit amount above until that payment is recorded as received.
+                </span>
+              </span>
+            </label>
 
             <TextArea
               label="Schedule"
@@ -909,9 +931,38 @@ export default function ProjectDetailTabs({
 }
 
 function InvoicePanel({ project }: { project: ProjectRecord }) {
-  const summary = getInvoiceSummary(project);
+  const [paymentProject, setPaymentProject] = useState(project);
+  const [paymentBusy, setPaymentBusy] = useState(false);
+  const [paymentMessage, setPaymentMessage] = useState("");
+  const summary = getInvoiceSummary(paymentProject);
   const lineItems = getInvoiceLineItems(summary);
   const projectLabel = project.proposal_project_name || project.customer_name;
+  const initialPaymentAmount = Number(project.proposal_deposit_amount || 0);
+
+  async function recordInitialPayment(formData: FormData) {
+    setPaymentBusy(true);
+    setPaymentMessage("");
+    try {
+      const response = await fetch(`/api/projects/${encodeURIComponent(project.id)}/payments/initial`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ amount: formData.get("amount"), method: formData.get("method") }),
+      });
+      const body = await response.json().catch(() => null) as { error?: string; amount?: number; method?: string; receivedAt?: string } | null;
+      if (!response.ok) throw new Error(body?.error || "Unable to record payment.");
+      setPaymentProject((current) => ({
+        ...current,
+        initial_payment_received_amount: body?.amount || 0,
+        initial_payment_method: body?.method || "",
+        initial_payment_received_at: body?.receivedAt || new Date().toISOString(),
+      }));
+      setPaymentMessage("Initial payment recorded.");
+    } catch (error) {
+      setPaymentMessage(error instanceof Error ? error.message : "Unable to record payment.");
+    } finally {
+      setPaymentBusy(false);
+    }
+  }
 
   return (
     <div>
@@ -919,7 +970,9 @@ function InvoicePanel({ project }: { project: ProjectRecord }) {
         <div>
           <h2 className="text-xl font-semibold">Invoice</h2>
           <p className="mt-1 text-sm text-neutral-400">
-            Standard invoice based on the current remaining balance.
+            {summary.isInitialPaymentInvoice
+              ? "Initial-payment invoice based on the signed proposal."
+              : "Invoice based on the current recorded balance."}
           </p>
         </div>
 
@@ -983,6 +1036,25 @@ function InvoicePanel({ project }: { project: ProjectRecord }) {
           {projectLabel || "—"}
         </p>
       </div>
+
+      {project.proposal_initial_payment_required && !paymentProject.initial_payment_received_at && (
+        <form action={recordInitialPayment} className="mt-6 rounded-xl border border-amber-400/20 bg-amber-400/10 p-4">
+          <h3 className="font-semibold text-amber-100">Record first payment received</h3>
+          <p className="mt-1 text-xs leading-5 text-amber-100/70">Only record this after the funds have actually been received.</p>
+          <div className="mt-4 grid gap-3 sm:grid-cols-[1fr_1fr_auto] sm:items-end">
+            <label className="text-sm text-neutral-200"><span className="mb-2 block">Amount received</span><input name="amount" type="number" min="0.01" step="0.01" required defaultValue={initialPaymentAmount || ""} className="h-11 w-full rounded-xl border border-white/10 bg-neutral-900 px-4 text-white outline-none focus:border-[#fb5411]" /></label>
+            <label className="text-sm text-neutral-200"><span className="mb-2 block">Payment method</span><select name="method" required defaultValue="" className="h-11 w-full rounded-xl border border-white/10 bg-neutral-900 px-4 text-white outline-none focus:border-[#fb5411]"><option value="" disabled>Select method</option><option value="check">Check</option><option value="ach">ACH</option><option value="wire">Wire transfer</option><option value="credit_card">Credit card</option><option value="cash">Cash</option><option value="other">Other</option></select></label>
+            <button type="submit" disabled={paymentBusy} className="h-11 rounded-xl bg-[#fb5411] px-4 text-sm font-semibold text-white disabled:opacity-60">{paymentBusy ? "Recording…" : "Mark received"}</button>
+          </div>
+          {paymentMessage && <p className="mt-3 text-sm text-amber-100">{paymentMessage}</p>}
+        </form>
+      )}
+
+      {paymentProject.initial_payment_received_at && (
+        <div className="mt-6 rounded-xl border border-emerald-500/20 bg-emerald-500/10 p-4 text-sm text-emerald-100">
+          First payment of {formatCurrency(Number(paymentProject.initial_payment_received_amount || 0))} received by {String(paymentProject.initial_payment_method || "unspecified method").replaceAll("_", " ")} on {formatWashingtonDateTime(paymentProject.initial_payment_received_at)}.
+        </div>
+      )}
 
       <div className="mt-6 flex flex-wrap gap-3">
         <Link
@@ -1549,12 +1621,14 @@ function Field({
   type = "text",
   defaultValue = "",
   help,
+  required,
 }: {
   label: string;
   name: string;
   type?: string;
   defaultValue?: string | number;
   help?: string;
+  required?: boolean;
 }) {
   return (
     <div>
@@ -1568,6 +1642,7 @@ function Field({
         type={type}
         defaultValue={defaultValue}
         step={type === "number" ? "0.01" : undefined}
+        required={required}
         className="w-full rounded-xl border border-white/10 bg-white/5 px-4 py-3 text-white outline-none focus:border-[#fb5411]"
       />
     </div>

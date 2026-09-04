@@ -4,7 +4,6 @@ import {
   BellRing,
   BriefcaseBusiness,
   CircleDollarSign,
-  Clock3,
   DollarSign,
   MapPin,
   TrendingUp,
@@ -76,7 +75,7 @@ export default async function AdminPage({
   const { data: projects, error } = await supabase
     .from("projects")
     .select(
-      "id, customer_name, status, project_category, project_type, lead_source, received_at, has_open_follow_up, proposal_amount, balance_due, proposal_deposit_amount, website_lead_reviewed_at, site_visit_status, site_visit_assigned_to"
+      "id, customer_name, status, project_category, project_type, lead_source, received_at, proposal_amount, initial_payment_received_amount, website_lead_reviewed_at, site_visit_status, site_visit_assigned_to"
     )
     .order("received_at", { ascending: false });
 
@@ -111,9 +110,6 @@ export default async function AdminPage({
     ])
   ).sort((a, b) => b.localeCompare(a));
   const totalProjects = records.length;
-  const openFollowUps = records.filter(
-    (project) => project.has_open_follow_up
-  ).length;
   const proposalValue = records.reduce(
     (total, project) => total + Number(project.proposal_amount || 0),
     0
@@ -126,7 +122,7 @@ export default async function AdminPage({
       (total, project) =>
         total +
         Number(project.proposal_amount || 0) -
-        Number(project.proposal_deposit_amount || 0),
+        Number(project.initial_payment_received_amount || 0),
       0
     );
   const pipelineRevenue = records
@@ -169,7 +165,7 @@ export default async function AdminPage({
         <div>
           <h1 className="text-2xl font-semibold sm:text-3xl">Dashboard</h1>
           <p className="mt-2 text-neutral-400">
-            A live snapshot of your project pipeline and follow-up workload.
+            A live snapshot of your project pipeline and revenue.
           </p>
         </div>
 
@@ -215,22 +211,13 @@ export default async function AdminPage({
 
       <section
         aria-label="Key metrics"
-        className="mt-8 grid gap-4 sm:grid-cols-2 xl:grid-cols-5"
+        className="mt-8 grid gap-4 sm:grid-cols-2 xl:grid-cols-4"
       >
         <MetricCard
           label="Total projects"
           value={formatNumber(totalProjects)}
           detail={`${activePipeline} in the active pipeline`}
           icon={<BriefcaseBusiness className="h-5 w-5" />}
-        />
-        <MetricCard
-          label="Open follow-ups"
-          value={formatNumber(openFollowUps)}
-          detail={
-            openFollowUps ? "Require attention" : "All follow-ups are clear"
-          }
-          icon={<Clock3 className="h-5 w-5" />}
-          alert={openFollowUps > 0}
         />
         <MetricCard
           label="Proposal value"
@@ -370,9 +357,6 @@ export default async function AdminPage({
                       ? formatWashingtonDate(project.received_at)
                       : "No received date"}
                   </span>
-                  {project.has_open_follow_up && (
-                    <span className="text-red-300">Needs follow-up</span>
-                  )}
                 </div>
               </a>
             ))}
@@ -385,7 +369,6 @@ export default async function AdminPage({
                   <th className="px-6 py-3 font-medium">Project</th>
                   <th className="px-6 py-3 font-medium">Received</th>
                   <th className="px-6 py-3 font-medium">Status</th>
-                  <th className="px-6 py-3 font-medium">Follow-up</th>
                 </tr>
               </thead>
               <tbody>
@@ -420,15 +403,6 @@ export default async function AdminPage({
                       >
                         {project.status || "lead"}
                       </span>
-                    </td>
-                    <td className="px-6 py-4">
-                      {project.has_open_follow_up ? (
-                        <span className="rounded-full border border-red-500/20 bg-red-500/10 px-2.5 py-1 text-xs text-red-300">
-                          Needs attention
-                        </span>
-                      ) : (
-                        <span className="text-neutral-600">Clear</span>
-                      )}
                     </td>
                   </tr>
                 ))}

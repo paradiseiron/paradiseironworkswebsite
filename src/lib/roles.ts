@@ -66,6 +66,17 @@ export async function requireOperationalRole(userId: string) {
   return role;
 }
 
+export async function requireSiteVisitWriteRole(userId: string) {
+  const role = await getUserRole(userId);
+  if (role === "unassigned") {
+    throw new Error("This account has not been assigned an application role.");
+  }
+  if (role === "viewer") {
+    throw new Error("Read-only users cannot change site visit details.");
+  }
+  return role;
+}
+
 export async function requireBidWriteRole(userId: string) {
   const role = await getUserRole(userId);
   if (

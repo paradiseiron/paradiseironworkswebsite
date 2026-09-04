@@ -7,6 +7,7 @@ import {
   ENGINEERING_SERVICES_OPTIONS,
   PROJECT_TYPES,
 } from "@/lib/project-options";
+import { upsertCustomerProfile } from "@/lib/customers";
 
 export const dynamic = "force-dynamic";
 export const revalidate = 0;
@@ -62,11 +63,23 @@ async function createProject(formData: FormData) {
     throw new Error("Project category is required.");
   }
 
+  const customer_id = await upsertCustomerProfile(supabase, {
+    name: customer_name,
+    contactName: contact_name,
+    phone,
+    email,
+    address: project_address,
+    city,
+    state,
+    zipCode: zip_code,
+  });
+
   const { data: newProject, error } = await supabase
     .from("projects")
     .insert({
       customer_name,
-      contact_name,
+      customer_id,
+      contact_name: contact_name.trim() || null,
       phone,
       email,
       project_address,
@@ -162,9 +175,14 @@ async function createProject(formData: FormData) {
   redirect("/admin/projects?toast=project-created");
 }
 
-export default async function NewProjectPage() {
+export default async function NewProjectPage({ searchParams }: { searchParams: Promise<{ customer?: string }> }) {
   const user = await requireAuthenticatedUser();
   await requireOperationalRole(user.id);
+  const { customer: customerId } = await searchParams;
+  const supabase = createAdminClient();
+  const { data: customer } = customerId
+    ? await supabase.from("customers").select("*").eq("id", customerId).maybeSingle()
+    : { data: null };
 
   return (
     <div>
@@ -187,13 +205,14 @@ export default async function NewProjectPage() {
               label="Customer Name *"
               name="customer_name"
               required
+              defaultValue={customer?.name || ""}
             />
 
-            <Field label="Contact Name" name="contact_name" />
+            <Field label="Contact Name" name="contact_name" defaultValue={customer?.contact_name || ""} />
 
-            <Field label="Phone" name="phone" />
+            <Field label="Phone" name="phone" defaultValue={customer?.phone || ""} />
 
-            <Field label="Email" name="email" type="email" />
+            <Field label="Email" name="email" type="email" defaultValue={customer?.email || ""} />
           </div>
         </section>
 
@@ -207,12 +226,13 @@ export default async function NewProjectPage() {
               <Field
                 label="Project Address"
                 name="project_address"
+                defaultValue={customer?.address || ""}
               />
             </div>
 
-            <Field label="City" name="city" />
-            <Field label="State" name="state" />
-            <Field label="ZIP Code" name="zip_code" />
+            <Field label="City" name="city" defaultValue={customer?.city || ""} />
+            <Field label="State" name="state" defaultValue={customer?.state || ""} />
+            <Field label="ZIP Code" name="zip_code" defaultValue={customer?.zip_code || ""} />
           </div>
         </section>
 
@@ -276,6 +296,7 @@ export default async function NewProjectPage() {
             <SelectField
               label="Lead Source"
               name="lead_source"
+              defaultValue={customer ? "Repeat Customer" : ""}
               options={[
                 {
                   value: "",
@@ -362,11 +383,13 @@ function Field({
   name,
   type = "text",
   required = false,
+  defaultValue = "",
 }: {
   label: string;
   name: string;
   type?: string;
   required?: boolean;
+  defaultValue?: string;
 }) {
   return (
     <div>
@@ -378,6 +401,7 @@ function Field({
         name={name}
         type={type}
         required={required}
+        defaultValue={defaultValue}
         className="w-full rounded-xl border border-white/10 bg-white/5 px-4 py-3 text-white outline-none focus:border-[#fb5411]"
       />
     </div>

@@ -1,15 +1,14 @@
 import { NextResponse } from "next/server";
 import { requireAuthenticatedUser } from "@/lib/auth";
 import { createAdminClient } from "@/lib/supabase/admin";
-import { requireOperationalRole } from "@/lib/roles";
-import { sendWorkflowNotification } from "@/lib/notifications/workflow-notification";
+import { requireSiteVisitWriteRole } from "@/lib/roles";
 
 export async function POST(
   request: Request,
   context: { params: Promise<{ id: string }> }
 ) {
   const user = await requireAuthenticatedUser();
-  await requireOperationalRole(user.id);
+  await requireSiteVisitWriteRole(user.id);
   const { id } = await context.params;
   const body = (await request.json()) as {
     scopeObservations?: string;
@@ -53,45 +52,35 @@ export async function POST(
       (path.startsWith(`${user.id}/${id}/`) || existingImagePaths.has(path)) &&
       !path.includes("..")
   );
-  const completedAt = new Date().toISOString();
+  const updatedAt = new Date().toISOString();
   const { data: project, error } = await supabase
     .from("projects")
     .update({
-      site_visit_status: "completed",
       site_visit_scope_observations: body.scopeObservations.trim(),
       site_visit_notes: body.visitNotes.trim(),
       site_visit_exclusion_notes: body.exclusionNotes?.trim() || null,
       site_visit_access_safety_concerns:
         body.accessSafetyConcerns?.trim() || null,
       site_visit_image_paths: imagePaths,
-      site_visit_completed_at: completedAt,
-      updated_at: completedAt,
+      updated_at: updatedAt,
     })
     .eq("id", id)
     .select("customer_name")
     .single();
 
   if (error || !project) {
+    console.error("Unable to save site visit details:", error);
     return NextResponse.json(
-      { error: "Unable to complete this site visit." },
+      { error: error?.message || "Unable to save site visit details." },
       { status: 500 }
     );
   }
 
   await supabase.from("project_activities").insert({
     project_id: id,
-    activity_type: "site_visit_completed",
-    activity_date: completedAt,
-    summary: "Site visit completed. Proposal drafting can begin.",
-  });
-
-  await sendWorkflowNotification({
-    recipientRole: "admin",
-    title: "Site visit completed",
-    body: `${project.customer_name}'s site visit is complete and ready for proposal drafting.`,
-    emailSubject: `Site visit completed: ${project.customer_name}`,
-    url: `/admin/projects/${id}?tab=site-visit`,
-    tag: `site-visit-completed-${id}`,
+    activity_type: "site_visit_updated",
+    activity_date: updatedAt,
+    summary: "Site visit details updated.",
   });
 
   return NextResponse.json({ success: true });

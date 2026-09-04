@@ -127,6 +127,22 @@ export default async function ProposalPreviewPage({
             <p className="mt-2 whitespace-pre-wrap">
               {projectLocation || "—"}
             </p>
+            {mhicDraft && (
+              <div className="mt-5 space-y-1">
+                <p>
+                  <strong>Approximate work start:</strong>{" "}
+                  {project.proposal_mhic_start_date
+                    ? formatWashingtonDate(project.proposal_mhic_start_date)
+                    : "—"}
+                </p>
+                <p>
+                  <strong>Substantial completion:</strong>{" "}
+                  {project.proposal_mhic_completion_date
+                    ? formatWashingtonDate(project.proposal_mhic_completion_date)
+                    : "—"}
+                </p>
+              </div>
+            )}
           </div>
 
           <div>
@@ -189,20 +205,6 @@ export default async function ProposalPreviewPage({
 
         <PricingSection items={pricingItems} total={pricingTotal} />
 
-        {mhicDraft && (
-          <section className={`mt-8 border p-4 text-sm leading-7 ${Number(project.proposal_deposit_amount || 0) > pricingTotal / 3 ? "border-red-500 bg-red-50 text-red-900" : "border-emerald-500 bg-emerald-50 text-emerald-950"}`}>
-            <h2 className="text-lg font-bold">Deposit Check</h2>
-            <p className="mt-2">
-              Proposed deposit: {formatCurrency(Number(project.proposal_deposit_amount || 0))}. Maximum one-third deposit: {formatCurrency(pricingTotal / 3)}.
-            </p>
-            <p className="font-semibold">
-              {Number(project.proposal_deposit_amount || 0) > pricingTotal / 3
-                ? "FAIL — reduce the deposit before execution."
-                : "PASS — the proposed deposit does not exceed one-third of the current contract total."}
-            </p>
-          </section>
-        )}
-
         <ProposalSection
           title="Payment Terms"
           content={
@@ -215,14 +217,6 @@ export default async function ProposalPreviewPage({
           title="Schedule"
           content={project.proposal_schedule}
         />
-
-        {mhicDraft && (
-          <section className="mt-8 border border-amber-400 bg-amber-50 p-4 text-sm leading-7">
-            <h2 className="text-lg font-bold">Required Contract Dates</h2>
-            <p className="mt-3"><strong>Approximate work start date:</strong> {project.proposal_mhic_start_date ? formatWashingtonDate(project.proposal_mhic_start_date) : "Not entered"}</p>
-            <p><strong>Approximate substantial completion date:</strong> {project.proposal_mhic_completion_date ? formatWashingtonDate(project.proposal_mhic_completion_date) : "Not entered"}</p>
-          </section>
-        )}
 
         <ProposalSection
           title="Clarifications"
