@@ -23,6 +23,9 @@ async function updateBidOpportunity(formData: FormData) {
       general_contractor: optionalValue(formData, "general_contractor"),
       owner_name: optionalValue(formData, "owner_name"),
       architect_name: optionalValue(formData, "architect_name"),
+      contact_name: optionalValue(formData, "contact_name"),
+      contact_email: optionalValue(formData, "contact_email"),
+      contact_phone: optionalValue(formData, "contact_phone"),
       project_address: optionalValue(formData, "project_address"),
       city: optionalValue(formData, "city"),
       state: optionalValue(formData, "state"),
@@ -67,6 +70,9 @@ export default async function EditBidOpportunityPage({ params }: { params: Promi
               <Field label="General Contractor (GC)" name="general_contractor" defaultValue={bid.general_contractor} />
               <Field label="Owner" name="owner_name" defaultValue={bid.owner_name} />
               <Field label="Architect" name="architect_name" defaultValue={bid.architect_name} />
+              <Field label="Contact Name" name="contact_name" defaultValue={bid.contact_name} />
+              <Field label="Contact Email" name="contact_email" type="email" defaultValue={bid.contact_email} />
+              <Field label="Contact Phone" name="contact_phone" type="tel" defaultValue={bid.contact_phone} />
               <Field label="Project Address" name="project_address" defaultValue={bid.project_address} wide />
               <Field label="City" name="city" defaultValue={bid.city} />
               <Field label="State" name="state" defaultValue={bid.state} />

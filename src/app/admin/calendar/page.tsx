@@ -48,6 +48,7 @@ export default async function CalendarPage({
     { data: eventData, error: eventError },
     { data: projectData, error: projectError },
     { data: employeeData, error: employeeError },
+    { data: bidWorkItemData, error: bidWorkItemError },
   ] = await Promise.all([
     supabase
       .from("projects")
@@ -64,7 +65,7 @@ export default async function CalendarPage({
     supabase
       .from("calendar_events")
       .select(
-        "id, event_type, event_date, window_start, window_end, project_id, manual_project_name, notes, created_at, updated_at, projects(customer_name, project_category, project_type, proposal_number), calendar_event_employees(employee_id, shop_employees(name))"
+        "id, event_type, event_date, window_start, window_end, project_id, bid_work_item_id, manual_project_name, notes, created_at, updated_at, projects(customer_name, project_category, project_type, proposal_number), bid_work_items(description, item_number, bid_opportunities(id, project_name)), calendar_event_employees(employee_id, shop_employees(name))"
       )
       .gte("event_date", calendarDays[0].date)
       .lte("event_date", calendarDays[calendarDays.length - 1].date)
@@ -82,14 +83,16 @@ export default async function CalendarPage({
       .select("id, name")
       .eq("active", true)
       .order("sort_order"),
+    supabase.from("bid_work_items").select("id, description, bid_opportunities!inner(project_name, status)").eq("bid_opportunities.status", "won").order("sort_order"),
   ]);
 
-  if (visitError || eventError || projectError || employeeError) {
+  if (visitError || eventError || projectError || employeeError || bidWorkItemError) {
     throw new Error(
       visitError?.message ||
         eventError?.message ||
         projectError?.message ||
         employeeError?.message ||
+        bidWorkItemError?.message ||
         "Unable to load the calendar."
     );
   }
@@ -126,7 +129,19 @@ export default async function CalendarPage({
           : null,
       }))}
       events={(eventData || []) as unknown as CalendarEventRecord[]}
-      projects={(projectData || []) as ProjectOption[]}
+      projects={[
+        ...((projectData || []) as ProjectOption[]),
+        ...(bidWorkItemData || []).map((item) => {
+          const bid = Array.isArray(item.bid_opportunities) ? item.bid_opportunities[0] : item.bid_opportunities;
+          return {
+            id: `bid-work-item:${item.id}`,
+            customer_name: `Bid · ${bid?.project_name || "Won bid"}`,
+            project_category: "Schedule of Work",
+            project_type: item.description,
+            proposal_number: null,
+          };
+        }),
+      ]}
       employees={(employeeData || []) as EmployeeOption[]}
       canWrite={
         role === "admin" ||

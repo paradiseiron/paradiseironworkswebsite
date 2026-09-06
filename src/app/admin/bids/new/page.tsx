@@ -1,4 +1,5 @@
 import { redirect } from "next/navigation";
+import Link from "next/link";
 import { createAdminClient } from "@/lib/supabase/admin";
 import { requireAuthenticatedUser } from "@/lib/auth";
 import { requireBidWriteRole } from "@/lib/roles";
@@ -29,6 +30,9 @@ async function createBidOpportunity(formData: FormData) {
     general_contractor: optionalText(formData, "general_contractor"),
     owner_name: optionalText(formData, "owner_name"),
     architect_name: optionalText(formData, "architect_name"),
+    contact_name: optionalText(formData, "contact_name"),
+    contact_email: optionalText(formData, "contact_email"),
+    contact_phone: optionalText(formData, "contact_phone"),
     project_address: optionalText(formData, "project_address"),
     city: optionalText(formData, "city"),
     state: optionalText(formData, "state"),
@@ -84,6 +88,9 @@ export default async function NewBidOpportunityPage() {
             <Field label="General Contractor (GC)" name="general_contractor" />
             <Field label="Owner" name="owner_name" />
             <Field label="Architect" name="architect_name" />
+            <Field label="Contact Name" name="contact_name" />
+            <Field label="Contact Email" name="contact_email" type="email" />
+            <Field label="Contact Phone" name="contact_phone" type="tel" />
             <Field label="Project Address" name="project_address" wide />
             <Field label="City" name="city" />
             <Field label="State" name="state" defaultValue="VA" />
@@ -141,12 +148,12 @@ export default async function NewBidOpportunityPage() {
         </FormSection>
 
         <div className="flex justify-end gap-3">
-          <a
+          <Link
             href="/admin/bids"
             className="inline-flex h-11 cursor-pointer items-center rounded-xl border border-white/10 px-5 text-sm font-semibold text-neutral-300 transition hover:bg-white/5 hover:text-white"
           >
             Cancel
-          </a>
+          </Link>
           <button
             type="submit"
             className="inline-flex h-11 cursor-pointer items-center rounded-xl bg-[#fb5411] px-5 text-sm font-semibold text-white transition hover:bg-[#e64d0f]"

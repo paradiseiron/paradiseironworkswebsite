@@ -121,7 +121,7 @@ export default async function CalendarDetailPage({
     const { data: event } = await supabase
       .from("calendar_events")
       .select(
-        "id, event_type, event_date, window_start, window_end, project_id, manual_project_name, notes, projects(customer_name), calendar_event_employees(shop_employees(name))"
+        "id, event_type, event_date, window_start, window_end, project_id, bid_work_item_id, manual_project_name, notes, projects(customer_name), bid_work_items(description, item_number, bid_opportunities(id, project_name)), calendar_event_employees(shop_employees(name))"
       )
       .eq("id", id)
       .maybeSingle();
@@ -130,6 +130,12 @@ export default async function CalendarDetailPage({
     const project = Array.isArray(event.projects)
       ? event.projects[0]
       : event.projects;
+    const workItem = Array.isArray(event.bid_work_items)
+      ? event.bid_work_items[0]
+      : event.bid_work_items;
+    const workItemBid = Array.isArray(workItem?.bid_opportunities)
+      ? workItem?.bid_opportunities[0]
+      : workItem?.bid_opportunities;
     const employees = (event.calendar_event_employees || [])
       .map((assignment) => {
         const employee = Array.isArray(assignment.shop_employees)
@@ -156,7 +162,7 @@ export default async function CalendarDetailPage({
         />
         <Detail
           label="Project"
-          value={event.manual_project_name || project?.customer_name || "Unnamed project"}
+          value={event.manual_project_name || (workItem ? `${workItemBid?.project_name || "Won bid"} · ${workItem.item_number ? `Item ${workItem.item_number}: ` : ""}${workItem.description}` : null) || project?.customer_name || "Unnamed project"}
         />
         <Detail label="Employees" value={employees || "None assigned"} />
         <Detail label="Notes" value={event.notes || "None"} />
@@ -168,6 +174,9 @@ export default async function CalendarDetailPage({
             Open project
             <ExternalLink className="h-4 w-4" aria-hidden="true" />
           </Link>
+        )}
+        {event.bid_work_item_id && workItemBid?.id && (
+          <Link href={`/admin/bids/${workItemBid.id}?tab=schedule-of-work`} className="mt-4 inline-flex items-center gap-2 text-sm font-semibold text-[#ff7a45] hover:text-[#fb5411]">Open bid schedule<ExternalLink className="h-4 w-4" aria-hidden="true" /></Link>
         )}
         {(role === "admin" ||
           role === "estimator" ||

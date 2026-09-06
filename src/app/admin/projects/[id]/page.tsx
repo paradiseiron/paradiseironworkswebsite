@@ -48,13 +48,39 @@ async function updateProjectStatus(formData: FormData) {
   const project_id = String(formData.get("project_id") || "");
   const status = String(formData.get("status") || "lead");
 
-  const updateData: Record<string, string | null> = {
+  const { data: project, error: projectError } = await supabase
+    .from("projects")
+    .select(
+      "proposal_deposit_amount, proposal_initial_payment_required, initial_payment_received_at"
+    )
+    .eq("id", project_id)
+    .single();
+
+  if (projectError) throw new Error(projectError.message);
+
+  const updateData: Record<string, string | number | null> = {
     status,
     updated_at: new Date().toISOString(),
   };
+  let creditedDepositAmount: number | null = null;
 
   if (status === "lost") updateData.lost_at = new Date().toISOString();
-  if (status === "active") updateData.started_at = new Date().toISOString();
+  if (status === "active") {
+    const activatedAt = new Date().toISOString();
+    updateData.started_at = activatedAt;
+
+    const depositAmount = Number(project.proposal_deposit_amount || 0);
+    if (
+      !project.proposal_initial_payment_required &&
+      !project.initial_payment_received_at &&
+      depositAmount > 0
+    ) {
+      updateData.initial_payment_received_amount = depositAmount;
+      updateData.initial_payment_received_at = activatedAt;
+      updateData.initial_payment_recorded_by = user.id;
+      creditedDepositAmount = depositAmount;
+    }
+  }
   if (status === "completed") updateData.completed_at = new Date().toISOString();
 
   const { error } = await supabase
@@ -72,6 +98,17 @@ async function updateProjectStatus(formData: FormData) {
         ? "Proposal signed. Project moved to active."
         : `Project status changed to ${status}.`,
   });
+
+  if (creditedDepositAmount !== null) {
+    await supabase.from("project_activities").insert({
+      project_id,
+      activity_type: "payment_received",
+      summary: `Proposal deposit of $${creditedDepositAmount.toLocaleString(undefined, {
+        minimumFractionDigits: 2,
+        maximumFractionDigits: 2,
+      })} credited as received when the project became active.`,
+    });
+  }
 
   redirect(`/admin/projects/${project_id}?toast=status-updated`);
 }

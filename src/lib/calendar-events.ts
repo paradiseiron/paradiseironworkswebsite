@@ -4,6 +4,7 @@ export type CalendarEventPayload = {
   windowStart?: unknown;
   windowEnd?: unknown;
   projectId?: unknown;
+  bidWorkItemId?: unknown;
   manualProjectName?: unknown;
   notes?: unknown;
   employeeIds?: unknown;
@@ -17,6 +18,8 @@ export function parseCalendarEventPayload(body: CalendarEventPayload) {
       typeof body.windowStart === "string" ? body.windowStart.trim() : "",
     windowEnd: typeof body.windowEnd === "string" ? body.windowEnd.trim() : "",
     projectId: typeof body.projectId === "string" ? body.projectId.trim() : "",
+    bidWorkItemId:
+      typeof body.bidWorkItemId === "string" ? body.bidWorkItemId.trim() : "",
     manualProjectName:
       typeof body.manualProjectName === "string"
         ? body.manualProjectName.trim()
@@ -38,17 +41,15 @@ export function parseCalendarEventPayload(body: CalendarEventPayload) {
 export function validateCalendarEventPayload(
   payload: ReturnType<typeof parseCalendarEventPayload>
 ) {
-  if (!["fabrication", "installation"].includes(payload.eventType)) {
-    return "Select fabrication or installation.";
+  if (!["fabrication", "delivery", "installation"].includes(payload.eventType)) {
+    return "Select fabrication, delivery, or installation.";
   }
   if (!/^\d{4}-\d{2}-\d{2}$/.test(payload.eventDate)) {
     return "Select a valid event date.";
   }
-  if (!payload.projectId && !payload.manualProjectName) {
-    return "Select an active project or enter a project manually.";
-  }
-  if (payload.projectId && payload.manualProjectName) {
-    return "Choose either an active project or a manual project name.";
+  const projectChoices = [payload.projectId, payload.bidWorkItemId, payload.manualProjectName].filter(Boolean).length;
+  if (projectChoices !== 1) {
+    return "Choose one active project, bid work item, or manual project name.";
   }
   if (payload.manualProjectName.length > 150) {
     return "The manual project name must be 150 characters or fewer.";

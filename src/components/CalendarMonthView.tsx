@@ -39,11 +39,12 @@ export type CalendarSiteVisit = {
 
 export type CalendarEventRecord = {
   id: string;
-  event_type: "fabrication" | "installation";
+  event_type: "fabrication" | "delivery" | "installation";
   event_date: string;
   window_start: string | null;
   window_end: string | null;
   project_id: string | null;
+  bid_work_item_id: string | null;
   manual_project_name: string | null;
   notes: string | null;
   created_at: string;
@@ -53,6 +54,11 @@ export type CalendarEventRecord = {
     project_category: string | null;
     project_type: string | null;
     proposal_number: string | null;
+  } | null;
+  bid_work_items: {
+    description: string;
+    item_number: string | null;
+    bid_opportunities: { id: string; project_name: string } | null;
   } | null;
   calendar_event_employees: {
     employee_id: string;
@@ -76,7 +82,7 @@ type SelectedItem =
 
 type EventDraft = {
   id: string;
-  eventType: "fabrication" | "installation";
+  eventType: "fabrication" | "delivery" | "installation";
   eventDate: string;
   windowStart: string;
   windowEnd: string;
@@ -181,7 +187,11 @@ export default function CalendarMonthView({
         {
           method: draft.id ? "PATCH" : "POST",
           headers: { "Content-Type": "application/json" },
-          body: JSON.stringify(draft),
+          body: JSON.stringify({
+            ...draft,
+            projectId: draft.projectId.startsWith("bid-work-item:") ? "" : draft.projectId,
+            bidWorkItemId: draft.projectId.startsWith("bid-work-item:") ? draft.projectId.slice("bid-work-item:".length) : "",
+          }),
         }
       );
       const body = await response.json().catch(() => null);
@@ -374,7 +384,7 @@ export default function CalendarMonthView({
                           color={
                             event.event_type === "fabrication"
                               ? "emerald"
-                              : "blue"
+                              : event.event_type === "delivery" ? "orange" : "blue"
                           }
                           mobileHref={`/admin/calendar/details/event/${event.id}`}
                           onClick={() => setSelected({ kind: "event", event })}
@@ -569,6 +579,9 @@ function DetailsDrawer({
               <ExternalLink className="h-4 w-4" />
             </Link>
           )}
+          {item.event.bid_work_item_id && item.event.bid_work_items?.bid_opportunities?.id && (
+            <Link href={`/admin/bids/${item.event.bid_work_items.bid_opportunities.id}?tab=schedule-of-work`} className="mt-4 inline-flex items-center gap-2 text-sm font-semibold text-[#ff7a45] hover:text-[#fb5411]">Open bid schedule<ExternalLink className="h-4 w-4" /></Link>
+          )}
           {canWrite && (
             <div className="mt-8 flex gap-3 border-t border-white/10 pt-5">
               <button
@@ -632,12 +645,14 @@ function EventFormDrawer({
                 update({
                   eventType: event.target.value as
                     | "fabrication"
+                    | "delivery"
                     | "installation",
                 })
               }
               className="h-11 w-full appearance-none rounded-xl border border-white/10 bg-neutral-900 py-0 pl-4 pr-12 text-white outline-none focus:border-[#fb5411]"
             >
               <option value="fabrication">Fabrication</option>
+              <option value="delivery">Delivery</option>
               <option value="installation">Installation</option>
             </select>
             <ChevronDown
@@ -872,6 +887,10 @@ function itemTitle(item: SelectedItem) {
 
 function eventProjectName(event: CalendarEventRecord) {
   if (event.manual_project_name) return event.manual_project_name;
+  if (event.bid_work_items) {
+    const item = event.bid_work_items;
+    return `${item.bid_opportunities?.project_name || "Won bid"} · ${item.item_number ? `Item ${item.item_number}: ` : ""}${item.description}`;
+  }
   return event.projects?.customer_name || "Unnamed project";
 }
 
@@ -893,7 +912,7 @@ function draftFromEvent(event: CalendarEventRecord): EventDraft {
     eventDate: event.event_date,
     windowStart: shortTime(event.window_start),
     windowEnd: shortTime(event.window_end),
-    projectId: event.project_id || "",
+    projectId: event.bid_work_item_id ? `bid-work-item:${event.bid_work_item_id}` : event.project_id || "",
     manualProjectName: event.manual_project_name || "",
     notes: event.notes || "",
     employeeIds: event.calendar_event_employees.map(

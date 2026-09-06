@@ -36,6 +36,10 @@ export async function PATCH(
       );
     }
   }
+  if (payload.bidWorkItemId) {
+    const { data: workItem } = await supabase.from("bid_work_items").select("id, bid_opportunities!inner(status)").eq("id", payload.bidWorkItemId).eq("bid_opportunities.status", "won").maybeSingle();
+    if (!workItem) return NextResponse.json({ error: "Select a work item from a won bid." }, { status: 400 });
+  }
   if (payload.employeeIds.length) {
     const { data: employees } = await supabase
       .from("shop_employees")
@@ -58,7 +62,8 @@ export async function PATCH(
       window_start: payload.windowStart || null,
       window_end: payload.windowEnd || null,
       project_id: payload.projectId || null,
-      manual_project_name: payload.projectId
+      bid_work_item_id: payload.bidWorkItemId || null,
+      manual_project_name: payload.projectId || payload.bidWorkItemId
         ? null
         : payload.manualProjectName,
       notes: payload.notes || null,

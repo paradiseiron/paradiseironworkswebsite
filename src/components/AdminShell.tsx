@@ -37,7 +37,8 @@ export default function AdminShell({
   const [workspaceSwitching, setWorkspaceSwitching] = useState(false);
   const viewportBaseline = useRef(0);
   const workspaceTimer = useRef<number | null>(null);
-  const workspaceLogo = useRef<HTMLSpanElement>(null);
+  const workspaceContent = useRef<HTMLElement>(null);
+  const workspaceDirection = useRef<1 | -1>(1);
   const pathname = usePathname();
   const router = useRouter();
   const searchParams = useSearchParams();
@@ -99,6 +100,10 @@ export default function AdminShell({
     userRole === "admin" ||
     userRole === "estimator" ||
     userRole === "operations_foreman";
+  const canWriteBid =
+    userRole === "admin" ||
+    userRole === "bid_estimator" ||
+    userRole === "project_manager";
 
   const projectPath = isProposalPreview
     ? `${pathname.replace("/proposal", "")}?tab=proposal`
@@ -146,24 +151,40 @@ export default function AdminShell({
     }
 
     setWorkspaceSwitching(true);
-    workspaceLogo.current?.animate(
+    workspaceDirection.current = isBidWorkspace ? 1 : -1;
+    workspaceContent.current?.animate(
       [
-        { transform: "rotateY(0deg) scale(1)" },
-        { transform: "rotateY(180deg) scale(0.86)", offset: 0.5 },
-        { transform: "rotateY(360deg) scale(1)" },
+        { transform: "translateX(0)", opacity: 1 },
+        { transform: `translateX(${workspaceDirection.current * 12}px)`, opacity: 0 },
       ],
       {
-        duration: 900,
-        easing: "cubic-bezier(0.4, 0, 0.2, 1)",
+        duration: 170,
+        easing: "cubic-bezier(0.4, 0, 1, 1)",
         fill: "both",
       }
     );
     workspaceTimer.current = window.setTimeout(() => {
       workspaceTimer.current = null;
-      setWorkspaceSwitching(false);
       router.push(href);
-    }, 900);
+    }, 170);
   }
+
+  useEffect(() => {
+    if (!workspaceSwitching) return;
+    if (workspaceTimer.current !== null) return;
+    const animation = workspaceContent.current?.animate(
+      [
+        { transform: `translateX(${-workspaceDirection.current * 12}px)`, opacity: 0 },
+        { transform: "translateX(0)", opacity: 1 },
+      ],
+      { duration: 230, easing: "cubic-bezier(0, 0, 0.2, 1)", fill: "both" }
+    );
+    if (!animation) {
+      queueMicrotask(() => setWorkspaceSwitching(false));
+      return;
+    }
+    animation.finished.then(() => setWorkspaceSwitching(false)).catch(() => setWorkspaceSwitching(false));
+  }, [pathname, workspaceSwitching]);
 
   useEffect(() => {
     const viewport = window.visualViewport;
@@ -245,10 +266,7 @@ export default function AdminShell({
       <aside className="admin-sidebar fixed left-0 top-0 z-50 hidden h-screen w-20 border-r border-white/10 bg-black/50 backdrop-blur-xl md:block print:hidden">
         <div className="flex h-20 items-center justify-center border-b border-white/10">
           <Link href={isBidWorkspace ? "/admin/bids" : "/admin"} className="group [perspective:600px]">
-            <span
-              ref={workspaceLogo}
-              className="block [transform-style:preserve-3d]"
-            >
+            <span className="block">
               <Image
                 src="/images/paradise_ironworks_logo.png"
                 alt="Projects"
@@ -437,6 +455,17 @@ export default function AdminShell({
                   <span>New Project</span>
                 </Link>
               )}
+              {canWriteBid && pathname === "/admin/bids" && (
+                <Link
+                  href="/admin/bids/new"
+                  className="inline-flex h-10 shrink-0 items-center justify-center gap-2 rounded-xl bg-[#fb5411] px-4 text-sm font-semibold text-white transition hover:bg-[#e64d0f] sm:px-5"
+                >
+                  <svg xmlns="http://www.w3.org/2000/svg" className="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+                    <path strokeLinecap="round" strokeLinejoin="round" d="M12 4v16m8-8H4" />
+                  </svg>
+                  <span>New Bid Opportunity</span>
+                </Link>
+              )}
               {userRole === "operations_foreman" &&
                 isDailyShopReportIndex && (
                   <Link
@@ -556,6 +585,7 @@ export default function AdminShell({
         </header>
 
         <main
+          ref={workspaceContent}
           className={`overflow-x-hidden px-4 pt-4 sm:px-6 md:px-8 md:pb-8 print:p-0 print:overflow-visible ${
             keyboardOpen
               ? "pb-6"
@@ -635,7 +665,7 @@ function WorkspaceSwitch({
       className={
         mobile
           ? "inline-flex h-11 w-11 cursor-pointer items-center justify-center rounded-xl border border-white/10 bg-white/[0.03] text-neutral-400 transition hover:bg-white/10 hover:text-white"
-          : "absolute bottom-20 left-4 flex h-12 w-12 cursor-pointer items-center justify-center rounded-2xl border border-white/10 bg-white/[0.03] text-neutral-300 transition hover:border-[#fb5411]/40 hover:bg-[#fb5411]/15 hover:text-[#fb5411]"
+          : `absolute bottom-20 left-4 flex h-12 w-12 cursor-pointer items-center justify-center rounded-2xl border bg-white/[0.03] text-neutral-300 transition hover:border-[#fb5411]/40 hover:bg-[#fb5411]/15 hover:text-[#fb5411] ${switching ? "pointer-events-none border-[#fb5411]/50 bg-[#fb5411]/15 text-[#fb5411] shadow-[0_0_18px_rgba(251,84,17,0.18)]" : "border-white/10"}`
       }
     >
       <ArrowLeftRight className={mobile ? "h-5 w-5" : "h-6 w-6"} aria-hidden="true" />

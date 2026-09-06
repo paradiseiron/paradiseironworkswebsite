@@ -163,7 +163,10 @@ export default async function AdminPage({
     <div className="mx-auto max-w-[1500px]">
       <div>
         <div>
-          <h1 className="text-2xl font-semibold sm:text-3xl">Dashboard</h1>
+          <p className="text-xs font-semibold uppercase tracking-[0.2em] text-[#fb5411]">
+            Residential &amp; Non-Bid Commercial
+          </p>
+          <h1 className="mt-2 text-2xl font-semibold sm:text-3xl">Dashboard</h1>
           <p className="mt-2 text-neutral-400">
             A live snapshot of your project pipeline and revenue.
           </p>
