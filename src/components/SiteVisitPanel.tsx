@@ -1,6 +1,7 @@
 "use client";
 
-import { useState } from "react";
+import { useRef, useState } from "react";
+import { flushSync } from "react-dom";
 import { useRouter } from "next/navigation";
 import {
   Camera,
@@ -13,6 +14,7 @@ import {
 import { createClient } from "@/lib/supabase/client";
 import type { UserRole } from "@/lib/roles";
 import SelectedImagePreview from "@/components/SelectedImagePreview";
+import BulletButton, { toggleBulletedLines } from "@/components/BulletButton";
 import { prepareImageInput } from "@/lib/image-compression";
 
 type SiteVisitProject = {
@@ -337,6 +339,7 @@ function DictationTextArea({
   required?: boolean;
 }) {
   const [value, setValue] = useState(defaultValue);
+  const textareaRef = useRef<HTMLTextAreaElement>(null);
 
   function dictate() {
     const SpeechRecognition = (
@@ -361,19 +364,36 @@ function DictationTextArea({
   }
 
   return (
-    <label className="block text-sm text-neutral-300">
-      <span className="mb-2 flex items-center justify-between gap-3">
-        {label}
-        <button
-          type="button"
-          onClick={dictate}
-          className="inline-flex items-center gap-1.5 text-xs font-medium text-[#fb5411]"
-        >
-          <Mic className="h-4 w-4" aria-hidden="true" />
-          Dictate
-        </button>
-      </span>
+    <div className="block text-sm text-neutral-300">
+      <div className="mb-2 flex flex-wrap items-center justify-between gap-3">
+        <label htmlFor={`site-visit-${name}`}>{label}</label>
+        <div className="flex items-center gap-3">
+          <BulletButton
+            onClick={() => {
+              const textarea = textareaRef.current;
+              if (!textarea) return;
+              const result = toggleBulletedLines(
+                textarea.value,
+                textarea.selectionStart,
+                textarea.selectionEnd
+              );
+              flushSync(() => setValue(result.value));
+              textarea.focus();
+              textarea.setSelectionRange(result.start, result.end);
+            }}
+          />
+          <button
+            type="button"
+            onClick={dictate}
+            className="inline-flex items-center gap-1.5 text-xs font-medium text-[#fb5411]"
+          >
+            <Mic className="h-4 w-4" aria-hidden="true" />
+            Dictate
+          </button>
+        </div>
+      </div>
       <textarea
+        ref={textareaRef}
         id={`site-visit-${name}`}
         name={name}
         value={value}
@@ -382,7 +402,7 @@ function DictationTextArea({
         rows={5}
         className="w-full rounded-xl border border-white/10 bg-neutral-900 px-4 py-3 text-white outline-none focus:border-[#fb5411]"
       />
-    </label>
+    </div>
   );
 }
 

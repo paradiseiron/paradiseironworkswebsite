@@ -7,10 +7,10 @@ type ReviewRequest = {
 
 export async function sendReviewRequestEmail(request: ReviewRequest) {
   const apiKey = process.env.RESEND_API_KEY;
-  const from = process.env.LEAD_NOTIFICATION_FROM_EMAIL?.trim();
+  const from = "Paradise Ironworks <info@paradiseironworks.com>";
   const reviewUrl = process.env.GOOGLE_REVIEW_URL?.trim();
 
-  if (!apiKey || !from) {
+  if (!apiKey) {
     return { ok: false, error: "Email delivery is not configured." };
   }
   if (!reviewUrl) {
@@ -25,7 +25,7 @@ export async function sendReviewRequestEmail(request: ReviewRequest) {
       "Content-Type": "application/json",
     },
     body: JSON.stringify({
-      from: normalizeMailbox(from),
+      from,
       to: [request.recipient],
       subject: "How did we do? Share your Paradise Ironworks experience",
       text: `Hi ${name},\n\nThank you for choosing Paradise Ironworks & Construction. We hope you are enjoying your completed project. Would you take a moment to share your experience on Google?\n\nLeave a review: ${reviewUrl}\n\nThank you,\nParadise Ironworks & Construction LLC`,
@@ -38,10 +38,6 @@ export async function sendReviewRequestEmail(request: ReviewRequest) {
     return { ok: false, error: "The review request email could not be sent." };
   }
   return { ok: true };
-}
-
-function normalizeMailbox(value: string) {
-  return value.includes("<") ? value : `Paradise Ironworks <${value}>`;
 }
 
 function escapeHtml(value: string) {
