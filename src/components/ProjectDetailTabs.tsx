@@ -770,7 +770,7 @@ export default function ProjectDetailTabs({
                   Invoice the first payment when this project becomes active
                 </span>
                 <span className="mt-1 block text-xs leading-5 text-neutral-400">
-                  The active-project invoice will request the deposit amount above until that payment is recorded as received.
+                  When checked, the active-project invoice will request the selected payment amount until it is recorded as received. Otherwise, that amount is automatically credited as received when the project becomes active.
                 </span>
               </span>
             </label>
@@ -1327,7 +1327,7 @@ function PricingLineItems({
   );
 }
 
-type DepositChoice = "30" | "50" | "manual";
+type DepositChoice = "30" | "50" | "full" | "manual";
 
 function DepositAndPaymentTerms({
   total,
@@ -1356,7 +1356,7 @@ function DepositAndPaymentTerms({
         ? String(initialDeposit)
         : ""
     );
-  const percentage = choice === "30" ? 0.3 : choice === "50" ? 0.5 : null;
+  const percentage = choice === "30" ? 0.3 : choice === "50" ? 0.5 : choice === "full" ? 1 : null;
   const calculatedDeposit =
     percentage === null
       ? optionalPricingNumber(manualAmount)
@@ -1369,7 +1369,7 @@ function DepositAndPaymentTerms({
           Deposit &amp; Payment Terms
         </h3>
         <p className="mt-1 text-xs text-neutral-400">
-          Choose a percentage of the proposal total or enter a specific deposit.
+          Choose a deposit percentage, full payment, or a specific amount.
         </p>
       </div>
 
@@ -1379,11 +1379,12 @@ function DepositAndPaymentTerms({
         value={calculatedDeposit === null ? "" : calculatedDeposit}
       />
 
-      <div className="mt-4 grid gap-3 sm:grid-cols-3">
+      <div className="mt-4 grid gap-3 sm:grid-cols-2 lg:grid-cols-4">
         {(
           [
             ["30", "30% deposit"],
             ["50", "50% deposit"],
+            ["full", "Full payment"],
             ["manual", "Manual amount"],
           ] as const
         ).map(([value, label]) => (
@@ -1417,7 +1418,7 @@ function DepositAndPaymentTerms({
       <div className="mt-4 grid gap-4 sm:grid-cols-2">
         <label className="block">
           <span className="text-sm font-medium text-neutral-200">
-            Deposit amount
+            {choice === "full" ? "Full payment amount" : "Deposit amount"}
           </span>
           <div className="relative mt-2">
             <span className="pointer-events-none absolute left-3 top-1/2 -translate-y-1/2 text-neutral-500">
@@ -1504,12 +1505,17 @@ function initialDepositChoice(
   total: number
 ): DepositChoice {
   if (!deposit) return "30";
+  if (total > 0 && Math.abs(deposit - total) < 0.01) return "full";
   if (total > 0 && Math.abs(deposit - total * 0.3) < 0.01) return "30";
   if (total > 0 && Math.abs(deposit - total * 0.5) < 0.01) return "50";
   return "manual";
 }
 
 function depositPaymentTerms(choice: DepositChoice, manualAmount: string) {
+  if (choice === "full") {
+    return "Full payment (100%) is due upon acceptance.";
+  }
+
   if (choice === "30") {
     return "30% deposit due upon acceptance. The remaining 70% is due upon completion of the project.";
   }
