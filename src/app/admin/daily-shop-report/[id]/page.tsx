@@ -105,12 +105,8 @@ export default async function DailyShopReportDetailPage({
     url: signedImages[index]?.url || "",
     thumbnailUrl: signedImages[index]?.thumbnailUrl || "",
   }));
-  const canRemoveImages =
-    role === "operations_foreman" && report.created_by === user.id;
-  const canEdit =
-    role === "operations_foreman" &&
-    report.created_by === user.id &&
-    report.status === "submitted";
+  const canRemoveImages = report.status === "submitted";
+  const canEdit = report.status === "submitted";
 
   const employees = [...(report.daily_shop_report_employees || [])].sort(
     (a, b) => a.sort_order - b.sort_order

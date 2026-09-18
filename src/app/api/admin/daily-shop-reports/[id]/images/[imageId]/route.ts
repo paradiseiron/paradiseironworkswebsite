@@ -1,7 +1,7 @@
 import { NextResponse } from "next/server";
 import { revalidatePath } from "next/cache";
 import { requireAuthenticatedUser } from "@/lib/auth";
-import { getUserRole } from "@/lib/roles";
+import { requireAssignedRole } from "@/lib/roles";
 import { createAdminClient } from "@/lib/supabase/admin";
 
 export async function DELETE(
@@ -9,23 +9,20 @@ export async function DELETE(
   context: { params: Promise<{ id: string; imageId: string }> }
 ) {
   const user = await requireAuthenticatedUser();
-  const role = await getUserRole(user.id);
-  if (role !== "operations_foreman") {
-    return NextResponse.json({ error: "Forbidden" }, { status: 403 });
-  }
+  await requireAssignedRole(user.id);
 
   const { id, imageId } = await context.params;
   const supabase = createAdminClient();
   const { data: report } = await supabase
     .from("daily_shop_reports")
-    .select("created_by")
+    .select("status")
     .eq("id", id)
     .maybeSingle();
   if (!report) {
     return NextResponse.json({ error: "Report not found." }, { status: 404 });
   }
-  if (report.created_by !== user.id) {
-    return NextResponse.json({ error: "Forbidden" }, { status: 403 });
+  if (report.status !== "submitted") {
+    return NextResponse.json({ error: "Only submitted reports can be edited here." }, { status: 409 });
   }
 
   const { data: image, error: imageError } = await supabase

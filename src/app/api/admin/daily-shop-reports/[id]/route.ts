@@ -1,7 +1,7 @@
 import { NextResponse } from "next/server";
 import { revalidatePath } from "next/cache";
 import { requireAuthenticatedUser } from "@/lib/auth";
-import { getUserRole } from "@/lib/roles";
+import { getUserRole, requireAssignedRole } from "@/lib/roles";
 import { createAdminClient } from "@/lib/supabase/admin";
 import {
   parseReportPayload,
@@ -14,9 +14,7 @@ export async function PUT(
   context: { params: Promise<{ id: string }> }
 ) {
   const user = await requireAuthenticatedUser();
-  if ((await getUserRole(user.id)) !== "operations_foreman") {
-    return NextResponse.json({ error: "Forbidden" }, { status: 403 });
-  }
+  await requireAssignedRole(user.id);
 
   const { id } = await context.params;
   const formData = await request.formData();
@@ -29,14 +27,11 @@ export async function PUT(
   const supabase = createAdminClient();
   const { data: report } = await supabase
     .from("daily_shop_reports")
-    .select("id, created_by, status")
+    .select("id, status")
     .eq("id", id)
     .maybeSingle();
   if (!report) {
     return NextResponse.json({ error: "Report not found." }, { status: 404 });
-  }
-  if (report.created_by !== user.id) {
-    return NextResponse.json({ error: "Forbidden" }, { status: 403 });
   }
   if (report.status !== "submitted") {
     return NextResponse.json(

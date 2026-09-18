@@ -3,7 +3,7 @@ import DailyShopReportForm, {
   type ProjectOption,
 } from "@/components/DailyShopReportForm";
 import { requireAuthenticatedUser } from "@/lib/auth";
-import { requireRole } from "@/lib/roles";
+import { requireAssignedRole } from "@/lib/roles";
 import { createAdminClient } from "@/lib/supabase/admin";
 
 export const dynamic = "force-dynamic";
@@ -15,7 +15,7 @@ export default async function EditDailyShopReportPage({
   params: Promise<{ id: string }>;
 }) {
   const user = await requireAuthenticatedUser();
-  await requireRole(user.id, "operations_foreman");
+  await requireAssignedRole(user.id);
   const { id } = await params;
   const supabase = createAdminClient();
 
@@ -28,7 +28,6 @@ export default async function EditDailyShopReportPage({
         status,
         general_shop_notes,
         progress_blockers,
-        created_by,
         daily_shop_report_employees (
           employee_id,
           no_time_to_report,
@@ -49,7 +48,6 @@ export default async function EditDailyShopReportPage({
   if (
     reportError ||
     !report ||
-    report.created_by !== user.id ||
     report.status !== "submitted"
   ) {
     notFound();
