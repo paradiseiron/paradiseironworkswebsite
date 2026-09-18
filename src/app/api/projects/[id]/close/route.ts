@@ -72,6 +72,10 @@ export async function POST(request: Request, context: { params: Promise<{ id: st
     );
   }
 
+  const { data: existingPortfolio, error: existingPortfolioError } = await supabase.from("portfolio_projects").select("image_paths").eq("project_id", id).maybeSingle();
+  if (existingPortfolioError) return NextResponse.json({ error: "Unable to check existing portfolio photos." }, { status: 500 });
+  const removedImagePaths = (existingPortfolio?.image_paths || []).filter((path: string) => path.startsWith(`${id}/`) && !imagePaths.includes(path));
+
   const { error } = await supabase.from("portfolio_projects").upsert({
     project_id: id,
     slug,
@@ -93,6 +97,11 @@ export async function POST(request: Request, context: { params: Promise<{ id: st
   if (error) {
     const message = error.code === "23505" ? "That portfolio URL slug is already in use." : "Unable to publish this portfolio project.";
     return NextResponse.json({ error: message }, { status: error.code === "23505" ? 409 : 500 });
+  }
+
+  if (removedImagePaths.length) {
+    const { error: removalError } = await supabase.storage.from("portfolio-images").remove(removedImagePaths);
+    if (removalError) console.error("Unable to remove portfolio images:", removalError);
   }
 
   await supabase.from("project_activities").insert({

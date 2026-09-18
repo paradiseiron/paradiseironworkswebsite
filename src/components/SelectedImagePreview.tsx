@@ -1,14 +1,16 @@
 "use client";
 
 import { useEffect, useState } from "react";
-import { CheckCircle2 } from "lucide-react";
+import { CheckCircle2, X } from "lucide-react";
 
 export default function SelectedImagePreview({
   files,
   actionLabel = "Ready to upload",
+  onRemove,
 }: {
   files: File[];
   actionLabel?: string;
+  onRemove?: (index: number) => void;
 }) {
   if (!files.length) return null;
 
@@ -28,6 +30,7 @@ export default function SelectedImagePreview({
             key={`${file.name}-${file.lastModified}-${index}`}
             file={file}
             index={index}
+            onRemove={onRemove}
           />
         ))}
       </div>
@@ -35,7 +38,7 @@ export default function SelectedImagePreview({
   );
 }
 
-function SelectedImageCard({ file, index }: { file: File; index: number }) {
+function SelectedImageCard({ file, index, onRemove }: { file: File; index: number; onRemove?: (index: number) => void }) {
   const [url] = useState(() => URL.createObjectURL(file));
 
   useEffect(() => {
@@ -43,7 +46,8 @@ function SelectedImageCard({ file, index }: { file: File; index: number }) {
   }, [url]);
 
   return (
-    <div className="min-w-0 overflow-hidden rounded-lg border border-white/10 bg-neutral-900">
+    <div className="relative min-w-0 overflow-hidden rounded-lg border border-white/10 bg-neutral-900">
+      {onRemove && <button type="button" onClick={() => onRemove(index)} aria-label={`Remove ${file.name || `photo ${index + 1}`}`} className="absolute right-2 top-2 rounded-lg bg-black/80 p-1.5 text-white transition hover:bg-red-600"><X className="h-4 w-4" aria-hidden="true" /></button>}
       {/* eslint-disable-next-line @next/next/no-img-element */}
       <img
         src={url}
