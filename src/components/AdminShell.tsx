@@ -466,7 +466,7 @@ export default function AdminShell({
                   <span>New Bid Opportunity</span>
                 </Link>
               )}
-              {userRole === "operations_foreman" &&
+              {userRole !== "unassigned" &&
                 isDailyShopReportIndex && (
                   <Link
                     href="/admin/daily-shop-report/new"

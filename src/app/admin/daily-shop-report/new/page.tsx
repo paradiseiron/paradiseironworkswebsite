@@ -1,6 +1,6 @@
 import DailyShopReportForm from "@/components/DailyShopReportForm";
 import { requireAuthenticatedUser } from "@/lib/auth";
-import { requireRole } from "@/lib/roles";
+import { requireAssignedRole } from "@/lib/roles";
 import { createAdminClient } from "@/lib/supabase/admin";
 import { getWashingtonDateKey } from "@/lib/date-time";
 
@@ -9,7 +9,7 @@ export const revalidate = 0;
 
 export default async function NewDailyShopReportPage() {
   const user = await requireAuthenticatedUser();
-  await requireRole(user.id, "operations_foreman");
+  await requireAssignedRole(user.id);
   const supabase = createAdminClient();
 
   const [{ data: employees, error: employeeError }, { data: projects, error: projectError }] =

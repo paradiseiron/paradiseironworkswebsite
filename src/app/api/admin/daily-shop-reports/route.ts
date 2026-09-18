@@ -1,6 +1,6 @@
 import { NextResponse } from "next/server";
 import { requireAuthenticatedUser } from "@/lib/auth";
-import { requireRole } from "@/lib/roles";
+import { requireAssignedRole } from "@/lib/roles";
 import { createAdminClient } from "@/lib/supabase/admin";
 import {
   parseReportPayload,
@@ -10,7 +10,7 @@ import {
 
 export async function POST(request: Request) {
   const user = await requireAuthenticatedUser();
-  await requireRole(user.id, "operations_foreman");
+  await requireAssignedRole(user.id);
   const formData = await request.formData();
   const payload = parseReportPayload(formData.get("payload"));
   const validationError = validateReportPayload(payload);
