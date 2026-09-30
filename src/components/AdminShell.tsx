@@ -12,6 +12,7 @@ import {
   Hammer,
   LayoutDashboard,
   ClipboardList,
+  CircleDollarSign,
   Pencil,
 } from "lucide-react";
 import DeleteProjectButton from "@/components/DeleteProjectButton";
@@ -47,6 +48,7 @@ export default function AdminShell({
 
   const isDashboardPage = pathname === "/admin";
   const isProjectsPage = pathname === "/admin/projects";
+  const isCostingPage = pathname.startsWith("/admin/costing");
   const isBidsPage = pathname.startsWith("/admin/bids");
   const isBidWorkspace = isBidsPage;
   const isNewBidPage = pathname === "/admin/bids/new";
@@ -297,6 +299,9 @@ export default function AdminShell({
               </NavIcon>
               <NavIcon href="/admin/calendar" active={isCalendarPage} label="Calendar">
                 <CalendarDays className="h-6 w-6" aria-hidden="true" />
+              </NavIcon>
+              <NavIcon href="/admin/costing" active={isCostingPage} label="Costing">
+                <CircleDollarSign className="h-6 w-6" aria-hidden="true" />
               </NavIcon>
               <NavIcon
                 href="/admin/projects"
@@ -620,6 +625,9 @@ export default function AdminShell({
             </MobileNavLink>
             <MobileNavLink href="/admin/calendar" active={isCalendarPage} label="Calendar">
               <CalendarDays className="h-5 w-5" aria-hidden="true" />
+            </MobileNavLink>
+            <MobileNavLink href="/admin/costing" active={isCostingPage} label="Costing">
+              <CircleDollarSign className="h-5 w-5" aria-hidden="true" />
             </MobileNavLink>
             <MobileNavLink
               href="/admin/projects"
