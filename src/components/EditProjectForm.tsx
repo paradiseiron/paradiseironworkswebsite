@@ -2,6 +2,7 @@
 
 import { useRouter } from "next/navigation";
 import { useState } from "react";
+import CustomerNameField from "@/components/CustomerNameField";
 import {
   ENGINEERING_SERVICES_OPTIONS,
   PROJECT_TYPES,
@@ -28,8 +29,10 @@ type EditableProject = {
 
 export default function EditProjectForm({
   project,
+  customerNames,
 }: {
   project: EditableProject;
+  customerNames: string[];
 }) {
   const router = useRouter();
   const [errorMessage, setErrorMessage] = useState("");
@@ -76,11 +79,7 @@ export default function EditProjectForm({
         <h2 className="mb-5 text-xl font-semibold">Contact Info</h2>
 
         <div className="grid gap-5 md:grid-cols-2">
-          <Field
-            label="Customer / Company"
-            name="customer_name"
-            defaultValue={project.customer_name}
-          />
+          <CustomerNameField label="Customer / Company" names={customerNames} defaultValue={project.customer_name} />
 
           <Field
             label="Contact Name"

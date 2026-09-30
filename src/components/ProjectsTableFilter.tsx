@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useRef, useState } from "react";
 import Link from "next/link";
 import { ChevronDown, Search, SlidersHorizontal, X } from "lucide-react";
 
@@ -29,6 +29,8 @@ export default function ProjectsTableFilter({
 }) {
   const [selectedPeriod, setSelectedPeriod] = useState<Period>(period);
   const [mobileOpen, setMobileOpen] = useState(false);
+  const [searchQuery, setSearchQuery] = useState(query);
+  const searchInputRef = useRef<HTMLInputElement>(null);
   const hasFilters = Boolean(
     query || period !== "all" || category || status
   );
@@ -76,20 +78,39 @@ export default function ProjectsTableFilter({
         >
           Search projects
         </label>
-        <input
-          id="project-search"
-          name="q"
-          type="search"
-          defaultValue={query}
-          onKeyDown={(event) => {
-            if (event.key === "Enter") {
-              event.preventDefault();
-              event.currentTarget.form?.requestSubmit();
-            }
-          }}
-          placeholder="Customer or proposal number"
-          className="h-10 w-full rounded-xl border border-white/10 bg-neutral-900 px-3 text-sm text-white outline-none placeholder:text-neutral-600 focus:border-[#fb5411]"
-        />
+        <div className="relative">
+          <input
+            ref={searchInputRef}
+            id="project-search"
+            name="q"
+            type="text"
+            inputMode="search"
+            value={searchQuery}
+            onChange={(event) => setSearchQuery(event.target.value)}
+            onKeyDown={(event) => {
+              if (event.key === "Enter") {
+                event.preventDefault();
+                event.currentTarget.form?.requestSubmit();
+              }
+            }}
+            placeholder="Customer or proposal number"
+            className="h-10 w-full rounded-xl border border-white/10 bg-neutral-900 py-0 pl-3 pr-11 text-sm text-white outline-none placeholder:text-neutral-600 focus:border-[#fb5411]"
+          />
+          {searchQuery && (
+            <button
+              type="button"
+              onClick={() => {
+                setSearchQuery("");
+                searchInputRef.current?.focus();
+              }}
+              aria-label="Clear project search"
+              title="Clear search"
+              className="absolute right-1.5 top-1/2 inline-flex h-7 w-7 -translate-y-1/2 items-center justify-center rounded-lg text-neutral-500 transition hover:bg-white/10 hover:text-white focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#fb5411]/60"
+            >
+              <X className="h-4 w-4" aria-hidden="true" />
+            </button>
+          )}
+        </div>
       </div>
 
       <div className="min-w-0">

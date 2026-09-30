@@ -1,5 +1,6 @@
 import { redirect } from "next/navigation";
 import NewProjectPhotoFields from "@/components/NewProjectPhotoFields";
+import CustomerNameField from "@/components/CustomerNameField";
 import { createAdminClient } from "@/lib/supabase/admin";
 import { requireAuthenticatedUser } from "@/lib/auth";
 import { requireOperationalRole } from "@/lib/roles";
@@ -7,7 +8,8 @@ import {
   ENGINEERING_SERVICES_OPTIONS,
   PROJECT_TYPES,
 } from "@/lib/project-options";
-import { upsertCustomerProfile } from "@/lib/customers";
+import { listCustomerNames, upsertCustomerProfile } from "@/lib/customers";
+import { CUSTOMER_TYPES } from "@/lib/customer-types";
 
 export const dynamic = "force-dynamic";
 export const revalidate = 0;
@@ -21,6 +23,7 @@ async function createProject(formData: FormData) {
 
   const customer_name = String(formData.get("customer_name") || "");
   const contact_name = String(formData.get("contact_name") || "");
+  const customer_type = String(formData.get("customer_type") || "");
   const phone = String(formData.get("phone") || "");
   const email = String(formData.get("email") || "");
 
@@ -66,6 +69,7 @@ async function createProject(formData: FormData) {
   const customer_id = await upsertCustomerProfile(supabase, {
     name: customer_name,
     contactName: contact_name,
+    customerType: customer_type,
     phone,
     email,
     address: project_address,
@@ -180,6 +184,7 @@ export default async function NewProjectPage({ searchParams }: { searchParams: P
   await requireOperationalRole(user.id);
   const { customer: customerId } = await searchParams;
   const supabase = createAdminClient();
+  const customerNames = await listCustomerNames(supabase);
   const { data: customer } = customerId
     ? await supabase.from("customers").select("*").eq("id", customerId).maybeSingle()
     : { data: null };
@@ -201,13 +206,12 @@ export default async function NewProjectPage({ searchParams }: { searchParams: P
           </h2>
 
           <div className="mt-6 grid gap-5 md:grid-cols-2">
-            <Field
-              label="Customer Name *"
-              name="customer_name"
-              required
-              defaultValue={customer?.name || ""}
-            />
+            <CustomerNameField label="Customer Name *" names={customerNames} required defaultValue={customer?.name} />
 
+            <div>
+              <SelectField label="Customer Type" name="customer_type" defaultValue={customer?.customer_type || ""} options={[{ value: "", label: "Select customer type" }, ...CUSTOMER_TYPES]} />
+              <p className="mt-2 text-xs text-neutral-400">Choose the customer relationship for future audience segments. Project category is selected separately below.</p>
+            </div>
             <Field label="Contact Name" name="contact_name" defaultValue={customer?.contact_name || ""} />
 
             <Field label="Phone" name="phone" defaultValue={customer?.phone || ""} />

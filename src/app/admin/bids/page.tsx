@@ -32,10 +32,11 @@ const BID_STATUS_TRACKS: Record<string, string> = {
 export default async function BidOpportunitiesPage({
   searchParams,
 }: {
-  searchParams: Promise<{ toast?: string }>;
+  searchParams: Promise<{ toast?: string; view?: string }>;
 }) {
   await requireAuthenticatedUser();
   const filters = await searchParams;
+  const opportunitiesView = filters.view === "opportunities";
   const supabase = createAdminClient();
   const { data: opportunities, error } = await supabase
     .from("bid_opportunities")
@@ -95,6 +96,7 @@ export default async function BidOpportunitiesPage({
         />
       )}
 
+      {!opportunitiesView && <>
       <div className="mb-6 flex flex-wrap items-end justify-between gap-4 sm:mb-8">
         <div>
           <p className="text-xs font-semibold uppercase tracking-[0.2em] text-[#fb5411]">
@@ -108,7 +110,7 @@ export default async function BidOpportunitiesPage({
       </div>
 
       {(upcomingBids.length > 0 || overdueBids.length > 0) && (
-        <Link href="#bid-opportunities" className={`mt-4 flex items-center gap-4 rounded-2xl border px-5 py-4 transition hover:brightness-110 ${overdueBids.length ? "border-red-400/25 bg-red-400/10 text-red-100" : "border-[#fb5411]/25 bg-[#fb5411]/10 text-orange-100"}`}>
+        <Link href="/admin/bids?view=opportunities" className={`mt-4 flex items-center gap-4 rounded-2xl border px-5 py-4 transition hover:brightness-110 ${overdueBids.length ? "border-red-400/25 bg-red-400/10 text-red-100" : "border-[#fb5411]/25 bg-[#fb5411]/10 text-orange-100"}`}>
           <span className={`rounded-xl p-2.5 ${overdueBids.length ? "bg-red-400/15 text-red-300" : "bg-[#fb5411]/15 text-[#ff7a45]"}`}><CalendarClock className="h-5 w-5" /></span>
           <div className="min-w-0 flex-1"><p className="text-sm font-semibold">Bid deadline notifications</p><p className="mt-0.5 text-sm opacity-75">{overdueBids.length ? `${overdueBids.length} overdue · ${upcomingBids.length} due in 14 days` : `${upcomingBids.length} due in the next 14 days`}</p></div>
           <span className="text-3xl font-semibold tabular-nums">{overdueBids.length + upcomingBids.length}</span><ArrowRight className="h-4 w-4 opacity-70" />
@@ -133,9 +135,10 @@ export default async function BidOpportunitiesPage({
           <div className="mt-8 space-y-5">{[["Won",wonBids.length,"bg-green-500 border-green-500/20"],["Lost",decidedBids.length-wonBids.length,"bg-neutral-500 border-neutral-500/20"]] .map(([label,count,fill])=><div key={String(label)}><div className="mb-2 flex justify-between text-sm"><span className="text-neutral-300">{label}</span><span className="font-medium">{count}</span></div><div className="h-3 overflow-hidden rounded-full border border-white/10"><div className={`h-full rounded-full border-r ${fill}`} style={{width:`${decidedBids.length?(Number(count)/decidedBids.length)*100:0}%`}} /></div></div>)}</div>
         </section>
       </div>
+      </>}
 
-      <div id="bid-opportunities" className="mb-4 mt-8 flex items-center justify-between gap-3">
-        <h2 className="text-xl font-semibold">Bid Opportunities</h2>
+      {opportunitiesView && <><div id="bid-opportunities" className="mb-4 mt-0 flex items-end justify-between gap-3">
+        <div>{opportunitiesView && <p className="text-xs font-semibold uppercase tracking-[0.2em] text-[#fb5411]">Commercial Bids</p>}<h1 className={`${opportunitiesView ? "mt-2 text-2xl sm:text-3xl" : "text-xl"} font-semibold`}>Bid Opportunities</h1>{opportunitiesView && <p className="mt-2 text-neutral-400">Review and manage every commercial bid opportunity.</p>}</div>
         <span className="text-sm text-neutral-500">{bids.length} total</span>
       </div>
 
@@ -213,6 +216,7 @@ export default async function BidOpportunitiesPage({
           </div>
         )}
       </div>
+      </>}
     </div>
   );
 }

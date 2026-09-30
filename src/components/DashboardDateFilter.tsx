@@ -2,28 +2,42 @@
 
 import { useState } from "react";
 import { CalendarDays, ChevronDown } from "lucide-react";
+import DashboardRangeDatePicker from "@/components/DashboardRangeDatePicker";
 
-type Period = "all" | "month" | "range";
+type Period = "all" | "year" | "month" | "range";
 
 export default function DashboardDateFilter({
   period,
   month,
+  year,
   availableMonths,
+  availableYears,
   from,
   to,
 }: {
   period: Period;
   month: string;
+  year: string;
   availableMonths: string[];
+  availableYears: string[];
   from: string;
   to: string;
 }) {
   const [selectedPeriod, setSelectedPeriod] = useState<Period>(period);
+  const [selectedFrom, setSelectedFrom] = useState(from);
+  const [selectedTo, setSelectedTo] = useState(to);
+  const [rangeError, setRangeError] = useState("");
 
   return (
     <form
       action="/admin"
       method="get"
+      onSubmit={(event) => {
+        if (selectedPeriod === "range" && (!selectedFrom || !selectedTo)) {
+          event.preventDefault();
+          setRangeError("Select both a From and To date.");
+        }
+      }}
       className="mt-6 grid items-end gap-3 rounded-2xl border border-white/10 bg-white/[0.03] p-4 sm:grid-cols-2 lg:flex lg:flex-wrap"
     >
       <div className="min-w-0 lg:w-48">
@@ -45,6 +59,7 @@ export default function DashboardDateFilter({
           >
             <option value="all">All time</option>
             <option value="month">By month</option>
+            <option value="year">By year</option>
             <option value="range">Date range</option>
           </select>
           <ChevronDown
@@ -53,6 +68,18 @@ export default function DashboardDateFilter({
           />
         </div>
       </div>
+
+      {selectedPeriod === "year" && (
+        <div className="min-w-0 lg:w-48">
+          <label htmlFor="dashboard-year" className="mb-2 block text-xs font-medium uppercase tracking-wide text-neutral-500">Year</label>
+          <div className="relative">
+            <select id="dashboard-year" name="year" required defaultValue={year} className="h-10 w-full appearance-none rounded-xl border border-white/10 bg-neutral-900 py-0 pl-3 pr-12 text-sm text-white outline-none focus:border-[#fb5411]">
+              {availableYears.map((availableYear) => <option key={availableYear} value={availableYear}>{availableYear}</option>)}
+            </select>
+            <ChevronDown className="pointer-events-none absolute right-4 top-1/2 h-4 w-4 -translate-y-1/2 text-neutral-500" aria-hidden="true" />
+          </div>
+        </div>
+      )}
 
       {selectedPeriod === "month" && (
         <div className="min-w-0 lg:w-48">
@@ -86,41 +113,12 @@ export default function DashboardDateFilter({
 
       {selectedPeriod === "range" && (
         <>
-          <div className="min-w-0">
-            <label
-              htmlFor="dashboard-from"
-              className="mb-2 block text-xs font-medium uppercase tracking-wide text-neutral-500"
-            >
-              From
-            </label>
-            <input
-              id="dashboard-from"
-              name="from"
-              type="date"
-              required
-              defaultValue={from}
-              className="h-10 w-full rounded-xl border border-white/10 bg-neutral-900 px-3 text-sm text-white outline-none focus:border-[#fb5411]"
-            />
-          </div>
-          <div className="min-w-0">
-            <label
-              htmlFor="dashboard-to"
-              className="mb-2 block text-xs font-medium uppercase tracking-wide text-neutral-500"
-            >
-              To
-            </label>
-            <input
-              id="dashboard-to"
-              name="to"
-              type="date"
-              required
-              min={from || undefined}
-              defaultValue={to}
-              className="h-10 w-full rounded-xl border border-white/10 bg-neutral-900 px-3 text-sm text-white outline-none focus:border-[#fb5411]"
-            />
-          </div>
+          <DashboardRangeDatePicker label="From" name="from" value={selectedFrom} onChange={(value) => { setSelectedFrom(value); setRangeError(""); if (selectedTo && value && selectedTo < value) setSelectedTo(""); }} />
+          <DashboardRangeDatePicker label="To" name="to" value={selectedTo} min={selectedFrom || undefined} onChange={(value) => { setSelectedTo(value); setRangeError(""); }} />
         </>
       )}
+
+      {rangeError && <p role="alert" className="text-sm text-red-300 sm:col-span-2 lg:w-full">{rangeError}</p>}
 
       <button
         type="submit"

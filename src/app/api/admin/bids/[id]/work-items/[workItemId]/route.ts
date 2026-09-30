@@ -23,18 +23,18 @@ export async function PATCH(request: Request, context: { params: Promise<{ id: s
   const supabase = createAdminClient();
   const { data: bid } = await supabase.from("bid_opportunities").select("status").eq("id", id).maybeSingle();
   if (bid?.status !== "won") return NextResponse.json({ error: "A schedule of work is only available for won bids." }, { status: 400 });
-  const { data: current } = await supabase.from("bid_work_items").select("*").eq("id", workItemId).eq("bid_opportunity_id", id).maybeSingle();
+  const { data: current } = await supabase.from("bid_work_items").select("id").eq("id", workItemId).eq("bid_opportunity_id", id).maybeSingle();
   if (!current) return NextResponse.json({ error: "Work item not found." }, { status: 404 });
   const now = new Date().toISOString();
-  const statuses = ["not_started", "fabrication", "delivery", "installation", "ready_for_billing", "paid"] as const;
-  const workStatus = statuses.includes(body.workStatus) ? body.workStatus : "not_started";
   const approvalStatuses = ["proposed", "pending_approval", "approved", "rejected"] as const;
   const approvalStatus = itemType === "change_order" && approvalStatuses.includes(body.changeOrderApprovalStatus) ? body.changeOrderApprovalStatus : null;
   if (itemType === "change_order" && !String(body.changeOrderNumber || "").trim()) return NextResponse.json({ error: "Enter a change order number." }, { status: 400 });
-  if (itemType === "change_order" && approvalStatus !== "approved" && ["ready_for_billing", "paid"].includes(workStatus)) return NextResponse.json({ error: "Only approved change orders can be ready for billing or paid." }, { status: 400 });
-  const selectedIndex = statuses.indexOf(workStatus);
-  const reached = (status: typeof statuses[number]) => selectedIndex >= statuses.indexOf(status);
-  const timestamp = (status: typeof statuses[number], columnName: string) => reached(status) ? current[columnName] || now : null;
+  const amount = (value: unknown) => { const number = Number(value || 0); return Number.isFinite(number) ? number : 0; };
+  const previousBilling = amount(body.previousBilling), currentBilling = amount(body.currentBilling), storedMaterials = amount(body.storedMaterials), retainageAmount = amount(body.retainageAmount);
+  const totalBilled = previousBilling + currentBilling + storedMaterials;
+  const completionStatus = Math.abs(totalBilled) < 0.005 || Math.abs(scheduledValue || 0) < 0.005 ? "not_completed" : Math.abs(totalBilled) >= Math.abs(scheduledValue || 0) - 0.01 ? "completed" : "partially_completed";
+  if ([previousBilling, currentBilling, storedMaterials, retainageAmount].some((value) => value < 0) && scheduledValue !== null && scheduledValue >= 0) return NextResponse.json({ error: "Billing and retainage amounts cannot be negative for a positive-value line item." }, { status: 400 });
+  if (scheduledValue !== null && scheduledValue >= 0 && totalBilled > scheduledValue + 0.01) return NextResponse.json({ error: "Total billed cannot exceed the scheduled value." }, { status: 400 });
   const { error } = await supabase.from("bid_work_items").update({
     description, scheduled_value: scheduledValue,
     item_type: itemType,
@@ -42,12 +42,15 @@ export async function PATCH(request: Request, context: { params: Promise<{ id: s
     change_order_approval_status: approvalStatus,
     change_order_approved_at: approvalStatus === "approved" && /^\d{4}-\d{2}-\d{2}$/.test(body.changeOrderApprovedAt) ? body.changeOrderApprovedAt : null,
     notes: typeof body.notes === "string" ? body.notes.trim() || null : null,
-    work_status: workStatus,
-    fabrication_complete: reached("fabrication"), fabrication_completed_at: timestamp("fabrication", "fabrication_completed_at"),
-    delivery_complete: reached("delivery"), delivery_completed_at: timestamp("delivery", "delivery_completed_at"),
-    installation_complete: reached("installation"), installation_completed_at: timestamp("installation", "installation_completed_at"),
-    ready_for_billing: reached("ready_for_billing"), ready_for_billing_at: timestamp("ready_for_billing", "ready_for_billing_at"),
-    paid: reached("paid"), paid_at: timestamp("paid", "paid_at"), updated_at: now,
+    completion_status: completionStatus,
+    previous_billing: previousBilling,
+    current_billing: currentBilling,
+    stored_materials: storedMaterials,
+    retainage_amount: retainageAmount,
+    billing_application_number: typeof body.billingApplicationNumber === "string" ? body.billingApplicationNumber.trim() || null : null,
+    billing_period_to: typeof body.billingPeriodTo === "string" && /^\d{4}-\d{2}-\d{2}$/.test(body.billingPeriodTo) ? body.billingPeriodTo : null,
+    billing_source_document: typeof body.billingSourceDocument === "string" ? body.billingSourceDocument.trim() || null : null,
+    updated_at: now,
   }).eq("id", workItemId).eq("bid_opportunity_id", id);
   if (error) return NextResponse.json({ error: error.message }, { status: 500 });
   return NextResponse.json({ success: true });

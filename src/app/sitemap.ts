@@ -10,6 +10,7 @@ export default function sitemap(): MetadataRoute.Sitemap {
     "/contact",
     "/quote",
     "/ironwork-projects",
+    "/careers",
     "/services/residential",
     "/services/commercial",
     "/services/structural",

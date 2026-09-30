@@ -47,7 +47,7 @@ const STATUS_GRAPH_TRACKS: Record<string, string> = {
   lost: "border-neutral-500/20",
 };
 
-type DashboardPeriod = "all" | "month" | "range";
+type DashboardPeriod = "all" | "year" | "month" | "range";
 
 export default async function AdminPage({
   searchParams,
@@ -55,6 +55,7 @@ export default async function AdminPage({
   searchParams: Promise<{
     period?: string;
     month?: string;
+    year?: string;
     from?: string;
     to?: string;
   }>;
@@ -63,28 +64,44 @@ export default async function AdminPage({
   const role = await getUserRole(user.id);
   const filters = await searchParams;
   const period: DashboardPeriod =
-    filters.period === "all" || filters.period === "range"
+    filters.period === "all" || filters.period === "year" || filters.period === "range"
       ? filters.period
       : "month";
   const currentMonth = getWashingtonDateKey(new Date()).slice(0, 7);
   const month = isMonth(filters.month) ? filters.month : currentMonth;
+  const year = isYear(filters.year) ? filters.year : currentMonth.slice(0, 4);
   const from = isDate(filters.from) ? filters.from : "";
   const to = isDate(filters.to) ? filters.to : "";
   const supabase = createAdminClient();
 
-  const { data: projects, error } = await supabase
-    .from("projects")
-    .select(
-      "id, customer_name, status, project_category, project_type, lead_source, received_at, proposal_amount, initial_payment_received_amount, website_lead_reviewed_at, site_visit_status, site_visit_assigned_to"
-    )
-    .order("received_at", { ascending: false });
-
-  if (error) {
-    throw new Error(error.message || "Failed to load dashboard data.");
+  const projects: {
+    id: string;
+    customer_name: string | null;
+    status: string | null;
+    project_category: string | null;
+    project_type: string | null;
+    lead_source: string | null;
+    received_at: string | null;
+    proposal_amount: number | null;
+    initial_payment_received_amount: number | null;
+    website_lead_reviewed_at: string | null;
+    site_visit_status: string | null;
+    site_visit_assigned_to: string | null;
+  }[] = [];
+  for (let offset = 0; ; offset += 1000) {
+    const { data, error } = await supabase
+      .from("projects")
+      .select("id, customer_name, status, project_category, project_type, lead_source, received_at, proposal_amount, initial_payment_received_amount, website_lead_reviewed_at, site_visit_status, site_visit_assigned_to")
+      .order("received_at", { ascending: false })
+      .order("id")
+      .range(offset, offset + 999);
+    if (error) throw new Error(error.message || "Failed to load dashboard data.");
+    projects.push(...(data || []));
+    if (!data || data.length < 1000) break;
   }
 
   const records = (projects || []).filter((project) =>
-    isWithinPeriod(project.received_at, period, month, from, to)
+    isWithinPeriod(project.received_at, period, month, year, from, to)
   );
   const newLeadCount = (projects || []).filter(
     (project) =>
@@ -109,6 +126,7 @@ export default async function AdminPage({
         .filter(Boolean),
     ])
   ).sort((a, b) => b.localeCompare(a));
+  const availableYears = Array.from(new Set([year, ...availableMonths.map((availableMonth) => availableMonth.slice(0, 4))])).sort((a, b) => b.localeCompare(a));
   const totalProjects = records.length;
   const proposalValue = records.reduce(
     (total, project) => total + Number(project.proposal_amount || 0),
@@ -177,7 +195,9 @@ export default async function AdminPage({
       <DashboardDateFilter
         period={period}
         month={month}
+        year={year}
         availableMonths={availableMonths}
+        availableYears={availableYears}
         from={from}
         to={to}
       />
@@ -546,6 +566,10 @@ function isMonth(value?: string): value is string {
   return Boolean(value && /^\d{4}-(0[1-9]|1[0-2])$/.test(value));
 }
 
+function isYear(value?: string): value is string {
+  return Boolean(value && /^\d{4}$/.test(value));
+}
+
 function isDate(value?: string): value is string {
   if (!value || !/^\d{4}-\d{2}-\d{2}$/.test(value)) return false;
   return !Number.isNaN(new Date(`${value}T00:00:00Z`).getTime());
@@ -555,6 +579,7 @@ function isWithinPeriod(
   receivedAt: string | null,
   period: DashboardPeriod,
   month: string,
+  year: string,
   from: string,
   to: string
 ) {
@@ -567,6 +592,9 @@ function isWithinPeriod(
 
   if (period === "month") {
     return receivedDateKey.startsWith(month);
+  }
+  if (period === "year") {
+    return receivedDateKey.startsWith(year);
   }
 
   if (!from || !to) return true;

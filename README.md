@@ -15,6 +15,21 @@ NEXT_PUBLIC_SITE_URL=https://www.paradiseironworks.com
 The sender domain must be verified with Resend. Apply the Supabase migration in
 `supabase/migrations` before deploying the unread-lead interface.
 
+## Cost document extraction
+
+The Costing inbox analyzes uploaded PDFs and images with the OpenAI Responses
+API, then presents the extracted values for human review. Configure these
+server-side deployment variables:
+
+```text
+OPENAI_API_KEY=sk-...
+OPENAI_COST_EXTRACTION_MODEL=gpt-4.1-mini
+```
+
+`OPENAI_COST_EXTRACTION_MODEL` is optional and defaults to `gpt-4.1-mini`.
+Apply the costing migrations before enabling uploads. Never expose the API key
+through a `NEXT_PUBLIC_` environment variable.
+
 ## Getting Started
 
 First, run the development server:

@@ -1,8 +1,10 @@
 import type { SupabaseClient } from "@supabase/supabase-js";
+import { isCustomerType } from "@/lib/customer-types";
 
 export type CustomerProfileInput = {
   name: string;
   contactName?: string | null;
+  customerType?: string | null;
   phone?: string | null;
   email?: string | null;
   address?: string | null;
@@ -22,6 +24,7 @@ export async function upsertCustomerProfile(
   const name = input.name.trim().replace(/\s+/g, " ");
   const nameKey = customerNameKey(name);
   if (!nameKey) throw new Error("Customer name is required.");
+  if (input.customerType && !isCustomerType(input.customerType)) throw new Error("Invalid customer type.");
 
   const { data: existing, error: lookupError } = await supabase
     .from("customers")
@@ -32,6 +35,7 @@ export async function upsertCustomerProfile(
 
   const reusableFields = {
     contact_name: optional(input.contactName),
+    customer_type: optional(input.customerType),
     phone: optional(input.phone),
     email: optional(input.email),
     address: optional(input.address),
@@ -72,4 +76,15 @@ export async function upsertCustomerProfile(
 
 function optional(value?: string | null) {
   return value?.trim() || null;
+}
+
+export async function listCustomerNames(supabase: SupabaseClient) {
+  const names: string[] = [];
+  for (let offset = 0; ; offset += 1000) {
+    const { data, error } = await supabase.from("customers").select("name").order("name").range(offset, offset + 999);
+    if (error) throw error;
+    names.push(...(data || []).map((customer) => customer.name));
+    if (!data || data.length < 1000) break;
+  }
+  return names;
 }

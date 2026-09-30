@@ -6,6 +6,7 @@ import { requireAssignedRole } from "@/lib/roles";
 import { createAdminClient } from "@/lib/supabase/admin";
 import { formatWashingtonDate } from "@/lib/date-time";
 import { formatCurrency } from "@/lib/proposal-pricing";
+import { customerTypeLabel } from "@/lib/customer-types";
 
 export const dynamic = "force-dynamic";
 export const revalidate = 0;
@@ -24,14 +25,15 @@ export default async function CustomerProfilePage({ params }: { params: Promise<
   const address = [customer.address, customer.city, customer.state, customer.zip_code].filter(Boolean).join(", ");
 
   return <div className="mx-auto max-w-6xl">
-    <Link href="/admin/projects" className="mb-5 inline-flex text-sm text-neutral-400 transition hover:text-white">← Back to projects</Link>
     <div className="flex flex-wrap items-start justify-between gap-4">
-      <div><p className="text-sm font-medium uppercase tracking-[0.18em] text-neutral-500">Customer profile</p><h1 className="mt-2 text-3xl font-semibold">{customer.name}</h1></div>
+      <div><h1 className="break-words text-2xl font-semibold sm:text-3xl">{customer.name}</h1>
+      <p className="mt-2 text-neutral-400">Customer profile{customer.customer_type ? ` · ${customerTypeLabel(customer.customer_type)}` : ""}</p></div>
       {canCreate && <Link href={`/admin/projects/new?customer=${customer.id}`} className="inline-flex h-11 items-center gap-2 rounded-xl bg-[#fb5411] px-4 text-sm font-semibold text-white"><Plus className="h-4 w-4" />Start a new project</Link>}
     </div>
     <section className="mt-8 rounded-2xl border border-white/10 bg-white/[0.03] p-5 sm:p-6">
       <h2 className="text-xl font-semibold">Customer information</h2>
       <div className="mt-5 grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
+        <Detail label="Customer type" value={customerTypeLabel(customer.customer_type)} />
         <Detail label="Primary contact" value={customer.contact_name || customer.name} />
         <Detail label="Phone" value={customer.phone} icon={<Phone className="h-4 w-4" />} />
         <Detail label="Email" value={customer.email} icon={<Mail className="h-4 w-4" />} />

@@ -3,6 +3,7 @@
 
 import Link from "next/link";
 import Image from "next/image";
+import { hasPublishedJobs } from "@/lib/careers";
 
 const SITE = {
   name: "Paradise Ironworks & Construction",
@@ -40,8 +41,9 @@ const SOCIAL = [
   },
 ];
 
-export default function Footer() {
+export default async function Footer() {
   const year = new Date().getFullYear();
+  const hiringNow = await hasPublishedJobs();
 
   return (
     <footer className="bg-[#09090b] px-8 py-10">
@@ -69,6 +71,10 @@ export default function Footer() {
                 </Link>
                 <Link href="/contact" className="text-[#9f9fa9] hover:text-white">
                   Contact
+                </Link>
+                <Link href="/careers" className="flex items-center gap-2 text-[#9f9fa9] hover:text-white">
+                  Careers
+                  {hiringNow && <span className="rounded-full bg-[#fb5411] px-2 py-0.5 text-[10px] font-semibold uppercase tracking-wide text-white">Hiring Now!</span>}
                 </Link>
                 
               </div>

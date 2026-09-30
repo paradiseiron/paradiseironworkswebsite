@@ -11,9 +11,12 @@ import {
 } from "@/lib/roles";
 import SuccessToast from "@/components/SuccessToast";
 import BidProposalEditor from "@/components/BidProposalEditor";
-import BidScheduleWorkItem, { NewScheduleCurrencyInput, type BidWorkItem } from "@/components/BidScheduleWorkItem";
+import { NewScheduleCurrencyInput, type BidWorkItem } from "@/components/BidScheduleWorkItem";
+import BidScheduleOfWork from "@/components/BidScheduleOfWork";
 import { sendBidRfiEmail } from "@/lib/email/bid-rfi";
 import RfiAttachmentManager from "@/components/RfiAttachmentManager";
+import PostBidChecklist, { type PostBidChecklistItem } from "@/components/PostBidChecklist";
+import BidSubmittals, { type BidSubmittal } from "@/components/BidSubmittals";
 
 export const dynamic = "force-dynamic";
 export const revalidate = 0;
@@ -62,7 +65,29 @@ async function updateBidStatus(formData: FormData) {
     .update(update)
     .eq("id", id);
   if (error) throw new Error(error.message);
-  redirect(`/admin/bids/${id}?toast=status-updated`);
+  redirect(`/admin/bids/${id}${status === "won" ? "?tab=post-bid-checklist&toast=status-updated" : "?toast=status-updated"}`);
+}
+
+async function addPostBidChecklistItem(formData: FormData) {
+  "use server";
+  const user = await requireAuthenticatedUser();
+  await requireScheduleWriteAccess(user.id);
+  const bidId = String(formData.get("bid_opportunity_id") || "");
+  const task = String(formData.get("task") || "").trim();
+  if (!task) throw new Error("Enter a checklist task.");
+  const supabase = createAdminClient();
+  const { data: bid } = await supabase.from("bid_opportunities").select("status").eq("id", bidId).maybeSingle();
+  if (bid?.status !== "won") throw new Error("A post-bid checklist is available only for won bids.");
+  const { data: last } = await supabase.from("bid_post_win_checklist_items").select("sort_order").eq("bid_opportunity_id", bidId).order("sort_order", { ascending: false }).limit(1).maybeSingle();
+  const { error } = await supabase.from("bid_post_win_checklist_items").insert({
+    bid_opportunity_id: bidId,
+    task,
+    owner_name: String(formData.get("owner_name") || "").trim() || null,
+    due_date: String(formData.get("due_date") || "") || null,
+    sort_order: (last?.sort_order || 0) + 10,
+  });
+  if (error) throw new Error(error.message);
+  redirect(`/admin/bids/${bidId}?tab=post-bid-checklist&toast=checklist-item-added`);
 }
 
 async function saveBidProposal(formData: FormData) {
@@ -183,8 +208,6 @@ async function saveBidWorkItem(formData: FormData) {
   const supabase = createAdminClient();
   const { data: bid } = await supabase.from("bid_opportunities").select("id, status").eq("id", bidId).maybeSingle();
   if (!bid || bid.status !== "won") throw new Error("A schedule of work is only available for won bids.");
-  const now = new Date().toISOString();
-  const stage = (name: string) => formData.get(name) === "on";
   const valueText = String(formData.get("scheduled_value") || "").trim();
   if (valueText && !/^-?\d+(\.\d{1,2})?$/.test(valueText)) throw new Error("Enter a valid USD amount.");
   const itemType = formData.get("item_type") === "change_order" ? "change_order" : "original_contract";
@@ -200,17 +223,8 @@ async function saveBidWorkItem(formData: FormData) {
     change_order_approval_status: approvalStatus,
     change_order_approved_at: approvalStatus === "approved" ? String(formData.get("change_order_approved_at") || "") || null : null,
     notes: String(formData.get("notes") || "").trim() || null,
-    fabrication_complete: stage("fabrication_complete"),
-    delivery_complete: stage("delivery_complete"),
-    installation_complete: stage("installation_complete"),
-    ready_for_billing: stage("ready_for_billing"),
-    paid: stage("paid"),
-    fabrication_completed_at: stage("fabrication_complete") ? now : null,
-    delivery_completed_at: stage("delivery_complete") ? now : null,
-    installation_completed_at: stage("installation_complete") ? now : null,
-    ready_for_billing_at: stage("ready_for_billing") ? now : null,
-    paid_at: stage("paid") ? now : null,
-    updated_at: now,
+    completion_status: "not_completed",
+    updated_at: new Date().toISOString(),
   };
   const result = workItemId
     ? await supabase.from("bid_work_items").update(payload).eq("id", workItemId).eq("bid_opportunity_id", bidId)
@@ -316,13 +330,13 @@ export default async function BidOpportunityDetailPage({
   const role = await getUserRole(user.id);
   const { id } = await params;
   const filters = await searchParams;
-  const tab = ["overview", "proposal", "rfis", "schedule-of-work"].includes(
+  const tab = ["overview", "proposal", "post-bid-checklist", "submittals", "rfis", "schedule-of-work"].includes(
     filters.tab || ""
   )
     ? filters.tab!
     : "overview";
   const supabase = createAdminClient();
-  const [{ data: opportunity, error }, { data: documents, error: documentError }, { data: workItems, error: workItemError }, { data: rfis, error: rfiError }] =
+  const [{ data: opportunity, error }, { data: documents, error: documentError }, { data: workItems, error: workItemError }, { data: rfis, error: rfiError }, { data: checklistItems, error: checklistError }, { data: submittals, error: submittalError }] =
     await Promise.all([
       supabase.from("bid_opportunities").select("*").eq("id", id).single(),
       supabase
@@ -332,10 +346,12 @@ export default async function BidOpportunityDetailPage({
         .order("created_at", { ascending: false }),
       supabase.from("bid_work_items").select("*").eq("bid_opportunity_id", id).order("sort_order").order("created_at"),
       supabase.from("bid_rfis").select("*, bid_rfi_attachments(*), bid_rfi_email_history(*)").eq("bid_opportunity_id", id).order("rfi_number"),
+      supabase.from("bid_post_win_checklist_items").select("*").eq("bid_opportunity_id", id).order("sort_order").order("created_at"),
+      supabase.from("bid_submittals").select("*").eq("bid_opportunity_id", id).order("submittal_number"),
     ]);
 
   if (error || !opportunity) notFound();
-  if (documentError || workItemError || rfiError) throw new Error(documentError?.message || workItemError?.message || rfiError?.message || "Unable to load bid.");
+  if (documentError || workItemError || rfiError || checklistError || submittalError) throw new Error(documentError?.message || workItemError?.message || rfiError?.message || checklistError?.message || submittalError?.message || "Unable to load bid.");
 
   const rfisWithLinks = await Promise.all((rfis || []).map(async (rfi) => ({
     ...rfi,
@@ -370,6 +386,7 @@ export default async function BidOpportunityDetailPage({
       {filters.toast === "work-item-saved" && <SuccessToast message="Schedule of work updated." queryParam="toast" />}
       {filters.toast === "rfi-saved" && <SuccessToast message="RFI saved." queryParam="toast" />}
       {filters.toast === "rfi-sent" && <SuccessToast message="RFI email sent." queryParam="toast" />}
+      {filters.toast === "checklist-item-added" && <SuccessToast message="Checklist item added." queryParam="toast" />}
 
       <div className="mt-0 flex flex-wrap items-start justify-between gap-4">
         <div>
@@ -383,7 +400,7 @@ export default async function BidOpportunityDetailPage({
       </div>
 
       <nav className="mb-6 mt-6 flex gap-1 overflow-x-auto border-b border-white/10">
-        {(["overview", "proposal", ...(opportunity.status === "won" ? ["rfis", "schedule-of-work"] : [])] as const).map((item) => (
+        {(["overview", "proposal", ...(opportunity.status === "won" ? ["post-bid-checklist", "submittals", "rfis", "schedule-of-work"] : [])] as const).map((item) => (
           <Link
             key={item}
             href={`/admin/bids/${id}?tab=${item}`}
@@ -393,7 +410,7 @@ export default async function BidOpportunityDetailPage({
                 : "text-neutral-400 hover:text-white"
             }`}
           >
-            {item === "schedule-of-work" ? "Schedule of Work" : item === "rfis" ? "RFIs" : item}
+            {item === "schedule-of-work" ? "Schedule of Work" : item === "post-bid-checklist" ? "Post-Bid Checklist" : item === "rfis" ? "RFIs" : item}
           </Link>
         ))}
       </nav>
@@ -566,12 +583,18 @@ export default async function BidOpportunityDetailPage({
             </div>
           ) : <p className="mt-2 text-neutral-400">No proposal has been drafted.</p>}
         </section>
-      ) : tab === "schedule-of-work" && opportunity.status === "won" ? (
-        <ScheduleOfWork
+      ) : tab === "post-bid-checklist" && opportunity.status === "won" ? (
+        <PostBidChecklist
+          key={(checklistItems || []).map((item) => item.id).join(",")}
           bidId={id}
-          workItems={workItems || []}
+          items={(checklistItems || []) as PostBidChecklistItem[]}
           canWrite={canManageSchedule}
+          addAction={addPostBidChecklistItem}
         />
+      ) : tab === "submittals" && opportunity.status === "won" ? (
+        <BidSubmittals bidId={id} initialSubmittals={(submittals || []) as BidSubmittal[]} canWrite={canManageSchedule} />
+      ) : tab === "schedule-of-work" && opportunity.status === "won" ? (
+        <BidScheduleOfWork bidId={id} initialItems={(workItems || []) as BidWorkItem[]} canWrite={canManageSchedule} addForm={canManageSchedule ? <section className="rounded-2xl border border-dashed border-white/15 bg-white/[0.02] p-4 sm:p-6"><h3 className="font-semibold">Add schedule line</h3><NewWorkItemForm bidId={id} /></section> : undefined} />
       ) : tab === "rfis" && opportunity.status === "won" ? (
         <RfiPanel bidId={id} rfis={rfisWithLinks} workItems={workItems || []} canWrite={canManageSchedule} editRfiId={filters.editRfi || ""} />
       ) : (
@@ -632,32 +655,6 @@ const rfiTextarea = "mt-1.5 w-full rounded-xl border border-white/10 bg-neutral-
 function RfiField({ label, children }: { label: string; children: React.ReactNode }) { return <label className="block text-xs text-neutral-400">{label}{children}</label>; }
 function RfiSelect({ children, ...props }: React.SelectHTMLAttributes<HTMLSelectElement>) { return <span className="relative block"><select {...props} className={`${rfiInput} appearance-none pr-11`}>{children}</select><ChevronDown className="pointer-events-none absolute bottom-3.5 right-4 h-4 w-4 text-neutral-500" /></span>; }
 
-function ScheduleOfWork({ bidId, workItems, canWrite }: { bidId: string; workItems: BidWorkItem[]; canWrite: boolean }) {
-  const originalTotal = workItems.filter((item) => item.item_type !== "change_order").reduce((sum, item) => sum + Number(item.scheduled_value || 0), 0);
-  const approvedChangeTotal = workItems.filter((item) => item.item_type === "change_order" && item.change_order_approval_status === "approved").reduce((sum, item) => sum + Number(item.scheduled_value || 0), 0);
-  const pendingChangeTotal = workItems.filter((item) => item.item_type === "change_order" && ["proposed", "pending_approval"].includes(item.change_order_approval_status || "")).reduce((sum, item) => sum + Number(item.scheduled_value || 0), 0);
-  return <div className="space-y-5">
-    <section className="rounded-2xl border border-white/10 bg-white/[0.03] p-4 sm:p-6">
-      <h2 className="text-xl font-semibold">Schedule of Work</h2>
-      <p className="mt-2 text-sm text-neutral-400">Track each scope item from fabrication through payment. These items also appear as selectable projects on the calendar.</p>
-      <div className="mt-5 grid gap-3 sm:grid-cols-2 lg:grid-cols-4">
-        <ScheduleTotal label="Original contract" value={originalTotal} />
-        <ScheduleTotal label="Approved changes" value={approvedChangeTotal} />
-        <ScheduleTotal label="Revised contract" value={originalTotal + approvedChangeTotal} accent />
-        <ScheduleTotal label="Pending changes" value={pendingChangeTotal} />
-      </div>
-      {!workItems.length && <p className="mt-6 rounded-xl border border-dashed border-white/10 p-6 text-center text-sm text-neutral-500">No work items have been entered.</p>}
-      <div className="mt-5 space-y-4">
-        {workItems.map((item, index) => <BidScheduleWorkItem key={item.id} bidId={bidId} item={item} displayNumber={index + 1} canWrite={canWrite} />)}
-      </div>
-    </section>
-    {canWrite && <section className="rounded-2xl border border-dashed border-white/15 bg-white/[0.02] p-4 sm:p-6">
-      <h3 className="font-semibold">Add work item</h3>
-      <NewWorkItemForm bidId={bidId} />
-    </section>}
-  </div>;
-}
-
 function NewWorkItemForm({ bidId }: { bidId: string }) {
   return <form action={saveBidWorkItem} className="rounded-xl border border-white/10 bg-black/15 p-4">
     <input type="hidden" name="bid_opportunity_id" value={bidId} />
@@ -674,10 +671,6 @@ function NewWorkItemForm({ bidId }: { bidId: string }) {
     <label className="mt-3 block text-xs text-neutral-400">Notes<textarea name="notes" rows={2} className="mt-1.5 w-full rounded-xl border border-white/10 bg-neutral-900 px-3 py-2 text-sm text-white" /></label>
     <div className="mt-3 flex justify-end"><button className="inline-flex items-center gap-2 rounded-xl bg-[#fb5411] px-4 py-2.5 text-sm font-semibold text-white"><Plus className="h-4 w-4" />Add item</button></div>
   </form>;
-}
-
-function ScheduleTotal({ label, value, accent = false }: { label: string; value: number; accent?: boolean }) {
-  return <div className={`rounded-xl border p-3 ${accent ? "border-[#fb5411]/40 bg-[#fb5411]/10" : "border-white/10 bg-black/15"}`}><p className="text-xs text-neutral-500">{label}</p><p className="mt-1 text-lg font-semibold">{new Intl.NumberFormat("en-US", { style: "currency", currency: "USD" }).format(value)}</p></div>;
 }
 
 function Detail({ label, value }: { label: string; value?: string | null }) {

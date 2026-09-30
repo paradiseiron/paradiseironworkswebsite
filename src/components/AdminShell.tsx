@@ -13,8 +13,14 @@ import {
   LayoutDashboard,
   ClipboardList,
   Pencil,
+  Plus,
+  UsersRound,
+  Mail,
+  UserRoundSearch,
+  CircleDollarSign,
 } from "lucide-react";
 import DeleteProjectButton from "@/components/DeleteProjectButton";
+import DeleteCustomerButton from "@/components/DeleteCustomerButton";
 import DeleteBidOpportunityButton from "@/components/DeleteBidOpportunityButton";
 import AdminProfileMenu from "@/components/AdminProfileMenu";
 import ReliableMobileLink from "@/components/ReliableMobileLink";
@@ -44,11 +50,21 @@ export default function AdminShell({
   const searchParams = useSearchParams();
 
   const currentTab = searchParams.get("tab");
+  const bidView = searchParams.get("view");
 
   const isDashboardPage = pathname === "/admin";
   const isProjectsPage = pathname === "/admin/projects";
+  const isCampaignsPage = pathname === "/admin/campaigns";
+  const isApplicationsPage = pathname.startsWith("/admin/applications");
+  const isCostingPage = pathname.startsWith("/admin/costing");
+  const isNewCampaignPage = pathname === "/admin/campaigns/new";
+  const isCustomerDetail = /^\/admin\/customers\/[^/]+$/.test(pathname);
+  const isEditCustomerPage = /^\/admin\/customers\/[^/]+\/edit$/.test(pathname);
+  const customerId = pathname.split("/")[3] || "";
   const isBidsPage = pathname.startsWith("/admin/bids");
   const isBidWorkspace = isBidsPage;
+  const isBidDashboard = pathname === "/admin/bids" && bidView !== "opportunities";
+  const isBidOpportunities = isBidsPage && !isBidDashboard;
   const isNewBidPage = pathname === "/admin/bids/new";
   const isEditBidPage = isBidsPage && pathname.endsWith("/edit");
   const isBidDetailPage =
@@ -280,9 +296,14 @@ export default function AdminShell({
 
         <nav className="flex flex-col items-center gap-4 p-4">
           {isBidWorkspace ? (
-            <NavIcon href="/admin/bids" active label="Bid Opportunities">
-              <BriefcaseBusiness className="h-6 w-6" aria-hidden="true" />
-            </NavIcon>
+            <>
+              <NavIcon href="/admin/bids" active={isBidDashboard} label="Bid Dashboard">
+                <LayoutDashboard className="h-6 w-6" aria-hidden="true" />
+              </NavIcon>
+              <NavIcon href="/admin/bids?view=opportunities" active={isBidOpportunities} label="Bid Opportunities">
+                <BriefcaseBusiness className="h-6 w-6" aria-hidden="true" />
+              </NavIcon>
+            </>
           ) : (
             <>
               <NavIcon href="/admin" active={pathname === "/admin"} label="Dashboard">
@@ -297,6 +318,18 @@ export default function AdminShell({
               </NavIcon>
               <NavIcon href="/admin/calendar" active={isCalendarPage} label="Calendar">
                 <CalendarDays className="h-6 w-6" aria-hidden="true" />
+              </NavIcon>
+              {userRole === "admin" && <NavIcon href="/admin/campaigns" active={pathname.startsWith("/admin/campaigns")} label="Email Campaigns">
+                <Mail className="h-6 w-6" aria-hidden="true" />
+              </NavIcon>}
+              <NavIcon href="/admin/customers" active={pathname.startsWith("/admin/customers")} label="Customers">
+                <UsersRound className="h-6 w-6" aria-hidden="true" />
+              </NavIcon>
+              <NavIcon href="/admin/applications" active={isApplicationsPage} label="Job Applications">
+                <UserRoundSearch className="h-6 w-6" aria-hidden="true" />
+              </NavIcon>
+              <NavIcon href="/admin/costing" active={isCostingPage} label="Costing">
+                <CircleDollarSign className="h-6 w-6" aria-hidden="true" />
               </NavIcon>
               <NavIcon
                 href="/admin/projects"
@@ -344,6 +377,12 @@ export default function AdminShell({
                   )}
                 </div>
               </div>
+              {isNewCampaignPage && (
+                <ReliableMobileLink href="/admin/campaigns" aria-label="Back to Campaigns" title="Back to Campaigns" className="inline-flex h-10 touch-manipulation items-center justify-center gap-2 rounded-xl border border-white/10 px-3 text-sm text-neutral-300 transition hover:bg-white/5 hover:text-white sm:px-4">
+                  <ArrowLeft className="h-4 w-4" aria-hidden="true" />
+                  <span className="hidden sm:inline">Back to Campaigns</span>
+                </ReliableMobileLink>
+              )}
               {isNewProjectPage && (
                 <ReliableMobileLink
                   href="/admin/projects"
@@ -406,6 +445,18 @@ export default function AdminShell({
                 </ReliableMobileLink>
               )}
 
+              {(isCustomerDetail || isEditCustomerPage) && (
+                <ReliableMobileLink
+                  href={isEditCustomerPage ? `/admin/customers/${customerId}` : "/admin/customers"}
+                  aria-label={isEditCustomerPage ? "Back to Customer" : "Back to Customers"}
+                  title={isEditCustomerPage ? "Back to Customer" : "Back to Customers"}
+                  className="inline-flex h-10 touch-manipulation items-center justify-center gap-2 rounded-xl border border-white/10 px-3 text-sm text-neutral-300 transition hover:bg-white/5 hover:text-white sm:px-4"
+                >
+                  <ArrowLeft className="h-4 w-4" aria-hidden="true" />
+                  <span className="hidden sm:inline">{isEditCustomerPage ? "Back to Customer" : "Back to Customers"}</span>
+                </ReliableMobileLink>
+              )}
+
               {isProjectDetail && (
                 <ReliableMobileLink
                   href="/admin/projects"
@@ -432,7 +483,14 @@ export default function AdminShell({
             </div>
 
             <div className="flex min-w-0 flex-1 items-center justify-end gap-2 overflow-x-auto sm:gap-3">
+              {userRole === "admin" && isCampaignsPage && (
+                <Link href="/admin/campaigns/new" className="inline-flex h-10 shrink-0 items-center justify-center gap-2 rounded-xl bg-[#fb5411] px-4 text-sm font-semibold text-white transition hover:bg-[#e64d0f] sm:px-5">
+                  <Plus className="h-4 w-4" aria-hidden="true" />
+                  <span>Start New Campaign</span>
+                </Link>
+              )}
               {canWrite && (isDashboardPage || isProjectsPage) && (
+
                 <Link
                   href="/admin/projects/new"
                   className="inline-flex h-10 shrink-0 items-center justify-center gap-2 rounded-xl bg-[#fb5411] px-4 text-sm font-semibold text-white transition hover:bg-[#e64d0f] sm:px-5"
@@ -478,6 +536,9 @@ export default function AdminShell({
                 )}
               
 
+              {isNewCampaignPage && (
+                <button type="submit" form="new-campaign-form" className="inline-flex h-10 shrink-0 items-center justify-center rounded-xl bg-[#fb5411] px-4 text-sm font-semibold text-white transition hover:bg-[#e64d0f] sm:px-5">Save Draft</button>
+              )}
               {isNewProjectPage && (
                 <button
                   type="submit"
@@ -496,6 +557,18 @@ export default function AdminShell({
                   Create Opportunity
                 </button>
               )}
+{canWrite && isCustomerDetail && (
+  <>
+    <Link href={`${pathname}/edit`} aria-label="Edit Customer" title="Edit Customer" className="inline-flex h-10 shrink-0 items-center justify-center gap-2 rounded-xl border border-white/10 px-3 text-sm font-semibold text-neutral-300 transition hover:bg-white/5 hover:text-white sm:px-5">
+      <Pencil className="h-4 w-4" aria-hidden="true" />
+      <span className="hidden sm:inline">Edit Customer</span>
+    </Link>
+    {userRole === "admin" && <DeleteCustomerButton customerId={customerId} />}
+  </>
+)}
+{canWrite && isEditCustomerPage && (
+  <button type="submit" form="edit-customer-form" className="inline-flex h-10 shrink-0 items-center justify-center rounded-xl bg-[#fb5411] px-4 text-sm font-semibold text-white transition hover:bg-[#e64d0f] sm:px-5">Save Changes</button>
+)}
 {userRole === "admin" && isProjectDetail && !isProjectProposalTab && !isEditProjectPage &&  (
   <>
     <Link
@@ -598,14 +671,19 @@ export default function AdminShell({
 
       <nav
         aria-label="Admin navigation"
-        className={`fixed inset-x-0 bottom-0 z-50 items-center justify-around border-t border-white/10 bg-neutral-950/95 px-4 pb-[max(0.75rem,env(safe-area-inset-bottom))] pt-3 backdrop-blur-xl md:hidden print:hidden ${
+        className={`fixed inset-x-0 bottom-0 z-50 items-center justify-start gap-1 overflow-x-auto border-t border-white/10 bg-neutral-950/95 px-4 sm:justify-around pb-[max(0.75rem,env(safe-area-inset-bottom))] pt-3 backdrop-blur-xl md:hidden print:hidden ${
           keyboardOpen ? "hidden" : "flex"
         }`}
       >
         {isBidWorkspace ? (
-          <MobileNavLink href="/admin/bids" active label="Bid Opportunities">
-            <BriefcaseBusiness className="h-5 w-5" aria-hidden="true" />
-          </MobileNavLink>
+          <>
+            <MobileNavLink href="/admin/bids" active={isBidDashboard} label="Dashboard">
+              <LayoutDashboard className="h-5 w-5" aria-hidden="true" />
+            </MobileNavLink>
+            <MobileNavLink href="/admin/bids?view=opportunities" active={isBidOpportunities} label="Opportunities">
+              <BriefcaseBusiness className="h-5 w-5" aria-hidden="true" />
+            </MobileNavLink>
+          </>
         ) : (
           <>
             <MobileNavLink href="/admin" active={pathname === "/admin"} label="Dashboard">
@@ -620,6 +698,18 @@ export default function AdminShell({
             </MobileNavLink>
             <MobileNavLink href="/admin/calendar" active={isCalendarPage} label="Calendar">
               <CalendarDays className="h-5 w-5" aria-hidden="true" />
+            </MobileNavLink>
+            {userRole === "admin" && <MobileNavLink href="/admin/campaigns" active={pathname.startsWith("/admin/campaigns")} label="Campaigns">
+              <Mail className="h-5 w-5" aria-hidden="true" />
+            </MobileNavLink>}
+            <MobileNavLink href="/admin/customers" active={pathname.startsWith("/admin/customers")} label="Customers">
+              <UsersRound className="h-5 w-5" aria-hidden="true" />
+            </MobileNavLink>
+            <MobileNavLink href="/admin/applications" active={isApplicationsPage} label="Applications">
+              <UserRoundSearch className="h-5 w-5" aria-hidden="true" />
+            </MobileNavLink>
+            <MobileNavLink href="/admin/costing" active={isCostingPage} label="Costing">
+              <CircleDollarSign className="h-5 w-5" aria-hidden="true" />
             </MobileNavLink>
             <MobileNavLink
               href="/admin/projects"
